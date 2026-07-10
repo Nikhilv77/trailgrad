@@ -25,6 +25,7 @@ export async function createProject(input: Pick<Project, "name" | "summary" | "t
   };
 }
 
-export async function analyzeProject(_input: z.infer<typeof AnalyzeProjectRequestSchema>) {
+export async function analyzeProject(input: z.infer<typeof AnalyzeProjectRequestSchema>) {
+  void input;
   return aiOrchestrator.analyzeProject();
 }

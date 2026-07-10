@@ -3,10 +3,12 @@ import type { JDAnalyzeRequestSchema, JDMatchRequestSchema } from "@/lib/validat
 import type { z } from "zod";
 
 // TODO: Replace mock-ai with OpenAI later.
-export async function analyzeJD(_input: z.infer<typeof JDAnalyzeRequestSchema>) {
+export async function analyzeJD(input: z.infer<typeof JDAnalyzeRequestSchema>) {
+  void input;
   return aiOrchestrator.analyzeJD();
 }
 
-export async function compareJD(_input: z.infer<typeof JDMatchRequestSchema>) {
+export async function compareJD(input: z.infer<typeof JDMatchRequestSchema>) {
+  void input;
   return aiOrchestrator.compareJD();
 }

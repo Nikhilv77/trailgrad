@@ -1,86 +1,113 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { Check, Eye, FileText, MessageSquare, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Check, Sparkles, TrendingUp } from "lucide-react";
 
-function Brand() {
-  return (
-    <Link href="/" className="flex items-center gap-3">
-      <span className="grid size-9 place-items-center rounded-full bg-white/15 text-white ring-1 ring-white/20">
-        <ShieldCheck className="size-5" />
-      </span>
-      <span className="logo-script text-4xl font-semibold text-white">TraiGrad</span>
-    </Link>
-  );
-}
+import { LoginForm } from "@/components/auth/login-form";
+import { SiteBrand } from "@/components/marketing/site-brand";
+
+export const metadata: Metadata = {
+  title: "Log in — TrailGrad",
+  description: "Continue building your interview readiness plan.",
+};
 
 export default function LoginPage() {
   return (
-    <main className="grid min-h-screen bg-white text-slate-950 lg:grid-cols-[0.82fr_1.18fr]">
-      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_70%_40%,#213de8_0%,#101c84_38%,#07113d_82%)] px-10 py-14 text-white lg:px-16">
-        <Brand />
-        <div className="mt-16 max-w-md">
-          <h1 className="text-4xl font-semibold leading-tight">Your AI coach for resume, projects and interviews.</h1>
-        </div>
-        <div className="relative mx-auto mt-16 h-72 max-w-md">
-          <div className="absolute left-10 top-10 grid size-16 rotate-[-8deg] place-items-center rounded-2xl bg-white/15 text-white shadow-2xl backdrop-blur">
-            <FileText className="size-8" />
-          </div>
-          <div className="absolute right-16 top-2 grid size-12 place-items-center rounded-full bg-white/10 text-blue-100 ring-1 ring-white/15">
-            <ShieldCheck className="size-6" />
-          </div>
-          <div className="absolute right-12 top-24 grid size-16 rotate-6 place-items-center rounded-2xl bg-blue-500/40 text-white shadow-2xl">
-            <Check className="size-8" />
-          </div>
-          <div className="absolute bottom-14 right-20 grid size-16 place-items-center rounded-2xl bg-white/15 text-white">
-            <MessageSquare className="size-8" />
-          </div>
-          <div className="absolute left-1/2 top-24 h-40 w-36 -translate-x-1/2 rounded-t-full bg-blue-300/20" />
-          <div className="absolute left-1/2 top-20 size-20 -translate-x-1/2 rounded-full bg-[#ffc7ac]" />
-          <div className="absolute left-1/2 top-40 h-24 w-40 -translate-x-1/2 rounded-[34px] bg-[#7aa7ff]" />
-          <div className="absolute left-[46%] top-48 h-16 w-48 -translate-x-1/2 rotate-[-10deg] rounded-full bg-[#a9c3ff]" />
-          <div className="absolute left-1/2 top-52 h-16 w-40 -translate-x-1/2 rounded-xl bg-slate-900/80 shadow-2xl" />
-          <div className="absolute left-1/2 top-60 h-3 w-28 -translate-x-1/2 rounded-full bg-blue-200/60" />
-        </div>
-        <p className="absolute bottom-12 left-16 text-xs text-white/55">© 2024 TrailGrad. All rights reserved.</p>
-      </section>
-      <section className="grid place-items-center bg-[#fbfcff] px-6 py-12">
-        <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-10 shadow-[0_24px_80px_rgba(15,23,42,0.09)]">
-          <h2 className="text-3xl font-bold tracking-tight">Welcome back!</h2>
-          <p className="mt-2 text-sm text-slate-500">Login to your account</p>
-          <form className="mt-8 space-y-5">
-            <div className="space-y-2">
-              <Label>Email address</Label>
-              <Input placeholder="you@example.com" className="h-12 rounded-md" />
-            </div>
-            <div className="space-y-2">
-              <Label>Password</Label>
-              <div className="relative">
-                <Input type="password" placeholder="••••••••" className="h-12 rounded-md pr-11" />
-                <Eye className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+    <main className="relative min-h-screen overflow-hidden bg-[#f4fbf9] text-[#143d39]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(111,219,198,0.28),transparent_26%),radial-gradient(circle_at_92%_88%,rgba(240,184,110,0.16),transparent_24%)]" />
+      <div className="tg-grid absolute inset-0 opacity-35" />
+
+      <div className="relative mx-auto grid min-h-screen w-full max-w-[1360px] lg:grid-cols-[1.08fr_0.92fr]">
+        <section className="relative hidden overflow-hidden px-12 py-10 lg:flex lg:flex-col xl:px-18 xl:py-12">
+          <SiteBrand />
+
+          <div className="flex flex-1 flex-col justify-center pb-12 pt-16">
+            <div className="max-w-[580px]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#cce8e1] bg-white/65 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-[#35786f]">
+                <Sparkles className="size-3.5" /> Your workspace remembers the context
               </div>
-              <div className="text-right">
-                <a className="text-xs font-semibold text-blue-600" href="#">Forgot password?</a>
+              <h1 className="mt-6 text-[52px] font-semibold leading-[0.98] tracking-[-0.058em] text-[#123f3a] xl:text-[60px]">
+                Pick up exactly where your prep left off.
+              </h1>
+              <p className="mt-6 max-w-[510px] text-[16px] leading-7 text-[#617b76]">
+                Your readiness score, saved practice, and next best action are waiting in one focused workspace.
+              </p>
+            </div>
+
+            <div className="relative mt-12 max-w-[560px]">
+              <div className="absolute -inset-10 rounded-full bg-[#7bdbc8]/18 blur-[50px]" />
+              <div className="relative overflow-hidden rounded-[26px] border border-white/90 bg-white/82 p-3 shadow-[0_28px_75px_rgba(25,85,76,0.16)] backdrop-blur-lg">
+                <div className="rounded-[19px] bg-[#123f3a] p-6 text-white">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-white/45">Weekly readiness</p>
+                      <p className="mt-2 text-lg font-semibold">You’re gaining momentum.</p>
+                    </div>
+                    <span className="grid size-10 place-items-center rounded-xl bg-[#79dbc8]/15 text-[#7cdfcb]">
+                      <TrendingUp className="size-5" />
+                    </span>
+                  </div>
+                  <div className="mt-8 flex items-end justify-between gap-4">
+                    <div>
+                      <span className="text-5xl font-semibold tracking-[-0.06em]">72</span>
+                      <span className="ml-2 text-sm text-white/45">/ 100</span>
+                    </div>
+                    <span className="rounded-full bg-[#79dbc8]/15 px-3 py-1.5 text-xs font-semibold text-[#8be3d2]">+8 this week</span>
+                  </div>
+                  <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/8">
+                    <div className="h-full w-[72%] rounded-full bg-[#78dbc8]" />
+                  </div>
+                </div>
+
+                <div className="grid gap-2.5 pt-3 sm:grid-cols-2">
+                  {["RAG story tightened", "Resume proof added"].map((item) => (
+                    <div key={item} className="flex items-center gap-2.5 rounded-xl bg-[#f2f8f6] p-3 text-[11px] font-medium text-[#3c625c]">
+                      <span className="grid size-6 place-items-center rounded-full bg-[#daf3ed] text-[#168372]">
+                        <Check className="size-3" />
+                      </span>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="tg-float absolute -right-5 -top-5 rounded-2xl border border-white bg-[#fff9ee] px-4 py-3 shadow-[0_18px_45px_rgba(80,69,39,0.12)]">
+                <p className="text-[9px] uppercase tracking-[0.12em] text-[#a18759]">Next action</p>
+                <p className="mt-1 text-xs font-semibold text-[#5d4a2d]">12 min mock practice</p>
               </div>
             </div>
-            <Link href="/dashboard" className={buttonVariants({ className: "h-12 w-full rounded-md bg-blue-700 hover:bg-blue-800" })}>Log in</Link>
-          </form>
-          <div className="my-6 flex items-center gap-3 text-xs text-slate-400">
-            <span className="h-px flex-1 bg-slate-200" />
-            or continue with
-            <span className="h-px flex-1 bg-slate-200" />
           </div>
-          <Button variant="outline" className="h-12 w-full rounded-md bg-white">
-            <span className="mr-2 text-lg font-bold text-red-500">G</span>
-            Continue with Google
-          </Button>
-          <p className="mt-8 text-center text-sm text-slate-600">
-            Don&apos;t have an account? <Link className="font-semibold text-blue-600" href="/onboarding">Sign up</Link>
-          </p>
-        </div>
-      </section>
+
+          <p className="text-[11px] text-[#809591]">© 2026 TrailGrad · Your career data stays private.</p>
+        </section>
+
+        <section className="relative flex items-center justify-center px-5 py-8 sm:px-8 lg:bg-white/48 lg:px-12">
+          <div className="w-full max-w-[460px]">
+            <div className="mb-10 flex items-center justify-between lg:hidden">
+              <SiteBrand compact />
+              <Link href="/" className="text-xs font-semibold text-[#4a706a] hover:text-[#183f3a]">Back home</Link>
+            </div>
+
+            <div className="rounded-[28px] border border-white bg-white/88 p-6 shadow-[0_26px_80px_rgba(23,77,69,0.11)] backdrop-blur-xl sm:p-9 lg:border-[#e2ece9] lg:shadow-[0_24px_70px_rgba(23,77,69,0.08)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#239381]">Welcome back</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.045em] text-[#153f3a] sm:text-[36px]">Continue your trail.</h2>
+              <p className="mt-3 text-sm leading-6 text-[#758985]">Log in to see today’s highest-impact next step.</p>
+
+              <LoginForm />
+
+              <p className="mt-7 text-center text-sm text-[#718581]">
+                New to TrailGrad?{" "}
+                <Link className="font-semibold text-[#168573] hover:underline" href="/onboarding">
+                  Create your workspace
+                </Link>
+              </p>
+            </div>
+
+            <p className="mx-auto mt-6 max-w-sm text-center text-[11px] leading-5 text-[#8b9d99]">
+              By continuing, you agree to our Terms and Privacy Policy.
+            </p>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

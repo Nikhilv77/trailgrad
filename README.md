@@ -1,37 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TrailGrad
 
-## Getting Started
+TrailGrad is a Next.js app for interview readiness, resume review, project prep, mock practice, and AI feedback.
 
-First, run the development server:
+## Development
+
+This repository uses `pnpm`.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `app/` - route entrypoints, layouts, and route handlers
+- `components/marketing/` - public landing-page UI
+- `components/ui/` - shared design-system primitives
+- `lib/` - services, validators, mocks, utilities, and shared app configuration
+- `public/images/` - static brand, landing, and avatar assets
 
-## Learn More
+## Health Check
 
-To learn more about Next.js, take a look at the following resources:
+Use `/api/health` for basic uptime monitoring.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Quality Checks
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+pnpm test:e2e
+pnpm build
+```
 
-## Deploy on Vercel
+Run the full suite with:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# trailgrad
+```bash
+pnpm test
+```

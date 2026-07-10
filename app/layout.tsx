@@ -13,8 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TrailGrad",
-  description: "Know your rejection risks before the interview.",
+  title: {
+    default: "TrailGrad — Interview-ready before you apply",
+    template: "%s",
+  },
+  description: "Turn your resume, projects, and target role into a personalized interview-readiness plan.",
 };
 
 export default function RootLayout({
@@ -27,7 +30,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col antialiased">{children}</body>
+      <body className="min-h-full flex flex-col antialiased" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }

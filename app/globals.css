@@ -49,30 +49,30 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.98 0.01 170);
+  --foreground: oklch(0.29 0.045 174);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.29 0.045 174);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.55 0.24 264);
+  --popover-foreground: oklch(0.29 0.045 174);
+  --primary: oklch(0.43 0.075 174);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.955 0.018 170);
+  --secondary-foreground: oklch(0.31 0.045 174);
+  --muted: oklch(0.955 0.014 170);
+  --muted-foreground: oklch(0.55 0.025 174);
+  --accent: oklch(0.94 0.028 170);
+  --accent-foreground: oklch(0.32 0.06 174);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.62 0.2 264);
+  --border: oklch(0.9 0.018 170);
+  --input: oklch(0.9 0.018 170);
+  --ring: oklch(0.64 0.11 174);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -121,15 +121,90 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply scroll-smooth font-sans;
+  }
   body {
     @apply bg-background text-foreground;
+    min-width: 320px;
   }
-  html {
-    @apply font-sans;
+  ::selection {
+    background: rgb(120 219 200 / 0.35);
+    color: #123f3a;
   }
 }
 
-.logo-script {
-  font-family: "Segoe Print", "Bradley Hand", "Noteworthy", "Comic Sans MS", cursive;
-  letter-spacing: -0.01em;
+.tg-grid {
+  background-image:
+    linear-gradient(to right, rgb(41 112 101 / 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(41 112 101 / 0.055) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: linear-gradient(to bottom, black, transparent 92%);
+}
+
+@keyframes tg-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes tg-preview {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes tg-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -7px, 0); }
+}
+
+.tg-hero-enter,
+.tg-hero-enter-delay,
+.tg-hero-enter-delay-2,
+.tg-hero-enter-delay-3 {
+  opacity: 0;
+  animation: tg-rise 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.tg-hero-enter-delay { animation-delay: 70ms; }
+.tg-hero-enter-delay-2 { animation-delay: 145ms; }
+.tg-hero-enter-delay-3 { animation-delay: 220ms; }
+
+.tg-preview-enter {
+  opacity: 0;
+  animation: tg-preview 780ms 160ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.tg-float {
+  animation: tg-float 5.5s ease-in-out infinite;
+}
+
+.tg-float-delayed {
+  animation: tg-float 6.2s 900ms ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
