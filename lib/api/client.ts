@@ -23,7 +23,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload?.error ?? "TrailGrad API request failed.");
+    throw new Error(payload?.error ?? "Trailgrad API request failed.");
   }
   return payload as T;
 }

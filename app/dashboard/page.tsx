@@ -3,8 +3,12 @@ import type { Metadata } from "next";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
 export const metadata: Metadata = {
-  title: "Readiness workspace — TrailGrad",
+  title: "Readiness workspace",
   description: "Track interview readiness, close rejection risks, and practice what matters next.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function DashboardPage() {

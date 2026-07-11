@@ -1,6 +1,6 @@
-# TrailGrad
+# Trailgrad
 
-TrailGrad is a Next.js app for interview readiness, resume review, project prep, mock practice, and AI feedback.
+Trailgrad is a Next.js app for interview readiness, resume review, project prep, mock practice, and AI feedback.
 
 ## Development
 

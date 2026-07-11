@@ -1,344 +1,622 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type ReactNode, useLayoutEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, type Transition } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowLeft,
   ArrowRight,
+  BrainCircuit,
   BriefcaseBusiness,
   CalendarClock,
+  ChartColumn,
   Check,
   Clock3,
   Code2,
-  FileText,
+  Database,
+  FileCheck2,
+  FileUp,
   GitBranch,
   GraduationCap,
   Layers3,
   Link2,
   LoaderCircle,
+  MonitorSmartphone,
   Rocket,
-  ShieldCheck,
+  ServerCog,
   Sparkles,
-  UploadCloud,
 } from "lucide-react";
 
-import { SiteBrand } from "@/components/marketing/site-brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { lobsterTwo } from "@/lib/fonts";
 
 interface Option {
   id: string;
   title: string;
-  description: string;
   icon: LucideIcon;
   badge?: string;
 }
 
-const steps = [
-  { label: "Your goal", helper: "What you’re aiming for" },
-  { label: "Experience", helper: "Where you’re starting" },
-  { label: "Timeline", helper: "How fast to move" },
-  { label: "Career context", helper: "Evidence for your plan" },
-] as const;
+type StepId =
+  | "role"
+  | "experience"
+  | "timeline"
+  | "resume"
+  | "job-description"
+  | "github"
+  | "linkedin"
+  | "review";
+
+interface OnboardingStep {
+  id: StepId;
+  title: string;
+  optional?: boolean;
+}
+
+const steps: OnboardingStep[] = [
+  {
+    id: "role",
+    title: "Where are you headed?",
+  },
+  {
+    id: "experience",
+    title: "Where are you right now?",
+  },
+  {
+    id: "timeline",
+    title: "When do you want to be ready?",
+  },
+  {
+    id: "resume",
+    title: "Add your resume.",
+    optional: true,
+  },
+  {
+    id: "job-description",
+    title: "Paste the target job.",
+    optional: true,
+  },
+  {
+    id: "github",
+    title: "Add GitHub.",
+    optional: true,
+  },
+  {
+    id: "linkedin",
+    title: "Add LinkedIn.",
+    optional: true,
+  },
+  {
+    id: "review",
+    title: "Ready to build your workspace.",
+  },
+];
 
 const roleOptions: Option[] = [
-  { id: "ai-engineer", title: "AI Engineer", description: "LLMs, RAG, agents, and applied ML systems", icon: Sparkles, badge: "Popular" },
-  { id: "software-engineer", title: "Software Engineer", description: "Product engineering, backend, or full stack", icon: Code2 },
-  { id: "data-scientist", title: "Data Scientist", description: "Modeling, experiments, and business insights", icon: Layers3 },
-  { id: "product", title: "Product & strategy", description: "Product roles with a strong technical edge", icon: BriefcaseBusiness },
+  { id: "ai-engineer", title: "AI Engineer", icon: Sparkles, badge: "Popular" },
+  { id: "ml-engineer", title: "ML Engineer", icon: BrainCircuit },
+  { id: "software-engineer", title: "Software Engineer", icon: Code2 },
+  { id: "frontend-engineer", title: "Frontend Engineer", icon: MonitorSmartphone },
+  { id: "backend-engineer", title: "Backend Engineer", icon: ServerCog },
+  { id: "full-stack-engineer", title: "Full Stack Engineer", icon: BrainCircuit },
+  { id: "data-scientist", title: "Data Scientist", icon: Layers3 },
+  { id: "data-analyst", title: "Data Analyst", icon: ChartColumn },
+  { id: "data-engineer", title: "Data Engineer", icon: Database },
+  { id: "product", title: "Product & strategy", icon: BriefcaseBusiness },
 ];
 
 const experienceOptions: Option[] = [
-  { id: "student", title: "Student or new graduate", description: "Building proof through projects and internships", icon: GraduationCap },
-  { id: "early", title: "0–2 years", description: "Turning early work into compelling evidence", icon: Rocket, badge: "Most common" },
-  { id: "mid", title: "3–5 years", description: "Positioning for deeper scope and ownership", icon: BriefcaseBusiness },
-  { id: "switching", title: "Switching careers", description: "Translating existing strengths into a new field", icon: ArrowRight },
+  { id: "student", title: "Student or new graduate", icon: GraduationCap },
+  { id: "early", title: "0-2 years", icon: Rocket, badge: "Most common" },
+  { id: "mid", title: "3-5 years", icon: BriefcaseBusiness },
+  { id: "switching", title: "Switching careers", icon: ArrowRight },
 ];
 
 const timelineOptions: Option[] = [
-  { id: "active", title: "Interviewing now", description: "I need a focused plan for the next 1–2 weeks", icon: Clock3, badge: "Intensive" },
-  { id: "soon", title: "Applying this month", description: "I want to be ready before interviews land", icon: CalendarClock },
-  { id: "exploring", title: "Exploring for later", description: "I’m strengthening my profile proactively", icon: Rocket },
+  { id: "active", title: "Interviewing now", icon: Clock3, badge: "Intensive" },
+  { id: "soon", title: "Applying this month", icon: CalendarClock },
+  { id: "exploring", title: "Exploring for later", icon: Rocket },
 ];
 
 export function OnboardingFlow() {
   const router = useRouter();
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = usePrefersReducedMotion();
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [role, setRole] = useState("");
   const [experience, setExperience] = useState("");
   const [timeline, setTimeline] = useState("");
   const [resumeName, setResumeName] = useState("");
+  const [jdText, setJdText] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [showAllRoles, setShowAllRoles] = useState(false);
 
-  useEffect(() => {
-    if (!generating) return;
+  const activeStep = steps[currentStep];
+  const transition: Transition = reduceMotion ? { duration: 0 } : { duration: 0.52, ease: [0.16, 1, 0.3, 1] };
+  const slideDistance = reduceMotion ? 0 : 18;
+  const progress = ((currentStep + 1) / steps.length) * 100;
+  const visibleRoleOptions = showAllRoles ? roleOptions : roleOptions.slice(0, 4);
+  const hiddenRoleCount = roleOptions.length - visibleRoleOptions.length;
 
-    const timer = window.setTimeout(() => router.push("/dashboard"), 850);
-    return () => window.clearTimeout(timer);
-  }, [generating, router]);
+  const selectedLabels = useMemo(
+    () => ({
+      role: getOptionTitle(roleOptions, role) || "Target role",
+      experience: getOptionTitle(experienceOptions, experience) || "Experience",
+      timeline: getOptionTitle(timelineOptions, timeline) || "Timeline",
+    }),
+    [experience, role, timeline],
+  );
 
-  const activeValue = currentStep === 0 ? role : currentStep === 1 ? experience : currentStep === 2 ? timeline : "ready";
+  function getStepValue(stepId = activeStep.id) {
+    if (stepId === "role") return role;
+    if (stepId === "experience") return experience;
+    if (stepId === "timeline") return timeline;
+    if (stepId === "resume") return resumeName;
+    if (stepId === "job-description") return jdText.trim();
+    if (stepId === "github") return githubUrl.trim();
+    if (stepId === "linkedin") return linkedinUrl.trim();
+    return "ready";
+  }
 
   function selectOption(value: string) {
-    if (currentStep === 0) setRole(value);
-    if (currentStep === 1) setExperience(value);
-    if (currentStep === 2) setTimeline(value);
+    if (activeStep.id === "role") setRole(value);
+    if (activeStep.id === "experience") setExperience(value);
+    if (activeStep.id === "timeline") setTimeline(value);
   }
 
   function goForward() {
-    if (currentStep === steps.length - 1) {
+    if (activeStep.id === "review") {
+      saveDraft();
       setGenerating(true);
+      startRouteTransition();
+      window.setTimeout(() => router.push("/auth"), reduceMotion ? 0 : 450);
       return;
     }
 
     setDirection(1);
-    setCurrentStep((step) => step + 1);
+    setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
   }
 
   function goBack() {
     if (currentStep === 0) {
-      router.push("/");
+      startRouteTransition();
+      window.setTimeout(() => router.push("/"), reduceMotion ? 0 : 160);
       return;
     }
 
     setDirection(-1);
-    setCurrentStep((step) => step - 1);
+    setCurrentStep((step) => Math.max(step - 1, 0));
   }
 
-  const transition = reduceMotion ? { duration: 0 } : { duration: 0.28, ease: [0.22, 1, 0.36, 1] as const };
-  const slideDistance = reduceMotion ? 0 : 22;
+  function saveDraft() {
+    try {
+      window.sessionStorage.setItem(
+        "trailgrad:onboarding",
+        JSON.stringify({
+          role,
+          experience,
+          timeline,
+          resumeName,
+          jdText,
+          githubUrl,
+          linkedinUrl,
+        }),
+      );
+    } catch {
+      // Storage is a convenience for the next auth handoff, not a blocker.
+    }
+  }
+
+  function startRouteTransition() {
+    if (!reduceMotion) {
+      window.dispatchEvent(new Event("trailgrad:route-transition-start"));
+    }
+  }
+
+  const canContinue = activeStep.optional || Boolean(getStepValue()) || activeStep.id === "review";
+  const primaryLabel =
+    generating
+      ? "Opening sign in"
+      : activeStep.id === "review"
+        ? "Create account to save"
+        : activeStep.optional && !getStepValue()
+          ? "Skip for now"
+          : "Continue";
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f3faf8] text-[#153f3a]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_5%_8%,rgba(115,219,199,0.2),transparent_25%),radial-gradient(circle_at_95%_90%,rgba(240,184,110,0.13),transparent_24%)]" />
-      <div className="tg-grid absolute inset-0 opacity-30" />
+    <main className="relative min-h-screen overflow-hidden bg-[#f4fbf9] text-[#111827]">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[#f6fcfa]" />
+        <div className="tg-onboarding-teal-clouds absolute inset-[-18%]" />
+        <div className="tg-onboarding-cloud-haze absolute inset-[-12%]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.48),rgba(255,255,255,0.2)_46%,rgba(255,255,255,0.5))]" />
+        <div className="tg-grid absolute inset-0 opacity-[0.045]" />
+      </div>
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-[1440px] flex-col p-4 sm:p-6 lg:p-8">
-        <header className="flex h-12 items-center justify-between px-1 lg:px-2">
-          <SiteBrand compact />
-          <div className="hidden items-center gap-2 rounded-full border border-[#d7e7e3] bg-white/70 px-3 py-1.5 text-[11px] font-medium text-[#64807a] sm:flex">
-            <ShieldCheck className="size-3.5 text-[#269b89]" />
-            Your data stays private
-          </div>
+      <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1180px] flex-col px-5 pb-6 pt-7 sm:px-8 lg:px-10">
+        <header className="flex h-[52px] items-center justify-between">
+          <OnboardingBrand />
         </header>
 
-        <div className="mx-auto grid w-full max-w-[1220px] flex-1 items-stretch gap-5 py-6 lg:grid-cols-[320px_1fr] lg:py-8">
-          <aside className="hidden overflow-hidden rounded-[28px] bg-[#123f3a] p-7 text-white shadow-[0_26px_70px_rgba(18,63,58,0.17)] lg:flex lg:flex-col">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#76d9c5]">Set up your trail</p>
-              <h2 className="mt-4 text-[28px] font-semibold leading-[1.08] tracking-[-0.04em]">A plan shaped around your actual goal.</h2>
-              <p className="mt-4 text-sm leading-6 text-white/52">Four quick steps give TrailGrad enough context to prioritize the right gaps.</p>
-            </div>
-
-            <ol className="mt-10 space-y-1">
-              {steps.map((step, index) => {
-                const complete = index < currentStep;
-                const active = index === currentStep;
-
-                return (
-                  <li key={step.label} className={`relative flex gap-4 rounded-2xl p-3.5 transition-colors ${active ? "bg-white/9" : ""}`}>
-                    {index < steps.length - 1 && (
-                      <span className={`absolute left-[27px] top-[43px] h-[29px] w-px ${complete ? "bg-[#67ceb9]" : "bg-white/12"}`} />
-                    )}
-                    <span className={`relative grid size-7 shrink-0 place-items-center rounded-full border text-[10px] font-semibold ${
-                      complete
-                        ? "border-[#72d7c3] bg-[#72d7c3] text-[#123f3a]"
-                        : active
-                          ? "border-[#78dbc8] bg-[#78dbc8]/12 text-[#8ee4d3]"
-                          : "border-white/15 text-white/35"
-                    }`}>
-                      {complete ? <Check className="size-3.5" /> : index + 1}
-                    </span>
-                    <div>
-                      <p className={`text-[13px] font-semibold ${active || complete ? "text-white" : "text-white/38"}`}>{step.label}</p>
-                      <p className={`mt-1 text-[10px] ${active ? "text-white/48" : "text-white/25"}`}>{step.helper}</p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-
-            <div className="mt-auto rounded-2xl border border-white/8 bg-white/5 p-4">
-              <div className="flex items-center gap-3">
-                <span className="grid size-9 place-items-center rounded-xl bg-[#78dbc8]/12 text-[#82e0ce]">
-                  <Sparkles className="size-4" />
-                </span>
-                <div>
-                  <p className="text-xs font-semibold">Personalized, not generic</p>
-                  <p className="mt-1 text-[10px] text-white/38">Every action maps back to your inputs.</p>
-                </div>
+        <div className="flex flex-1 items-center justify-center py-7 sm:py-10">
+          <div className="w-full max-w-[840px]">
+            <motion.article className="relative overflow-hidden rounded-[28px] bg-white p-5 shadow-[0_34px_110px_rgba(15,118,110,0.16),0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-2xl sm:p-7 lg:p-9">
+              <div className="relative flex items-center justify-center">
+                <ProgressDots currentStep={currentStep} totalSteps={steps.length} />
               </div>
-            </div>
-          </aside>
 
-          <section className="flex min-h-[650px] flex-col overflow-hidden rounded-[28px] border border-white bg-white/88 p-5 shadow-[0_26px_80px_rgba(22,78,70,0.1)] backdrop-blur-xl sm:p-8 lg:p-10">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 text-[11px] font-medium text-[#718782]">
-                <span className="font-mono text-[#218c7c]">0{currentStep + 1}</span>
-                <span className="h-px w-7 bg-[#cfdfdb]" />
-                <span>0{steps.length}</span>
-              </div>
-              <span className="text-[11px] font-medium text-[#78908b]">About 2 minutes</span>
-            </div>
-
-            <div className="mt-5 h-1 overflow-hidden rounded-full bg-[#eaf2f0] lg:hidden">
-              <motion.div
-                className="h-full rounded-full bg-[#2cae9b]"
-                animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-                transition={transition}
-              />
-            </div>
-
-            <div className="relative flex flex-1 flex-col pt-8 sm:pt-10">
-              <AnimatePresence mode="wait" custom={direction} initial={false}>
+              <div className="relative mx-auto mt-5 h-1 max-w-[520px] overflow-hidden rounded-full bg-[#e7f2ef]/80 shadow-[inset_0_1px_2px_rgba(18,83,75,0.04)]">
                 <motion.div
-                  key={currentStep}
-                  custom={direction}
-                  initial={{ opacity: 0, x: direction * slideDistance }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: direction * -slideDistance }}
+                  className="h-full rounded-full bg-gradient-to-r from-[#0f8f7e] via-[#22ab97] to-[#76d9c5]"
+                  initial={false}
+                  animate={{ width: `${progress}%` }}
                   transition={transition}
-                  className="flex flex-1 flex-col"
-                >
-                  {currentStep === 0 && (
-                    <StepOptions
-                      eyebrow="Your target"
-                      title="Where are you headed?"
-                      description="Choose the role you want TrailGrad to benchmark your profile against."
-                      options={roleOptions}
-                      selected={role}
-                      onSelect={selectOption}
-                    />
-                  )}
+                />
+              </div>
 
-                  {currentStep === 1 && (
-                    <StepOptions
-                      eyebrow="Your starting point"
-                      title="Tell us where you are now."
-                      description="This changes the proof level and interview depth we’ll expect from you."
-                      options={experienceOptions}
-                      selected={experience}
-                      onSelect={selectOption}
-                    />
-                  )}
-
-                  {currentStep === 2 && (
-                    <StepOptions
-                      eyebrow="Your pace"
-                      title="When do you want to be ready?"
-                      description="We’ll size your daily plan around the time and energy you actually have."
-                      options={timelineOptions}
-                      selected={timeline}
-                      onSelect={selectOption}
-                      compact
-                    />
-                  )}
-
-                  {currentStep === 3 && (
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#249481]">Your evidence</p>
-                      <h1 className="mt-3 text-[34px] font-semibold leading-[1.02] tracking-[-0.05em] text-[#143d39] sm:text-[42px]">Add your career context.</h1>
-                      <p className="mt-4 max-w-[590px] text-sm leading-6 text-[#6e827e] sm:text-[15px]">Start with a resume. GitHub and LinkedIn help us connect your claims to stronger proof.</p>
-
-                      <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                        <label htmlFor="resume" className="group flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-[20px] border border-dashed border-[#bcd7d1] bg-[#f5faf8] p-6 text-center outline-none transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-[#5db8aa] hover:bg-[#eff8f5] focus-within:ring-2 focus-within:ring-[#4fb5a5]/30">
-                          <input
-                            id="resume"
-                            type="file"
-                            accept=".pdf,.doc,.docx"
-                            className="sr-only"
-                            onChange={(event) => setResumeName(event.target.files?.[0]?.name ?? "")}
-                          />
-                          <span className="grid size-11 place-items-center rounded-2xl bg-white text-[#238d7d] shadow-sm ring-1 ring-[#deebe8]">
-                            {resumeName ? <Check className="size-5" /> : <UploadCloud className="size-5" />}
-                          </span>
-                          <span className="mt-4 text-sm font-semibold text-[#214943]">{resumeName || "Upload your resume"}</span>
-                          <span className="mt-1.5 text-[11px] text-[#849692]">PDF or DOCX · up to 10 MB</span>
-                        </label>
-
-                        <div className="flex min-h-44 flex-col rounded-[20px] border border-[#dce9e6] bg-white p-5">
-                          <div className="flex items-center gap-3">
-                            <span className="grid size-10 place-items-center rounded-xl bg-[#e7f5f1] text-[#2a8376]">
-                              <FileText className="size-4.5" />
-                            </span>
-                            <div>
-                              <p className="text-sm font-semibold text-[#234943]">Target job description</p>
-                              <p className="mt-0.5 text-[10px] text-[#879995]">Optional, but improves your match score</p>
-                            </div>
-                          </div>
-                          <textarea
-                            aria-label="Target job description"
-                            placeholder="Paste the job description or key requirements…"
-                            className="mt-4 min-h-20 flex-1 resize-none rounded-xl border border-[#dfebe8] bg-[#f8fbfa] p-3 text-xs text-[#294e48] outline-none placeholder:text-[#a2b1ae] focus:border-[#62b8ab] focus:ring-2 focus:ring-[#5ec1b2]/15"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                        <div className="relative">
-                          <GitBranch className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[#708782]" />
-                          <Input aria-label="GitHub profile URL" placeholder="GitHub profile URL" className="h-12 rounded-xl border-[#dce9e6] pl-10 text-sm focus-visible:border-[#5db8aa] focus-visible:ring-[#5db8aa]/15" />
-                        </div>
-                        <div className="relative">
-                          <Link2 className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[#708782]" />
-                          <Input aria-label="LinkedIn profile URL" placeholder="LinkedIn profile URL" className="h-12 rounded-xl border-[#dce9e6] pl-10 text-sm focus-visible:border-[#5db8aa] focus-visible:ring-[#5db8aa]/15" />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            <div className="mt-8 flex items-center justify-between gap-4 border-t border-[#e7efed] pt-5">
-              <Button type="button" variant="ghost" onClick={goBack} className="h-11 rounded-xl px-3 text-[#53716b] hover:bg-[#edf6f3]">
-                <ArrowLeft className="size-4" /> {currentStep === 0 ? "Back home" : "Back"}
-              </Button>
-              <Button
-                type="button"
-                onClick={goForward}
-                disabled={!activeValue || generating}
-                className="h-11 rounded-xl bg-[#123f3a] px-5 font-semibold text-white shadow-[0_12px_28px_rgba(18,63,58,0.17)] hover:bg-[#0e342f] sm:px-6"
+              <StepViewport
+                direction={direction}
+                measureKey={`${activeStep.id}-${showAllRoles ? "all" : "short"}`}
+                slideDistance={slideDistance}
+                stepKey={activeStep.id}
+                transition={transition}
               >
-                {generating ? (
-                  <><LoaderCircle className="size-4 animate-spin" /> Building your map</>
-                ) : currentStep === steps.length - 1 ? (
-                  <>Build my workspace <Sparkles className="size-4" /></>
-                ) : (
-                  <>Continue <ArrowRight className="size-4" /></>
+                <StepHeading step={activeStep} reduceMotion={reduceMotion} />
+
+                {activeStep.id === "role" && (
+                  <StepOptions
+                    options={visibleRoleOptions}
+                    selected={role}
+                    onSelect={selectOption}
+                    spacious
+                    footer={
+                      !showAllRoles && hiddenRoleCount > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllRoles(true)}
+                          className="inline-flex h-11 items-center gap-2 rounded-lg border border-[#d7e9e4] bg-white px-4 text-sm font-semibold text-[#111827] shadow-[0_10px_26px_rgba(15,118,110,0.06)] outline-none transition-[border-color,background-color,box-shadow] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#9bd8cf] hover:bg-[#f8fffd] hover:shadow-[0_12px_30px_rgba(15,118,110,0.09)]"
+                        >
+                          View more roles
+                          <span className="rounded-full bg-[#edf8f5] px-2 py-0.5 text-[11px] text-[#159b89]">
+                            +{hiddenRoleCount}
+                          </span>
+                          <ArrowRight className="size-4" />
+                        </button>
+                      ) : undefined
+                    }
+                  />
                 )}
-              </Button>
-            </div>
-          </section>
+
+                {activeStep.id === "experience" && (
+                  <StepOptions options={experienceOptions} selected={experience} onSelect={selectOption} />
+                )}
+
+                {activeStep.id === "timeline" && (
+                  <StepOptions options={timelineOptions} selected={timeline} onSelect={selectOption} />
+                )}
+
+                {activeStep.id === "resume" && (
+                  <ResumeQuestion resumeName={resumeName} onResumeNameChange={setResumeName} />
+                )}
+
+                {activeStep.id === "job-description" && (
+                  <JobDescriptionQuestion value={jdText} onChange={setJdText} />
+                )}
+
+                {activeStep.id === "github" && (
+                  <UrlQuestion
+                    icon={GitBranch}
+                    label="GitHub profile URL"
+                    placeholder="https://github.com/yourname"
+                    value={githubUrl}
+                    onChange={setGithubUrl}
+                  />
+                )}
+
+                {activeStep.id === "linkedin" && (
+                  <UrlQuestion
+                    icon={Link2}
+                    label="LinkedIn profile URL"
+                    placeholder="https://linkedin.com/in/yourname"
+                    value={linkedinUrl}
+                    onChange={setLinkedinUrl}
+                  />
+                )}
+
+                {activeStep.id === "review" && (
+                  <ReviewStep
+                    role={selectedLabels.role}
+                    experience={selectedLabels.experience}
+                    timeline={selectedLabels.timeline}
+                    resumeName={resumeName}
+                    hasJd={Boolean(jdText.trim())}
+                    hasGithub={Boolean(githubUrl.trim())}
+                    hasLinkedin={Boolean(linkedinUrl.trim())}
+                  />
+                )}
+              </StepViewport>
+
+              <motion.div layout className="relative mt-6 flex items-center justify-between gap-3">
+                <Button type="button" variant="ghost" onClick={goBack} className="h-11 rounded-lg px-3 text-[#4b5563] transition-all duration-500 hover:bg-[#edf6f3] focus-visible:!border-transparent focus-visible:!ring-0">
+                  <ArrowLeft className="size-4" /> {currentStep === 0 ? "Back home" : "Back"}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={goForward}
+                  disabled={!canContinue || generating}
+                  className="h-11 min-w-[150px] rounded-lg bg-[#0f9f8d] px-5 font-semibold text-white shadow-[0_14px_32px_rgba(15,159,141,0.24)] transition-all duration-500 hover:bg-[#0d8d7d] hover:shadow-[0_18px_38px_rgba(15,159,141,0.28)] focus-visible:!border-transparent focus-visible:!ring-0 sm:px-6"
+                >
+                  {generating ? (
+                    <><LoaderCircle className="size-4 animate-spin" /> {primaryLabel}</>
+                  ) : activeStep.id === "review" ? (
+                    <>{primaryLabel} <Sparkles className="size-4" /></>
+                  ) : (
+                    <>{primaryLabel} <ArrowRight className="size-4" /></>
+                  )}
+                </Button>
+              </motion.div>
+            </motion.article>
+          </div>
         </div>
-      </div>
+      </section>
+
+      <style jsx global>{`
+        @keyframes tg-onboarding-heading-word {
+          from {
+            opacity: 0;
+            transform: translate3d(0, 12px, 0);
+          }
+          to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
+
+        .tg-onboarding-heading-word {
+          opacity: 0;
+          animation: tg-onboarding-heading-word 520ms
+            cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          will-change: opacity, transform;
+        }
+
+        .tg-onboarding-teal-clouds {
+          background:
+            radial-gradient(
+              ellipse 24% 17% at 6% 72%,
+              rgba(15, 118, 110, 0.3),
+              rgba(20, 184, 166, 0.18) 46%,
+              transparent 76%
+            ),
+            radial-gradient(
+              ellipse 30% 19% at 20% 82%,
+              rgba(45, 212, 191, 0.28),
+              rgba(153, 246, 228, 0.16) 48%,
+              transparent 78%
+            ),
+            radial-gradient(
+              ellipse 28% 18% at 36% 76%,
+              rgba(125, 232, 218, 0.2),
+              rgba(204, 251, 241, 0.12) 50%,
+              transparent 78%
+            ),
+            radial-gradient(
+              ellipse 32% 21% at 75% 16%,
+              rgba(94, 234, 212, 0.28),
+              rgba(20, 184, 166, 0.13) 48%,
+              transparent 78%
+            ),
+            radial-gradient(
+              ellipse 25% 17% at 91% 28%,
+              rgba(153, 246, 228, 0.2),
+              transparent 76%
+            ),
+            radial-gradient(
+              ellipse 22% 15% at 57% 28%,
+              rgba(167, 243, 208, 0.18),
+              transparent 74%
+            ),
+            radial-gradient(
+              ellipse 44% 24% at 54% 98%,
+              rgba(204, 251, 241, 0.22),
+              transparent 72%
+            ),
+            linear-gradient(135deg, #f9fffd 0%, #e6fbf6 54%, #f7fcfa 100%);
+          filter: blur(34px) saturate(1.03);
+          opacity: 0.86;
+          transform: translate3d(0, 0, 0);
+        }
+
+        .tg-onboarding-cloud-haze {
+          background:
+            radial-gradient(
+              ellipse 58% 30% at 26% 92%,
+              rgba(20, 184, 166, 0.13),
+              transparent 72%
+            ),
+            radial-gradient(
+              ellipse 58% 34% at 87% 38%,
+              rgba(125, 232, 218, 0.12),
+              transparent 74%
+            ),
+            linear-gradient(
+              15deg,
+              rgba(15, 118, 110, 0.1) 0%,
+              rgba(20, 184, 166, 0.08) 26%,
+              transparent 62%
+            );
+          filter: blur(64px);
+          opacity: 0.7;
+        }
+      `}</style>
     </main>
   );
 }
 
+function StepViewport({
+  children,
+  direction,
+  measureKey,
+  slideDistance,
+  stepKey,
+  transition,
+}: {
+  children: ReactNode;
+  direction: number;
+  measureKey: string;
+  slideDistance: number;
+  stepKey: StepId;
+  transition: Transition;
+}) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<number | null>(null);
+  const [height, setHeight] = useState<number>();
+
+  useLayoutEffect(() => {
+    const content = contentRef.current;
+
+    if (!content) {
+      return;
+    }
+
+    const measure = () => {
+      const nextHeight = Math.max(content.getBoundingClientRect().height, content.scrollHeight);
+
+      if (nextHeight < 1) {
+        return;
+      }
+
+      setHeight((currentHeight) =>
+        currentHeight !== undefined && Math.abs(currentHeight - nextHeight) < 0.5 ? currentHeight : nextHeight,
+      );
+    };
+
+    measure();
+    frameRef.current = window.requestAnimationFrame(measure);
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(content);
+
+    return () => {
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+      }
+
+      observer.disconnect();
+    };
+  }, [measureKey]);
+
+  return (
+    <div
+      className="tg-step-viewport relative overflow-hidden transition-[height] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+      style={{ height: height === undefined ? "auto" : `${height}px` }}
+    >
+      <AnimatePresence custom={direction} initial={false}>
+        <motion.div
+          key={stepKey}
+          custom={direction}
+          initial={{ opacity: 0, x: direction * slideDistance, filter: "blur(5px)" }}
+          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+          exit={{ opacity: 0, x: direction * -slideDistance, filter: "blur(4px)" }}
+          transition={transition}
+          className={`tg-step-pane ${height === undefined ? "relative" : "absolute inset-x-0 top-0"} will-change-transform`}
+        >
+          <div ref={contentRef} className="pt-10">{children}</div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function OnboardingBrand() {
+  return (
+    <Link
+      href="/"
+      className="flex shrink-0 items-center transition-opacity duration-300 hover:opacity-80"
+      aria-label="Trailgrad home"
+    >
+      <Image
+        src="/images/brand/trailgrad-logo.png"
+        alt=""
+        width={172}
+        height={194}
+        className="h-[34px] w-auto"
+        priority
+      />
+      <span className={`${lobsterTwo.className} text-[27px] font-semibold leading-none text-[#111827]`}>
+        Trailgrad
+      </span>
+    </Link>
+  );
+}
+
+function ProgressDots({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
+  return (
+    <div className="flex items-center gap-1.5" aria-label="Onboarding progress">
+      {Array.from({ length: totalSteps }).map((_, index) => {
+        const active = index <= currentStep;
+
+        return (
+          <span
+            key={index}
+            className={`h-1.5 rounded-full transition-all duration-500 ${
+              active ? "w-7 bg-[#159b89]" : "w-1.5 bg-[#d8e9e5]"
+            }`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function StepHeading({ step, reduceMotion }: { step: OnboardingStep; reduceMotion: boolean }) {
+  const compact = step.optional;
+  const words = step.title.split(" ");
+
+  return (
+    <div className="mx-auto max-w-[650px] text-center">
+      <h1
+        aria-label={step.title}
+        className={`mx-auto max-w-[620px] font-semibold leading-[1.02] tracking-[-0.045em] text-[#111827] ${
+          compact ? "text-[34px] sm:text-[44px]" : "text-[36px] sm:text-[48px]"
+        }`}
+      >
+        {reduceMotion
+          ? step.title
+          : words.map((word, index) => (
+              <span
+                key={`${step.id}-${word}-${index}`}
+                aria-hidden="true"
+                className={`tg-onboarding-heading-word inline-block ${index < words.length - 1 ? "mr-[0.22em]" : ""}`}
+                style={{ animationDelay: `${120 + index * 70}ms` }}
+              >
+                {word}
+              </span>
+            ))}
+      </h1>
+    </div>
+  );
+}
+
 interface StepOptionsProps {
-  eyebrow: string;
-  title: string;
-  description: string;
   options: Option[];
   selected: string;
   onSelect: (value: string) => void;
-  compact?: boolean;
+  spacious?: boolean;
+  footer?: ReactNode;
 }
 
-function StepOptions({ eyebrow, title, description, options, selected, onSelect, compact = false }: StepOptionsProps) {
+function StepOptions({ options, selected, onSelect, spacious = false, footer }: StepOptionsProps) {
   return (
-    <fieldset>
-      <legend className="sr-only">{title}</legend>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#249481]">{eyebrow}</p>
-      <h1 className="mt-3 text-[34px] font-semibold leading-[1.02] tracking-[-0.05em] text-[#143d39] sm:text-[42px]">{title}</h1>
-      <p className="mt-4 max-w-[590px] text-sm leading-6 text-[#6e827e] sm:text-[15px]">{description}</p>
-
-      <div className={`mt-8 grid gap-3.5 ${compact ? "sm:grid-cols-1" : "sm:grid-cols-2"}`}>
+    <fieldset className={`mx-auto mt-10 ${spacious ? "max-w-[720px]" : "max-w-[620px]"} ${footer ? "pb-4" : ""}`}>
+      <legend className="sr-only">Choose one option</legend>
+      <div className="grid gap-3 sm:grid-cols-2">
         {options.map((option) => {
           const active = option.id === selected;
           const Icon = option.icon;
@@ -349,29 +627,176 @@ function StepOptions({ eyebrow, title, description, options, selected, onSelect,
               type="button"
               aria-pressed={active}
               onClick={() => onSelect(option.id)}
-              className={`group relative flex min-h-[112px] items-start gap-4 rounded-[18px] border p-4 text-left outline-none transition-[border-color,background-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[#55b6a7]/35 ${
+              className={`group relative flex min-h-[88px] items-center gap-4 overflow-hidden rounded-[16px] border p-4 text-left outline-none transition-[border-color,background-color,box-shadow] duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 active
-                  ? "border-[#4caf9f] bg-[#eff9f6] shadow-[0_10px_28px_rgba(34,126,113,0.09)]"
-                  : "border-[#dce9e6] bg-white hover:border-[#acd4cb] hover:bg-[#fbfdfc]"
+                  ? "border-[#20b8a4] bg-[#f0fdfa] shadow-[0_16px_34px_rgba(15,118,110,0.11)]"
+                  : "border-[#e5e7eb] bg-white hover:border-[#b7ddd7] hover:bg-[#fbfffe] hover:shadow-[0_14px_34px_rgba(15,118,110,0.08)]"
               }`}
             >
-              <span className={`grid size-11 shrink-0 place-items-center rounded-[14px] transition-colors ${active ? "bg-[#1b8f7e] text-white" : "bg-[#edf6f3] text-[#387b71] group-hover:bg-[#e3f2ee]"}`}>
+              <span aria-hidden="true" className={`absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent transition-opacity duration-1000 ${active ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
+              <span className={`grid size-11 shrink-0 place-items-center rounded-[14px] transition-all duration-1000 ${active ? "bg-[#0f9f8d] text-white shadow-[0_12px_24px_rgba(15,159,141,0.22)]" : "bg-[#f3f4f6] text-[#4b5563] group-hover:bg-[#ecfdf9] group-hover:text-[#0f766e]"}`}>
                 <Icon className="size-5" />
               </span>
-              <span className="min-w-0 pt-0.5">
-                <span className="flex items-center gap-2 text-sm font-semibold text-[#214943]">
+              <span className="min-w-0">
+                <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[#111827]">
                   {option.title}
                   {option.badge && <span className="rounded-full bg-[#fff2dc] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-[#966329]">{option.badge}</span>}
                 </span>
-                <span className="mt-1.5 block text-[11px] leading-5 text-[#7c918d]">{option.description}</span>
               </span>
-              <span className={`ml-auto mt-1 grid size-5 shrink-0 place-items-center rounded-full border ${active ? "border-[#2b9f8f] bg-[#2b9f8f] text-white" : "border-[#cadbd7] text-transparent"}`}>
+              <span className={`ml-auto grid size-5 shrink-0 place-items-center rounded-full border transition-all duration-1000 ${active ? "border-[#2b9f8f] bg-[#2b9f8f] text-white" : "border-[#cadbd7] text-transparent group-hover:border-[#9ccfc6]"}`}>
                 <Check className="size-3" />
               </span>
             </button>
           );
         })}
       </div>
+      {footer ? <div className="mt-5 flex justify-center">{footer}</div> : null}
     </fieldset>
   );
+}
+
+function ResumeQuestion({
+  resumeName,
+  onResumeNameChange,
+}: {
+  resumeName: string;
+  onResumeNameChange: (value: string) => void;
+}) {
+  return (
+    <div className="mx-auto mt-9 max-w-[320px] pb-10">
+      <label
+        htmlFor="resume"
+        className={`group flex aspect-square w-full cursor-pointer flex-col items-center justify-center rounded-[22px] border bg-white p-6 text-center outline-none shadow-[0_8px_22px_rgba(15,118,110,0.028)] transition-[border-color,background-color,box-shadow] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#9fd8d0] hover:bg-[#fdfffe] hover:shadow-[0_12px_28px_rgba(15,118,110,0.045)] ${
+          resumeName ? "border-[#8fd5cb] bg-[#fbfffe]" : "border-[#e7ecea]"
+        }`}
+      >
+        <input
+          id="resume"
+          type="file"
+          accept="application/pdf,.pdf"
+          className="sr-only"
+          onChange={(event) => onResumeNameChange(event.target.files?.[0]?.name ?? "")}
+        />
+        <span className="grid size-16 place-items-center rounded-[18px] border border-[#dff2ee] bg-[#effbf8] text-[#0f9f8d] transition-transform duration-700 group-hover:scale-[1.025]">
+          {resumeName ? <FileCheck2 className="size-7" /> : <FileUp className="size-7" />}
+        </span>
+
+        <span className="mt-5 block max-w-full truncate text-base font-semibold text-[#111827]">
+          {resumeName || "Upload PDF resume"}
+        </span>
+        <span className="mt-2 text-sm font-medium text-[#6b7280]">
+          {resumeName ? "PDF selected" : "PDF"}
+        </span>
+        <span className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#d7e8e3] bg-white px-3 text-sm font-semibold text-[#0f766e] transition-colors duration-500 group-hover:border-[#9fd8d0] group-hover:bg-[#f4fbf9]">
+          {resumeName ? "Change PDF" : "Browse PDF"}
+          {resumeName ? <Check className="size-4" /> : <ArrowRight className="size-4" />}
+        </span>
+      </label>
+    </div>
+  );
+}
+
+function JobDescriptionQuestion({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="mx-auto mt-9 max-w-[620px] pb-10">
+      <textarea
+        aria-label="Target job description"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="Paste the job description or the key requirements..."
+        className="tg-slim-scrollbar min-h-[180px] w-full resize-none rounded-[16px] border border-[#e5e7eb] bg-[#fcfdfd] p-4 text-sm leading-6 text-[#111827] outline-none transition-colors duration-500 placeholder:text-[#9ca3af] focus:border-[#8bcfc5] focus:bg-white"
+      />
+    </div>
+  );
+}
+
+function UrlQuestion({
+  icon: Icon,
+  label,
+  placeholder,
+  value,
+  onChange,
+}: {
+  icon: LucideIcon;
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="mx-auto mt-9 max-w-[560px] pb-10">
+      <label htmlFor={label} className="text-sm font-semibold text-[#111827]">
+        {label}
+      </label>
+      <div className="relative mt-3">
+        <Icon className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#6b7280]" />
+        <Input
+          id={label}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          className="h-13 rounded-[14px] border-[#e5e7eb] bg-[#fcfdfd] pl-11 text-sm text-[#111827] transition-colors duration-500 placeholder:text-[#9ca3af] focus-visible:border-[#8bcfc5] focus-visible:bg-white focus-visible:!ring-0"
+        />
+      </div>
+    </div>
+  );
+}
+
+function ReviewStep({
+  role,
+  experience,
+  timeline,
+  resumeName,
+  hasJd,
+  hasGithub,
+  hasLinkedin,
+}: {
+  role: string;
+  experience: string;
+  timeline: string;
+  resumeName: string;
+  hasJd: boolean;
+  hasGithub: boolean;
+  hasLinkedin: boolean;
+}) {
+  const evidence = [
+    resumeName ? "Resume added" : "Resume later",
+    hasJd ? "JD added" : "JD later",
+    hasGithub ? "GitHub added" : "GitHub later",
+    hasLinkedin ? "LinkedIn added" : "LinkedIn later",
+  ];
+
+  return (
+    <div className="mx-auto mt-9 max-w-[680px] pb-8">
+      <div className="rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[role, experience, timeline].map((item) => (
+            <div key={item} className="rounded-[14px] bg-white p-4 ring-1 ring-[#e5e7eb]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6b7280]">Signal</p>
+              <p className="mt-2 text-sm font-semibold text-[#111827]">{item}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {evidence.map((item) => (
+            <span key={item} className="inline-flex items-center gap-1.5 rounded-full border border-[#d7e8e3] bg-white px-3 py-1.5 text-xs font-medium text-[#4b5563]">
+              <Check className="size-3.5 text-[#159b89]" />
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getOptionTitle(options: Option[], value: string) {
+  return options.find((option) => option.id === value)?.title;
 }

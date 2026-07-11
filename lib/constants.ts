@@ -1,4 +1,4 @@
-export const APP_NAME = "TrailGrad";
+export const APP_NAME = "Trailgrad";
 
 export const FUTURE_TODOS = [
   "Replace mock-auth with Clerk later",
