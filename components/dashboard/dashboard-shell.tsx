@@ -41,6 +41,7 @@ import { type ReactNode, useMemo, useState } from "react";
 import { SiteBrand } from "@/components/marketing/site-brand";
 import { Button } from "@/components/ui/button";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { SIGN_OUT_REDIRECT_URL } from "@/lib/auth/routes";
 import { mockDashboard } from "@/lib/mock/dashboard";
 
 interface NavItem {
@@ -852,7 +853,7 @@ function DashboardSignOutButton({
   if (!hasClerkPublishableKey) {
     return (
       <Link
-        href="/"
+        href={SIGN_OUT_REDIRECT_URL}
         className={className}
         onClick={onSignOut}
         aria-label="Sign out"
@@ -863,7 +864,7 @@ function DashboardSignOutButton({
   }
 
   return (
-    <SignOutButton redirectUrl="/">
+    <SignOutButton redirectUrl={SIGN_OUT_REDIRECT_URL}>
       <button
         type="button"
         className={className}

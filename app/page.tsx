@@ -18,7 +18,7 @@ const structuredData = [
     potentialAction: {
       "@type": "Action",
       name: "Start free interview-readiness analysis",
-      target: absoluteUrl("/onboarding"),
+      target: absoluteUrl("/auth"),
     },
   },
   {

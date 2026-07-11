@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { DEFAULT_AUTHENTICATED_ROUTE } from "@/lib/auth/server";
 
 export const metadata: Metadata = {
   title: "Readiness workspace",
@@ -12,5 +13,5 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardPage() {
-  return <DashboardShell />;
+  redirect(DEFAULT_AUTHENTICATED_ROUTE);
 }

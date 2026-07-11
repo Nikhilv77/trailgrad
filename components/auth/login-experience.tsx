@@ -128,7 +128,11 @@ function AnimatedLoginHeading() {
   );
 }
 
-export function LoginExperience() {
+interface LoginExperienceProps {
+  redirectUrl?: string | null;
+}
+
+export function LoginExperience({ redirectUrl }: LoginExperienceProps) {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#f7fcfa] text-[#082f35]">
       <LoginShowcase />
@@ -143,7 +147,7 @@ export function LoginExperience() {
             <AnimatedLoginHeading />
 
            <div className="relative mx-auto w-full max-w-[420px] overflow-hidden rounded-[26px] border border-[#0f766e]/10 bg-white/88 p-5 backdrop-blur-2xl sm:p-6">
-              <ClerkLoginCard />
+              <ClerkLoginCard redirectUrl={redirectUrl} />
             </div>
           </div>
         </section>

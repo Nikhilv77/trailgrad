@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("landing page routes into onboarding", async ({ page }) => {
+test("landing page routes into auth", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
@@ -10,38 +10,22 @@ test("landing page routes into onboarding", async ({ page }) => {
 
   await page.getByRole("link", { name: /start free analysis/i }).click();
 
-  await expect(page).toHaveURL(/\/onboarding$/);
-  await expect(page.getByRole("heading", { name: /where are you headed/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Data Scientist/i })).toHaveCount(0);
-
-  await page.getByRole("button", { name: /View more roles/i }).click();
-
-  await expect(page.getByRole("button", { name: /Data Scientist/i })).toBeVisible();
+  await expect(page).toHaveURL(/\/auth$/);
+  await expect(page.getByTestId("clerk-auth-surface")).toBeVisible();
 });
 
-test("onboarding builds a workspace", async ({ page }) => {
+test("signed-out onboarding asks for auth", async ({ page }) => {
   await page.goto("/onboarding");
 
-  await page.getByRole("button", { name: /AI Engineer/i }).click();
-  await page.getByRole("button", { name: /Continue/i }).click();
-  await page.getByRole("button", { name: /0-2 years/i }).click();
-  await page.getByRole("button", { name: /Continue/i }).click();
-  await page.getByRole("button", { name: /Applying this month/i }).click();
-  await page.getByRole("button", { name: /Continue/i }).click();
+  await expect(page).toHaveURL(/\/auth\?redirect_url=.*%2Fonboarding$/);
+  await expect(page.getByTestId("clerk-auth-surface")).toBeVisible();
+});
 
-  await expect(page.getByRole("heading", { name: /add your resume/i })).toBeVisible();
-  await page.getByRole("button", { name: /Skip for now/i }).click();
-  await expect(page.getByRole("heading", { name: /paste the target job/i })).toBeVisible();
-  await page.getByRole("button", { name: /Skip for now/i }).click();
-  await expect(page.getByRole("heading", { name: /add github/i })).toBeVisible();
-  await page.getByRole("button", { name: /Skip for now/i }).click();
-  await expect(page.getByRole("heading", { name: /add linkedin/i })).toBeVisible();
-  await page.getByRole("button", { name: /Skip for now/i }).click();
-  await expect(page.getByRole("heading", { name: /ready to build your workspace/i })).toBeVisible();
+test("signed-out app route asks for auth", async ({ page }) => {
+  await page.goto("/today");
 
-  await page.getByRole("button", { name: /Create account to save/i }).click();
-  await expect(page).toHaveURL(/\/auth$/, { timeout: 5_000 });
-  await expect(page.getByRole("heading", { name: /continue building your interview readiness/i })).toBeVisible();
+  await expect(page).toHaveURL(/\/auth\?redirect_url=.*%2Ftoday$/);
+  await expect(page.getByTestId("clerk-auth-surface")).toBeVisible();
 });
 
 test("auth page shows the Clerk auth card", async ({ page }) => {
@@ -52,10 +36,10 @@ test("auth page shows the Clerk auth card", async ({ page }) => {
   await expect(page.getByTestId("clerk-auth-surface")).toBeVisible();
 });
 
-test("auth ready screen opens the dashboard", async ({ page }) => {
+test("auth ready redirects signed-out users to auth", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/auth/ready");
 
-  await expect(page.getByRole("heading", { name: /getting things ready/i })).toBeVisible();
-  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 4_000 });
+  await expect(page).toHaveURL(/\/auth$/, { timeout: 4_000 });
+  await expect(page.getByTestId("clerk-auth-surface")).toBeVisible();
 });

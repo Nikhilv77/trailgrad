@@ -70,7 +70,17 @@ const clerkAppearance = {
   },
 };
 
-export function ClerkLoginCard() {
+interface ClerkLoginCardProps {
+  redirectUrl?: string | null;
+}
+
+export function ClerkLoginCard({ redirectUrl }: ClerkLoginCardProps) {
+  const redirectQuery = redirectUrl
+    ? `?${new URLSearchParams({ redirect_url: redirectUrl }).toString()}`
+    : "";
+  const authUrl = `/auth${redirectQuery}`;
+  const authReadyUrl = `/auth/ready${redirectQuery}`;
+
   return (
     <div className="w-full" data-testid="clerk-auth-surface">
       <div className="mb-5 text-center">
@@ -89,11 +99,9 @@ export function ClerkLoginCard() {
         <SignIn
           routing="hash"
           withSignUp
-          signUpUrl="/onboarding"
-          fallbackRedirectUrl="/auth/ready"
-          forceRedirectUrl="/auth/ready"
-          signUpFallbackRedirectUrl="/auth/ready"
-          signUpForceRedirectUrl="/auth/ready"
+          signUpUrl={authUrl}
+          fallbackRedirectUrl={authReadyUrl}
+          signUpFallbackRedirectUrl={authReadyUrl}
           appearance={clerkAppearance}
           fallback={<ClerkLoadingState />}
         />
@@ -365,7 +373,7 @@ function ClerkSetupState() {
 
       <div className="mt-4 flex items-center gap-2 text-xs font-medium text-[#6e8588]">
         <CheckCircle2 className="size-4 text-[#159b89]" />
-        Successful sign-ins redirect to the dashboard.
+        Successful sign-ins continue to the right workspace route.
       </div>
     </div>
   );

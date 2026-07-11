@@ -2,6 +2,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ui } from "@clerk/ui";
 import type { ReactNode } from "react";
 
+import { SIGN_OUT_REDIRECT_URL } from "@/lib/auth/routes";
+
 interface ClerkRootProviderProps {
   children: ReactNode;
 }
@@ -24,7 +26,7 @@ export function ClerkRootProvider({
       signUpUrl="/auth"
       signInFallbackRedirectUrl="/auth/ready"
       signUpFallbackRedirectUrl="/auth/ready"
-      afterSignOutUrl="/"
+      afterSignOutUrl={SIGN_OUT_REDIRECT_URL}
     >
       {children}
     </ClerkProvider>

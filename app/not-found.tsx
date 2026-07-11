@@ -50,7 +50,7 @@ export default function NotFound() {
                 Back home
               </Link>
               <Link
-                href="/onboarding"
+                href="/auth"
                 className="inline-flex h-11 items-center gap-2 rounded-lg border border-[#d8e8e4] bg-white/78 px-5 text-sm font-semibold text-[#244943] transition-colors hover:bg-white"
               >
                 Start analysis

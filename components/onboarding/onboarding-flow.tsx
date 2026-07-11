@@ -123,7 +123,13 @@ const timelineOptions: Option[] = [
   { id: "exploring", title: "Exploring for later", icon: Rocket },
 ];
 
-export function OnboardingFlow() {
+interface OnboardingFlowProps {
+  completionRedirectUrl?: string;
+}
+
+export function OnboardingFlow({
+  completionRedirectUrl = "/today",
+}: OnboardingFlowProps) {
   const router = useRouter();
   const reduceMotion = usePrefersReducedMotion();
   const [currentStep, setCurrentStep] = useState(0);
@@ -137,6 +143,7 @@ export function OnboardingFlow() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [generating, setGenerating] = useState(false);
   const [showAllRoles, setShowAllRoles] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const activeStep = steps[currentStep];
   const transition: Transition = reduceMotion ? { duration: 0 } : { duration: 0.52, ease: [0.16, 1, 0.3, 1] };
@@ -173,13 +180,11 @@ export function OnboardingFlow() {
 
   function goForward() {
     if (activeStep.id === "review") {
-      saveDraft();
-      setGenerating(true);
-      startRouteTransition();
-      window.setTimeout(() => router.push("/auth"), reduceMotion ? 0 : 450);
+      void completeOnboarding();
       return;
     }
 
+    setErrorMessage("");
     setDirection(1);
     setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
   }
@@ -214,6 +219,57 @@ export function OnboardingFlow() {
     }
   }
 
+  async function completeOnboarding() {
+    setErrorMessage("");
+    saveDraft();
+    setGenerating(true);
+
+    try {
+      const response = await fetch("/api/profile/onboarding", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          role,
+          experience,
+          timeline,
+          resumeName,
+          jdText,
+          githubUrl,
+          linkedinUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+
+        throw new Error(payload?.error ?? "Unable to save onboarding.");
+      }
+
+      try {
+        window.sessionStorage.removeItem("trailgrad:onboarding");
+      } catch {
+        // A stale draft is harmless if browser storage is unavailable.
+      }
+
+      startRouteTransition();
+      window.setTimeout(
+        () => router.replace(completionRedirectUrl),
+        reduceMotion ? 0 : 450,
+      );
+    } catch (error) {
+      setGenerating(false);
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to save onboarding.",
+      );
+    }
+  }
+
   function startRouteTransition() {
     if (!reduceMotion) {
       window.dispatchEvent(new Event("trailgrad:route-transition-start"));
@@ -223,9 +279,9 @@ export function OnboardingFlow() {
   const canContinue = activeStep.optional || Boolean(getStepValue()) || activeStep.id === "review";
   const primaryLabel =
     generating
-      ? "Opening sign in"
+      ? "Saving workspace"
       : activeStep.id === "review"
-        ? "Create account to save"
+        ? "Save workspace"
         : activeStep.optional && !getStepValue()
           ? "Skip for now"
           : "Continue";
@@ -343,24 +399,32 @@ export function OnboardingFlow() {
                 )}
               </StepViewport>
 
-              <motion.div layout className="relative mt-6 flex items-center justify-between gap-3">
-                <Button type="button" variant="ghost" onClick={goBack} className="h-11 rounded-lg px-3 text-[#4b5563] transition-all duration-500 hover:bg-[#edf6f3] focus-visible:!border-transparent focus-visible:!ring-0">
-                  <ArrowLeft className="size-4" /> {currentStep === 0 ? "Back home" : "Back"}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={goForward}
-                  disabled={!canContinue || generating}
-                  className="h-11 min-w-[150px] rounded-lg bg-[#0f9f8d] px-5 font-semibold text-white shadow-[0_14px_32px_rgba(15,159,141,0.24)] transition-all duration-500 hover:bg-[#0d8d7d] hover:shadow-[0_18px_38px_rgba(15,159,141,0.28)] focus-visible:!border-transparent focus-visible:!ring-0 sm:px-6"
-                >
-                  {generating ? (
-                    <><LoaderCircle className="size-4 animate-spin" /> {primaryLabel}</>
-                  ) : activeStep.id === "review" ? (
-                    <>{primaryLabel} <Sparkles className="size-4" /></>
-                  ) : (
-                    <>{primaryLabel} <ArrowRight className="size-4" /></>
-                  )}
-                </Button>
+              <motion.div layout className="relative mt-6">
+                {errorMessage ? (
+                  <p className="mb-3 rounded-lg border border-[#f3c7b8] bg-[#fff7f3] px-3 py-2 text-sm font-medium text-[#9b4f3f]" role="alert">
+                    {errorMessage}
+                  </p>
+                ) : null}
+
+                <div className="flex items-center justify-between gap-3">
+                  <Button type="button" variant="ghost" onClick={goBack} className="h-11 rounded-lg px-3 text-[#4b5563] transition-all duration-500 hover:bg-[#edf6f3] focus-visible:!border-transparent focus-visible:!ring-0">
+                    <ArrowLeft className="size-4" /> {currentStep === 0 ? "Back home" : "Back"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={goForward}
+                    disabled={!canContinue || generating}
+                    className="h-11 min-w-[150px] rounded-lg bg-[#0f9f8d] px-5 font-semibold text-white shadow-[0_14px_32px_rgba(15,159,141,0.24)] transition-all duration-500 hover:bg-[#0d8d7d] hover:shadow-[0_18px_38px_rgba(15,159,141,0.28)] focus-visible:!border-transparent focus-visible:!ring-0 sm:px-6"
+                  >
+                    {generating ? (
+                      <><LoaderCircle className="size-4 animate-spin" /> {primaryLabel}</>
+                    ) : activeStep.id === "review" ? (
+                      <>{primaryLabel} <Sparkles className="size-4" /></>
+                    ) : (
+                      <>{primaryLabel} <ArrowRight className="size-4" /></>
+                    )}
+                  </Button>
+                </div>
               </motion.div>
             </motion.article>
           </div>

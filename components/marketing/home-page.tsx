@@ -57,7 +57,7 @@ function IntroScreen({ scene }: { scene: number }) {
 
   return (
     <div
-      className={`pointer-events-none fixed inset-0 z-50 grid place-items-center bg-[#f7fcfa]/95 transition-opacity duration-700 ${
+      className={`pointer-events-none fixed inset-0 z-50 grid place-items-center bg-[#f7fcfa]/95 transition-opacity duration-500 ${
         hidden ? "opacity-0" : "opacity-100"
       }`}
     >
@@ -102,7 +102,7 @@ function IntroHeading({
   return (
     <h2
       aria-label={label}
-      className={`absolute max-w-[820px] font-semibold leading-[1.1] tracking-[-0.035em] text-[#082f35] transition-opacity duration-200 ${
+      className={`${lobsterTwo.className} absolute max-w-[820px] font-normal leading-[1.08] tracking-normal text-[#082f35] transition-opacity duration-200 ${
         active ? "opacity-100" : "opacity-0"
       } ${className}`}
     >
@@ -113,7 +113,7 @@ function IntroHeading({
           className={`tg-intro-word inline-block ${active ? "tg-intro-word-active" : ""} ${
             chunk.accent ? "text-[#159b89]" : ""
           } ${index < chunks.length - 1 ? "mr-[0.22em]" : ""}`}
-          style={{ animationDelay: `${index * 105}ms` }}
+          style={{ animationDelay: `${index * 75}ms` }}
         >
           {chunk.text}
         </span>
@@ -125,7 +125,7 @@ function IntroHeading({
 function HeroStackImages({ visible }: { visible: boolean }) {
   return (
     <div
-      className={`relative isolate mx-auto h-[350px] w-full max-w-[660px] overflow-visible transition-opacity duration-700 ease-out sm:h-[455px] sm:max-w-[800px] lg:h-[500px] lg:max-w-[900px] ${
+      className={`relative isolate mx-auto h-[350px] w-full max-w-[660px] overflow-visible transition-opacity duration-500 ease-out sm:h-[455px] sm:max-w-[800px] lg:h-[500px] lg:max-w-[900px] ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >
@@ -171,14 +171,14 @@ export default function HomePage() {
     }
 
     const timers = [
-      window.setTimeout(() => setScene(1), 900),
-      window.setTimeout(() => setScene(0), 3100),
-      window.setTimeout(() => setScene(2), 4200),
-      window.setTimeout(() => setScene(3), 5850),
-      window.setTimeout(() => setScene(4), 6400),
-      window.setTimeout(() => setScene(5), 7100),
-      window.setTimeout(() => setScene(6), 8050),
-      window.setTimeout(() => setScene(7), 9000),
+      window.setTimeout(() => setScene(1), 320),
+      window.setTimeout(() => setScene(0), 1600),
+      window.setTimeout(() => setScene(2), 1950),
+      window.setTimeout(() => setScene(3), 3000),
+      window.setTimeout(() => setScene(4), 3250),
+      window.setTimeout(() => setScene(5), 3550),
+      window.setTimeout(() => setScene(6), 3920),
+      window.setTimeout(() => setScene(7), 4400),
     ];
 
     return () => {
@@ -193,7 +193,7 @@ export default function HomePage() {
 
       <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-5 pb-8 pt-7 sm:px-8 lg:px-10">
         <nav
-          className={`flex h-[52px] items-center justify-between transition-opacity duration-700 ease-out ${
+          className={`flex h-[52px] items-center justify-between transition-opacity duration-500 ease-out ${
             scene >= 4
               ? "opacity-100"
               : "pointer-events-none opacity-0"
@@ -202,7 +202,7 @@ export default function HomePage() {
           <Brand />
 
           <Link
-            href="/onboarding"
+            href="/auth"
             className={buttonVariants({
               className:
                 "h-[44px] w-[138px] gap-2 rounded-[12px] border border-[#118b7b]/10 px-0 text-[14px] font-semibold text-white shadow-[0_14px_30px_rgba(15,118,110,0.20)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(15,118,110,0.26)]",
@@ -221,7 +221,7 @@ export default function HomePage() {
           <HeroStackImages visible={scene >= 5} />
 
           <div
-            className={`mt-1 transition-opacity duration-700 ease-out sm:mt-2 lg:mt-3 ${
+            className={`mt-1 transition-opacity duration-500 ease-out sm:mt-2 lg:mt-3 ${
               scene >= 6 ? "opacity-100" : "opacity-0"
             }`}
           >
@@ -239,14 +239,14 @@ export default function HomePage() {
           </div>
 
           <div
-            className={`mt-7 transition-opacity duration-700 ease-out ${
+            className={`mt-7 transition-opacity duration-500 ease-out ${
               scene >= 7
                 ? "opacity-100"
                 : "pointer-events-none opacity-0"
             }`}
           >
             <Link
-              href="/onboarding"
+              href="/auth"
               className={buttonVariants({
                 className:
                   "h-[56px] w-[210px] gap-2 rounded-[14px] border border-[#118b7b]/10 px-0 text-[15px] font-semibold text-white shadow-[0_20px_40px_rgba(15,118,110,0.23)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_48px_rgba(15,118,110,0.29)]",
@@ -282,7 +282,7 @@ export default function HomePage() {
         }
 
         .tg-intro-word-active {
-          animation: tg-intro-word-in 620ms cubic-bezier(0.16, 1, 0.3, 1)
+          animation: tg-intro-word-in 480ms cubic-bezier(0.16, 1, 0.3, 1)
             forwards;
         }
 

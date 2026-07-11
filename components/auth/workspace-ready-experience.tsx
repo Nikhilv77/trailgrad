@@ -24,7 +24,7 @@ export function WorkspaceReadyExperience() {
     }, introDelay);
 
     const redirectId = window.setTimeout(() => {
-      router.replace("/dashboard");
+      router.replace("/today");
     }, redirectDelay);
 
     return () => {
