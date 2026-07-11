@@ -6,9 +6,9 @@ import {
   DEFAULT_AUTHENTICATED_ROUTE,
   getSafeAppRedirectPath,
   getSingleSearchParam,
-  readOnboardingStatus,
   requireAuthenticatedUser,
 } from "@/lib/auth/server";
+import { getOnboardingState } from "@/lib/services/profile-service";
 
 export const metadata: Metadata = {
   title: "Build your workspace",
@@ -37,11 +37,15 @@ export default async function OnboardingPage({
         : `?${new URLSearchParams({ redirect_url: completionRedirectUrl }).toString()}`
     }`,
   });
-  const onboardingStatus = await readOnboardingStatus(user.userId);
+  const onboardingState = await getOnboardingState(user.userId);
 
-  if (onboardingStatus.completed) {
+  if (onboardingState.status === "completed") {
     redirect(DEFAULT_AUTHENTICATED_ROUTE);
   }
 
-  return <OnboardingFlow completionRedirectUrl={completionRedirectUrl} />;
+  if (onboardingState.status === "analyzing") {
+    redirect("/onboarding/analyzing");
+  }
+
+  return <OnboardingFlow initialState={onboardingState} />;
 }

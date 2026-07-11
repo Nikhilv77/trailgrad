@@ -1,23 +1,35 @@
 import { mockDb } from "@/lib/db/mock-db";
 import {
   completeProfileOnboardingRecord,
+  getOnboardingStateRecord,
   getOrCreateProfileRecord,
+  markOnboardingAnalyzingRecord,
+  markOnboardingFailedRecord,
+  saveOnboardingResumeRecord,
+  updateOnboardingStepRecord,
 } from "@/lib/db/profile-repository";
+import type {
+  OnboardingState,
+  OnboardingStatus,
+  OnboardingStepId,
+  OnboardingSubmission,
+} from "@/lib/onboarding/types";
 import type { UserProfile } from "@/types";
 
-export interface OnboardingSubmission {
-  role: string;
-  experience: string;
-  timeline: string;
-  resumeName?: string;
-  jdText?: string;
-  githubUrl?: string;
-  linkedinUrl?: string;
-}
+export type {
+  OnboardingState,
+  OnboardingStatus,
+  OnboardingStepId,
+  OnboardingSubmission,
+} from "@/lib/onboarding/types";
 
 export interface TrailgradProfileRecord {
   clerkUserId: string;
+  onboardingStatus: OnboardingStatus;
+  currentOnboardingStep: OnboardingStepId;
+  onboardingStartedAt: string | null;
   onboardingCompletedAt: string | null;
+  analysisError: string | null;
   onboarding: OnboardingSubmission | null;
   createdAt: string;
   updatedAt: string;
@@ -33,19 +45,72 @@ export async function getDashboard() {
   return mockDb.dashboard;
 }
 
-export async function getOrCreateTrailgradProfile(
+export async function getOrCreateProfile(
   clerkUserId: string,
 ): Promise<TrailgradProfileRecord> {
   return getOrCreateProfileRecord(clerkUserId);
 }
 
+export async function getOnboardingState(
+  clerkUserId: string,
+): Promise<OnboardingState> {
+  return getOnboardingStateRecord(clerkUserId);
+}
+
+export async function updateOnboardingStep(
+  clerkUserId: string,
+  currentStep: OnboardingStepId,
+  onboarding: Partial<OnboardingSubmission>,
+): Promise<TrailgradProfileRecord> {
+  return updateOnboardingStepRecord(clerkUserId, currentStep, onboarding);
+}
+
+export async function markOnboardingAnalyzing(
+  clerkUserId: string,
+  onboarding: OnboardingSubmission,
+): Promise<TrailgradProfileRecord> {
+  return markOnboardingAnalyzingRecord(clerkUserId, onboarding);
+}
+
+export async function markOnboardingCompleted(
+  clerkUserId: string,
+  onboarding: OnboardingSubmission,
+): Promise<TrailgradProfileRecord> {
+  return completeProfileOnboardingRecord(clerkUserId, onboarding);
+}
+
+export async function markOnboardingFailed(
+  clerkUserId: string,
+  analysisError: string,
+): Promise<TrailgradProfileRecord> {
+  return markOnboardingFailedRecord(clerkUserId, analysisError);
+}
+
+export async function saveOnboardingResume(
+  clerkUserId: string,
+  resume: {
+    fileName: string;
+    contentType: string;
+    fileSize: number;
+    contentBase64: string;
+  },
+): Promise<TrailgradProfileRecord> {
+  return saveOnboardingResumeRecord(clerkUserId, resume);
+}
+
+export async function getOrCreateTrailgradProfile(
+  clerkUserId: string,
+): Promise<TrailgradProfileRecord> {
+  return getOrCreateProfile(clerkUserId);
+}
+
 export async function readTrailgradOnboardingStatus(
   clerkUserId: string,
 ): Promise<TrailgradOnboardingStatus> {
-  const profile = await getOrCreateTrailgradProfile(clerkUserId);
+  const profile = await getOrCreateProfile(clerkUserId);
 
   return {
-    completed: Boolean(profile.onboardingCompletedAt),
+    completed: profile.onboardingStatus === "completed",
     completedAt: profile.onboardingCompletedAt,
     profile,
   };
@@ -55,7 +120,7 @@ export async function completeTrailgradOnboarding(
   clerkUserId: string,
   onboarding: OnboardingSubmission,
 ): Promise<TrailgradProfileRecord> {
-  return completeProfileOnboardingRecord(clerkUserId, onboarding);
+  return markOnboardingCompleted(clerkUserId, onboarding);
 }
 
 export function toUserProfile(
@@ -72,21 +137,23 @@ export function toUserProfile(
     id: clerkUserId,
     name: identity?.name || "Trailgrad learner",
     email: identity?.email || "",
-    careerStage: getCareerStage(onboarding?.experience),
-    targetRole: getTargetRole(onboarding?.role),
-    experienceLevel: onboarding?.experience ?? "",
-    interviewTimeline: onboarding?.timeline ?? "",
+    careerStage: getCareerStage(onboarding?.experienceLevel),
+    targetRole: getTargetRole(onboarding?.targetRole),
+    experienceLevel: onboarding?.experienceLevel ?? "",
+    interviewTimeline: onboarding?.noDateYet
+      ? "No date yet"
+      : onboarding?.interviewDate ?? "",
     location: "",
     preferredFeedbackStyle: "Senior Engineer",
   };
 }
 
 function getCareerStage(experience: string | undefined): UserProfile["careerStage"] {
-  if (experience === "student") {
+  if (experience === "student-new-graduate") {
     return "Student";
   }
 
-  if (experience === "early") {
+  if (experience === "junior") {
     return "Fresher";
   }
 

@@ -1,10 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const onboardingPayload = {
-  role: "ai-engineer",
-  experience: "early",
-  timeline: "soon",
-};
+  targetRole: "ai-engineer",
+  experienceLevel: "junior",
+  noDateYet: true,
+  preparationTimePerDay: "30",
+  preparationIntensity: "standard",
+  resumeName: "resume.pdf",
+  targetJobMode: "skip",
+  projectsMode: "skip",
+} as const;
 
 class RedirectError extends Error {
   constructor(readonly url: string) {
@@ -21,7 +26,22 @@ async function loadAuthModules(userId: string | null) {
     string,
     {
       clerkUserId: string;
+      onboardingStatus:
+        | "not_started"
+        | "in_progress"
+        | "analyzing"
+        | "completed"
+        | "failed";
+      currentOnboardingStep:
+        | "target-role"
+        | "timeline"
+        | "resume"
+        | "target-job"
+        | "projects"
+        | "review";
+      onboardingStartedAt: string | null;
       onboardingCompletedAt: string | null;
+      analysisError: string | null;
       onboarding: typeof onboardingPayload | null;
       createdAt: string;
       updatedAt: string;
@@ -39,7 +59,11 @@ async function loadAuthModules(userId: string | null) {
       const now = new Date().toISOString();
       const profile = {
         clerkUserId,
+        onboardingStatus: "not_started" as const,
+        currentOnboardingStep: "target-role" as const,
+        onboardingStartedAt: null,
         onboardingCompletedAt: null,
+        analysisError: null,
         onboarding: null,
         createdAt: now,
         updatedAt: now,
@@ -48,15 +72,111 @@ async function loadAuthModules(userId: string | null) {
       profileRecords.set(clerkUserId, profile);
       return profile;
     }),
+    getOnboardingStateRecord: vi.fn(async (clerkUserId: string) => {
+      const profile =
+        profileRecords.get(clerkUserId) ??
+        (await (await import("@/lib/db/profile-repository")).getOrCreateProfileRecord(
+          clerkUserId,
+        ));
+
+      return {
+        status: profile.onboardingStatus,
+        currentStep: profile.currentOnboardingStep,
+        startedAt: profile.onboardingStartedAt,
+        completedAt: profile.onboardingCompletedAt,
+        analysisError: profile.analysisError,
+        onboarding: profile.onboarding,
+      };
+    }),
+    updateOnboardingStepRecord: vi.fn(
+      async (
+        clerkUserId: string,
+        currentStep:
+          | "target-role"
+          | "timeline"
+          | "resume"
+          | "target-job"
+          | "projects"
+          | "review",
+        onboarding: Partial<typeof onboardingPayload>,
+      ) => {
+        const now = new Date().toISOString();
+        const existingProfile = profileRecords.get(clerkUserId);
+        const profile = {
+          clerkUserId,
+          onboardingStatus:
+            existingProfile?.onboardingStatus === "completed"
+              ? "completed" as const
+              : "in_progress" as const,
+          currentOnboardingStep: currentStep,
+          onboardingStartedAt: existingProfile?.onboardingStartedAt ?? now,
+          onboardingCompletedAt: existingProfile?.onboardingCompletedAt ?? null,
+          analysisError: null,
+          onboarding: {
+            ...(existingProfile?.onboarding ?? {}),
+            ...onboarding,
+          } as typeof onboardingPayload,
+          createdAt: existingProfile?.createdAt ?? now,
+          updatedAt: now,
+        };
+
+        profileRecords.set(clerkUserId, profile);
+        return profile;
+      },
+    ),
+    markOnboardingAnalyzingRecord: vi.fn(
+      async (clerkUserId: string, onboarding: typeof onboardingPayload) => {
+        const now = new Date().toISOString();
+        const existingProfile = profileRecords.get(clerkUserId);
+        const profile = {
+          clerkUserId,
+          onboardingStatus: "analyzing" as const,
+          currentOnboardingStep: "review" as const,
+          onboardingStartedAt: existingProfile?.onboardingStartedAt ?? now,
+          onboardingCompletedAt: existingProfile?.onboardingCompletedAt ?? null,
+          analysisError: null,
+          onboarding,
+          createdAt: existingProfile?.createdAt ?? now,
+          updatedAt: now,
+        };
+
+        profileRecords.set(clerkUserId, profile);
+        return profile;
+      },
+    ),
     completeProfileOnboardingRecord: vi.fn(
       async (clerkUserId: string, onboarding: typeof onboardingPayload) => {
         const now = new Date().toISOString();
         const existingProfile = profileRecords.get(clerkUserId);
         const profile = {
           clerkUserId,
+          onboardingStatus: "completed" as const,
+          currentOnboardingStep: "review" as const,
+          onboardingStartedAt: existingProfile?.onboardingStartedAt ?? now,
           onboardingCompletedAt:
             existingProfile?.onboardingCompletedAt ?? now,
+          analysisError: null,
           onboarding,
+          createdAt: existingProfile?.createdAt ?? now,
+          updatedAt: now,
+        };
+
+        profileRecords.set(clerkUserId, profile);
+        return profile;
+      },
+    ),
+    markOnboardingFailedRecord: vi.fn(
+      async (clerkUserId: string, analysisError: string) => {
+        const now = new Date().toISOString();
+        const existingProfile = profileRecords.get(clerkUserId);
+        const profile = {
+          clerkUserId,
+          onboardingStatus: "failed" as const,
+          currentOnboardingStep: "review" as const,
+          onboardingStartedAt: existingProfile?.onboardingStartedAt ?? now,
+          onboardingCompletedAt: existingProfile?.onboardingCompletedAt ?? null,
+          analysisError,
+          onboarding: existingProfile?.onboarding ?? null,
           createdAt: existingProfile?.createdAt ?? now,
           updatedAt: now,
         };
@@ -98,6 +218,126 @@ afterEach(() => {
 });
 
 describe("authenticated route decisions", () => {
+  it("creates the first profile idempotently", async () => {
+    const userId = "user_first_profile";
+    const { profileService } = await loadAuthModules(userId);
+
+    await expect(profileService.getOrCreateProfile(userId)).resolves.toMatchObject({
+      clerkUserId: userId,
+      onboardingStatus: "not_started",
+      currentOnboardingStep: "target-role",
+      onboardingCompletedAt: null,
+    });
+  });
+
+  it("does not create duplicate profiles for repeated creation", async () => {
+    const userId = "user_repeated_profile";
+    const { profileService } = await loadAuthModules(userId);
+    const firstProfile = await profileService.getOrCreateProfile(userId);
+    const secondProfile = await profileService.getOrCreateProfile(userId);
+
+    expect(secondProfile).toMatchObject({
+      clerkUserId: firstProfile.clerkUserId,
+      createdAt: firstProfile.createdAt,
+    });
+  });
+
+  it("saves an onboarding step", async () => {
+    const userId = "user_save_step";
+    const { profileService } = await loadAuthModules(userId);
+
+    await expect(
+      profileService.updateOnboardingStep(userId, "timeline", {
+        targetRole: "ai-engineer",
+        experienceLevel: "junior",
+      }),
+    ).resolves.toMatchObject({
+      onboardingStatus: "in_progress",
+      currentOnboardingStep: "timeline",
+      onboardingStartedAt: expect.any(String),
+      onboarding: {
+        targetRole: "ai-engineer",
+        experienceLevel: "junior",
+      },
+    });
+  });
+
+  it("restores a saved onboarding step", async () => {
+    const userId = "user_restore_step";
+    const { profileService } = await loadAuthModules(userId);
+    await profileService.updateOnboardingStep(userId, "timeline", {
+      targetRole: "ai-engineer",
+      experienceLevel: "junior",
+    });
+
+    await expect(profileService.getOnboardingState(userId)).resolves.toMatchObject({
+      status: "in_progress",
+      currentStep: "timeline",
+      onboarding: {
+        targetRole: "ai-engineer",
+        experienceLevel: "junior",
+      },
+    });
+  });
+
+  it("marks onboarding as analyzing before profile completion", async () => {
+    const userId = "user_analyzing_service";
+    const { profileService } = await loadAuthModules(userId);
+
+    await expect(
+      profileService.markOnboardingAnalyzing(userId, onboardingPayload),
+    ).resolves.toMatchObject({
+      onboardingStatus: "analyzing",
+      currentOnboardingStep: "review",
+      onboardingCompletedAt: null,
+      analysisError: null,
+    });
+  });
+
+  it("completes onboarding", async () => {
+    const userId = "user_complete_service";
+    const { profileService } = await loadAuthModules(userId);
+
+    await expect(
+      profileService.markOnboardingCompleted(userId, onboardingPayload),
+    ).resolves.toMatchObject({
+      onboardingStatus: "completed",
+      currentOnboardingStep: "review",
+      onboardingCompletedAt: expect.any(String),
+      analysisError: null,
+    });
+  });
+
+  it("stores failed analysis state", async () => {
+    const userId = "user_failed_analysis";
+    const { profileService } = await loadAuthModules(userId);
+    await profileService.updateOnboardingStep(userId, "review", onboardingPayload);
+
+    await expect(
+      profileService.markOnboardingFailed(userId, "Analysis timed out."),
+    ).resolves.toMatchObject({
+      onboardingStatus: "failed",
+      currentOnboardingStep: "review",
+      analysisError: "Analysis timed out.",
+    });
+  });
+
+  it("isolates onboarding state by Clerk user ID", async () => {
+    const { profileService } = await loadAuthModules("user_isolation_a");
+    await profileService.updateOnboardingStep("user_isolation_a", "timeline", {
+      targetRole: "ai-engineer",
+      experienceLevel: "junior",
+    });
+
+    await expect(
+      profileService.getOnboardingState("user_isolation_b"),
+    ).resolves.toMatchObject({
+      status: "not_started",
+      currentStep: "target-role",
+      onboarding: null,
+    });
+  });
+
   it("redirects a signed-out user visiting /today to auth", async () => {
     const { authServer } = await loadAuthModules(null);
 

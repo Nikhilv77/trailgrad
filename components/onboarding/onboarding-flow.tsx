@@ -19,10 +19,8 @@ import {
   Database,
   FileCheck2,
   FileUp,
-  GitBranch,
   GraduationCap,
   Layers3,
-  Link2,
   LoaderCircle,
   MonitorSmartphone,
   Rocket,
@@ -34,6 +32,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { lobsterTwo } from "@/lib/fonts";
+import type {
+  OnboardingState,
+  OnboardingStepId,
+  OnboardingSubmission,
+} from "@/lib/onboarding/types";
 
 interface Option {
   id: string;
@@ -42,30 +45,16 @@ interface Option {
   badge?: string;
 }
 
-type StepId =
-  | "role"
-  | "experience"
-  | "timeline"
-  | "resume"
-  | "job-description"
-  | "github"
-  | "linkedin"
-  | "review";
-
 interface OnboardingStep {
-  id: StepId;
+  id: OnboardingStepId;
   title: string;
   optional?: boolean;
 }
 
 const steps: OnboardingStep[] = [
   {
-    id: "role",
+    id: "target-role",
     title: "Where are you headed?",
-  },
-  {
-    id: "experience",
-    title: "Where are you right now?",
   },
   {
     id: "timeline",
@@ -74,26 +63,20 @@ const steps: OnboardingStep[] = [
   {
     id: "resume",
     title: "Add your resume.",
+  },
+  {
+    id: "target-job",
+    title: "Add a target job.",
     optional: true,
   },
   {
-    id: "job-description",
-    title: "Paste the target job.",
-    optional: true,
-  },
-  {
-    id: "github",
-    title: "Add GitHub.",
-    optional: true,
-  },
-  {
-    id: "linkedin",
-    title: "Add LinkedIn.",
+    id: "projects",
+    title: "Add project context.",
     optional: true,
   },
   {
     id: "review",
-    title: "Ready to build your workspace.",
+    title: "Review your setup.",
   },
 ];
 
@@ -111,42 +94,114 @@ const roleOptions: Option[] = [
 ];
 
 const experienceOptions: Option[] = [
-  { id: "student", title: "Student or new graduate", icon: GraduationCap },
-  { id: "early", title: "0-2 years", icon: Rocket, badge: "Most common" },
-  { id: "mid", title: "3-5 years", icon: BriefcaseBusiness },
-  { id: "switching", title: "Switching careers", icon: ArrowRight },
+  { id: "student-new-graduate", title: "Student or new graduate", icon: GraduationCap },
+  { id: "junior", title: "Junior", icon: Rocket, badge: "Common" },
+  { id: "mid-level", title: "Mid-level", icon: BriefcaseBusiness },
+  { id: "senior", title: "Senior", icon: BrainCircuit },
 ];
 
-const timelineOptions: Option[] = [
-  { id: "active", title: "Interviewing now", icon: Clock3, badge: "Intensive" },
-  { id: "soon", title: "Applying this month", icon: CalendarClock },
-  { id: "exploring", title: "Exploring for later", icon: Rocket },
+const preparationTimeOptions: Option[] = [
+  { id: "15", title: "15 minutes", icon: Clock3 },
+  { id: "30", title: "30 minutes", icon: Clock3, badge: "Steady" },
+  { id: "60", title: "60 minutes", icon: CalendarClock },
+  { id: "flexible", title: "Flexible", icon: Rocket },
+];
+
+const intensityOptions: Option[] = [
+  { id: "light", title: "Light", icon: Clock3 },
+  { id: "standard", title: "Standard", icon: CalendarClock, badge: "Balanced" },
+  { id: "intensive", title: "Intensive", icon: Rocket },
+];
+
+const targetJobOptions: Option[] = [
+  { id: "paste", title: "Paste a job description", icon: BriefcaseBusiness },
+  { id: "skip", title: "Skip for now", icon: ArrowRight },
+];
+
+const projectOptions: Option[] = [
+  { id: "manual", title: "Add a project manually", icon: Code2 },
+  { id: "github_later", title: "Connect GitHub later", icon: ServerCog, badge: "Coming later" },
+  { id: "skip", title: "Skip for now", icon: ArrowRight },
 ];
 
 interface OnboardingFlowProps {
-  completionRedirectUrl?: string;
+  initialState?: OnboardingState;
 }
 
-export function OnboardingFlow({
-  completionRedirectUrl = "/today",
-}: OnboardingFlowProps) {
+export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
   const router = useRouter();
   const reduceMotion = usePrefersReducedMotion();
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(() =>
+    getStepIndex(initialState?.currentStep),
+  );
   const [direction, setDirection] = useState(1);
-  const [role, setRole] = useState("");
-  const [experience, setExperience] = useState("");
-  const [timeline, setTimeline] = useState("");
-  const [resumeName, setResumeName] = useState("");
-  const [jdText, setJdText] = useState("");
-  const [githubUrl, setGithubUrl] = useState("");
-  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [targetRole, setTargetRole] = useState(initialState?.onboarding?.targetRole ?? "");
+  const [experienceLevel, setExperienceLevel] = useState(
+    initialState?.onboarding?.experienceLevel ?? "",
+  );
+  const [targetCompany, setTargetCompany] = useState(
+    initialState?.onboarding?.targetCompany ?? "",
+  );
+  const [targetJobTitle, setTargetJobTitle] = useState(
+    initialState?.onboarding?.targetJobTitle ?? "",
+  );
+  const [interviewDate, setInterviewDate] = useState(
+    initialState?.onboarding?.interviewDate ?? "",
+  );
+  const [noDateYet, setNoDateYet] = useState(
+    Boolean(initialState?.onboarding?.noDateYet),
+  );
+  const [preparationTimePerDay, setPreparationTimePerDay] = useState<
+    OnboardingSubmission["preparationTimePerDay"] | ""
+  >(initialState?.onboarding?.preparationTimePerDay ?? "");
+  const [preparationIntensity, setPreparationIntensity] = useState<
+    OnboardingSubmission["preparationIntensity"] | ""
+  >(initialState?.onboarding?.preparationIntensity ?? "");
+  const [resumeName, setResumeName] = useState(initialState?.onboarding?.resumeName ?? "");
+  const [resumeContentType, setResumeContentType] = useState(
+    initialState?.onboarding?.resumeContentType ?? "",
+  );
+  const [resumeSize, setResumeSize] = useState(initialState?.onboarding?.resumeSize ?? 0);
+  const [resumeUploadedAt, setResumeUploadedAt] = useState(
+    initialState?.onboarding?.resumeUploadedAt ?? "",
+  );
+  const [targetJobMode, setTargetJobMode] = useState<
+    OnboardingSubmission["targetJobMode"] | ""
+  >(initialState?.onboarding?.targetJobMode ?? "");
+  const [jobDescription, setJobDescription] = useState(
+    initialState?.onboarding?.jobDescription ?? "",
+  );
+  const [projectsMode, setProjectsMode] = useState<
+    OnboardingSubmission["projectsMode"] | ""
+  >(initialState?.onboarding?.projectsMode ?? "");
+  const [projectName, setProjectName] = useState(
+    initialState?.onboarding?.projectName ?? "",
+  );
+  const [projectDescription, setProjectDescription] = useState(
+    initialState?.onboarding?.projectDescription ?? "",
+  );
+  const [projectTechStack, setProjectTechStack] = useState(
+    initialState?.onboarding?.projectTechStack ?? "",
+  );
   const [generating, setGenerating] = useState(false);
-  const [showAllRoles, setShowAllRoles] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [savingStep, setSavingStep] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [showAllRoles, setShowAllRoles] = useState(() =>
+    Boolean(
+      initialState?.onboarding?.targetRole &&
+        !roleOptions
+          .slice(0, 4)
+          .some((option) => option.id === initialState.onboarding?.targetRole),
+    ),
+  );
+  const [errorMessage, setErrorMessage] = useState(
+    initialState?.analysisError ?? "",
+  );
 
   const activeStep = steps[currentStep];
-  const transition: Transition = reduceMotion ? { duration: 0 } : { duration: 0.52, ease: [0.16, 1, 0.3, 1] };
+  const transition: Transition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.52, ease: [0.16, 1, 0.3, 1] };
   const slideDistance = reduceMotion ? 0 : 18;
   const progress = ((currentStep + 1) / steps.length) * 100;
   const visibleRoleOptions = showAllRoles ? roleOptions : roleOptions.slice(0, 4);
@@ -154,72 +209,267 @@ export function OnboardingFlow({
 
   const selectedLabels = useMemo(
     () => ({
-      role: getOptionTitle(roleOptions, role) || "Target role",
-      experience: getOptionTitle(experienceOptions, experience) || "Experience",
-      timeline: getOptionTitle(timelineOptions, timeline) || "Timeline",
+      role: getOptionTitle(roleOptions, targetRole) || "Target role",
+      experience:
+        getOptionTitle(experienceOptions, experienceLevel) || "Experience level",
+      preparation:
+        getOptionTitle(preparationTimeOptions, preparationTimePerDay) ||
+        "Preparation time",
+      intensity:
+        getOptionTitle(intensityOptions, preparationIntensity) ||
+        "Preparation intensity",
     }),
-    [experience, role, timeline],
+    [experienceLevel, preparationIntensity, preparationTimePerDay, targetRole],
   );
 
-  function getStepValue(stepId = activeStep.id) {
-    if (stepId === "role") return role;
-    if (stepId === "experience") return experience;
-    if (stepId === "timeline") return timeline;
-    if (stepId === "resume") return resumeName;
-    if (stepId === "job-description") return jdText.trim();
-    if (stepId === "github") return githubUrl.trim();
-    if (stepId === "linkedin") return linkedinUrl.trim();
-    return "ready";
-  }
-
   function selectOption(value: string) {
-    if (activeStep.id === "role") setRole(value);
-    if (activeStep.id === "experience") setExperience(value);
-    if (activeStep.id === "timeline") setTimeline(value);
+    if (activeStep.id === "target-role") setTargetRole(value);
+    if (activeStep.id === "target-job") {
+      setTargetJobMode(value as OnboardingSubmission["targetJobMode"]);
+    }
+    if (activeStep.id === "projects") {
+      setProjectsMode(value as OnboardingSubmission["projectsMode"]);
+    }
   }
 
-  function goForward() {
+  async function goForward() {
     if (activeStep.id === "review") {
-      void completeOnboarding();
+      await completeOnboarding();
+      return;
+    }
+
+    const validationError = validateStep(activeStep.id);
+
+    if (validationError) {
+      setErrorMessage(validationError);
       return;
     }
 
     setErrorMessage("");
+    setSavingStep(true);
+
+    const nextStep = Math.min(currentStep + 1, steps.length - 1);
+
+    try {
+      await saveStep(steps[nextStep].id);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to save onboarding progress.",
+      );
+      return;
+    } finally {
+      setSavingStep(false);
+    }
+
     setDirection(1);
-    setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
+    setCurrentStep(nextStep);
   }
 
-  function goBack() {
+  async function goBack() {
     if (currentStep === 0) {
       startRouteTransition();
       window.setTimeout(() => router.push("/"), reduceMotion ? 0 : 160);
       return;
     }
 
-    setDirection(-1);
-    setCurrentStep((step) => Math.max(step - 1, 0));
+    await moveToStep(Math.max(currentStep - 1, 0), -1);
+  }
+
+  async function moveToStep(nextStep: number, nextDirection = nextStep > currentStep ? 1 : -1) {
+    setErrorMessage("");
+    setSavingStep(true);
+
+    try {
+      await saveStep(steps[nextStep].id);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to save onboarding progress.",
+      );
+      return;
+    } finally {
+      setSavingStep(false);
+    }
+
+    setDirection(nextDirection);
+    setCurrentStep(nextStep);
   }
 
   function saveDraft() {
     try {
       window.sessionStorage.setItem(
         "trailgrad:onboarding",
-        JSON.stringify({
-          role,
-          experience,
-          timeline,
-          resumeName,
-          jdText,
-          githubUrl,
-          linkedinUrl,
-        }),
+        JSON.stringify(getPartialOnboardingDraft()),
       );
     } catch {
-      // Storage is a convenience for the next auth handoff, not a blocker.
+      // Storage is a convenience for the auth handoff, not a blocker.
+    }
+  }
+
+  function getOnboardingDraft(): OnboardingSubmission {
+    return {
+      targetRole,
+      experienceLevel,
+      ...(targetCompany.trim() ? { targetCompany: targetCompany.trim() } : {}),
+      ...(targetJobTitle.trim() ? { targetJobTitle: targetJobTitle.trim() } : {}),
+      ...(interviewDate && !noDateYet ? { interviewDate } : {}),
+      noDateYet,
+      preparationTimePerDay:
+        preparationTimePerDay || ("30" as OnboardingSubmission["preparationTimePerDay"]),
+      preparationIntensity:
+        preparationIntensity || ("standard" as OnboardingSubmission["preparationIntensity"]),
+      resumeName,
+      ...(resumeContentType ? { resumeContentType } : {}),
+      ...(resumeSize ? { resumeSize } : {}),
+      ...(resumeUploadedAt ? { resumeUploadedAt } : {}),
+      targetJobMode: targetJobMode || "skip",
+      ...(jobDescription.trim() ? { jobDescription: jobDescription.trim() } : {}),
+      projectsMode: projectsMode || "skip",
+      ...(projectName.trim() ? { projectName: projectName.trim() } : {}),
+      ...(projectDescription.trim()
+        ? { projectDescription: projectDescription.trim() }
+        : {}),
+      ...(projectTechStack.trim() ? { projectTechStack: projectTechStack.trim() } : {}),
+    };
+  }
+
+  function getPartialOnboardingDraft(): Partial<OnboardingSubmission> {
+    return {
+      ...(targetRole ? { targetRole } : {}),
+      ...(experienceLevel ? { experienceLevel } : {}),
+      targetCompany: targetCompany.trim(),
+      targetJobTitle: targetJobTitle.trim(),
+      interviewDate: noDateYet ? "" : interviewDate,
+      noDateYet,
+      ...(preparationTimePerDay ? { preparationTimePerDay } : {}),
+      ...(preparationIntensity ? { preparationIntensity } : {}),
+      ...(resumeName ? { resumeName } : {}),
+      ...(resumeContentType ? { resumeContentType } : {}),
+      ...(resumeSize ? { resumeSize } : {}),
+      ...(resumeUploadedAt ? { resumeUploadedAt } : {}),
+      ...(targetJobMode ? { targetJobMode } : {}),
+      jobDescription: jobDescription.trim(),
+      ...(projectsMode ? { projectsMode } : {}),
+      projectName: projectName.trim(),
+      projectDescription: projectDescription.trim(),
+      projectTechStack: projectTechStack.trim(),
+    };
+  }
+
+  function validateStep(stepId: OnboardingStepId): string {
+    if (stepId === "target-role" && (!targetRole || !experienceLevel)) {
+      return "Choose a target role and experience level.";
+    }
+
+    if (stepId === "timeline") {
+      if (!noDateYet && !interviewDate) {
+        return "Choose a date or select that you do not have one yet.";
+      }
+
+      if (!preparationTimePerDay || !preparationIntensity) {
+        return "Choose your daily preparation time and intensity.";
+      }
+    }
+
+    if (stepId === "resume" && !resumeName) {
+      return "Upload a PDF or DOCX resume before continuing.";
+    }
+
+    if (stepId === "projects" && projectsMode === "manual" && !projectName.trim()) {
+      return "Add a project name or choose another project option.";
+    }
+
+    if (stepId === "review") {
+      return (
+        validateStep("target-role") ||
+        validateStep("timeline") ||
+        validateStep("resume") ||
+        validateStep("projects")
+      );
+    }
+
+    return "";
+  }
+
+  async function saveStep(nextStep: OnboardingStepId) {
+    saveDraft();
+
+    const response = await fetch("/api/profile/onboarding", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        currentStep: nextStep,
+        onboarding: getPartialOnboardingDraft(),
+      }),
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
+
+      throw new Error(payload?.error ?? "Unable to save onboarding progress.");
+    }
+  }
+
+  async function uploadResume(file: File | undefined) {
+    if (!file) {
+      return;
+    }
+
+    setErrorMessage("");
+    setUploadingResume(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("resume", file);
+
+      const response = await fetch("/api/profile/onboarding/resume", {
+        method: "POST",
+        body: formData,
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | {
+            error?: string;
+            fileName?: string;
+            contentType?: string;
+            fileSize?: number;
+            state?: OnboardingState;
+          }
+        | null;
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Unable to upload resume.");
+      }
+
+      const saved = payload?.state?.onboarding;
+      setResumeName(saved?.resumeName ?? payload?.fileName ?? file.name);
+      setResumeContentType(saved?.resumeContentType ?? payload?.contentType ?? file.type);
+      setResumeSize(saved?.resumeSize ?? payload?.fileSize ?? file.size);
+      setResumeUploadedAt(saved?.resumeUploadedAt ?? new Date().toISOString());
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to upload resume.",
+      );
+    } finally {
+      setUploadingResume(false);
     }
   }
 
   async function completeOnboarding() {
+    const validationError = validateStep("review");
+
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
+
     setErrorMessage("");
     saveDraft();
     setGenerating(true);
@@ -230,15 +480,7 @@ export function OnboardingFlow({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          role,
-          experience,
-          timeline,
-          resumeName,
-          jdText,
-          githubUrl,
-          linkedinUrl,
-        }),
+        body: JSON.stringify(getOnboardingDraft()),
       });
 
       if (!response.ok) {
@@ -246,7 +488,7 @@ export function OnboardingFlow({
           | { error?: string }
           | null;
 
-        throw new Error(payload?.error ?? "Unable to save onboarding.");
+        throw new Error(payload?.error ?? "Unable to build your Trailgrad profile.");
       }
 
       try {
@@ -257,7 +499,7 @@ export function OnboardingFlow({
 
       startRouteTransition();
       window.setTimeout(
-        () => router.replace(completionRedirectUrl),
+        () => router.replace("/onboarding/analyzing"),
         reduceMotion ? 0 : 450,
       );
     } catch (error) {
@@ -265,7 +507,7 @@ export function OnboardingFlow({
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Unable to save onboarding.",
+          : "Unable to build your Trailgrad profile.",
       );
     }
   }
@@ -276,14 +518,14 @@ export function OnboardingFlow({
     }
   }
 
-  const canContinue = activeStep.optional || Boolean(getStepValue()) || activeStep.id === "review";
+  const canContinue = !generating && !savingStep && !uploadingResume;
   const primaryLabel =
     generating
-      ? "Saving workspace"
+      ? "Building profile"
       : activeStep.id === "review"
-        ? "Save workspace"
-        : activeStep.optional && !getStepValue()
-          ? "Skip for now"
+        ? "Build my Trailgrad Profile"
+        : activeStep.optional
+          ? "Continue"
           : "Continue";
 
   return (
@@ -319,82 +561,105 @@ export function OnboardingFlow({
 
               <StepViewport
                 direction={direction}
-                measureKey={`${activeStep.id}-${showAllRoles ? "all" : "short"}`}
+                measureKey={`${activeStep.id}-${showAllRoles}-${targetJobMode}-${projectsMode}`}
                 slideDistance={slideDistance}
                 stepKey={activeStep.id}
                 transition={transition}
               >
                 <StepHeading step={activeStep} reduceMotion={reduceMotion} />
 
-                {activeStep.id === "role" && (
-                  <StepOptions
-                    options={visibleRoleOptions}
-                    selected={role}
-                    onSelect={selectOption}
-                    spacious
-                    footer={
-                      !showAllRoles && hiddenRoleCount > 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => setShowAllRoles(true)}
-                          className="inline-flex h-11 items-center gap-2 rounded-lg border border-[#d7e9e4] bg-white px-4 text-sm font-semibold text-[#111827] shadow-[0_10px_26px_rgba(15,118,110,0.06)] outline-none transition-[border-color,background-color,box-shadow] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#9bd8cf] hover:bg-[#f8fffd] hover:shadow-[0_12px_30px_rgba(15,118,110,0.09)]"
-                        >
-                          View more roles
-                          <span className="rounded-full bg-[#edf8f5] px-2 py-0.5 text-[11px] text-[#159b89]">
-                            +{hiddenRoleCount}
-                          </span>
-                          <ArrowRight className="size-4" />
-                        </button>
-                      ) : undefined
-                    }
+                {activeStep.id === "target-role" && (
+                  <TargetRoleStep
+                    experienceLevel={experienceLevel}
+                    hiddenRoleCount={hiddenRoleCount}
+                    onExperienceChange={setExperienceLevel}
+                    onRoleChange={selectOption}
+                    onShowAllRoles={() => setShowAllRoles(true)}
+                    role={targetRole}
+                    targetCompany={targetCompany}
+                    targetJobTitle={targetJobTitle}
+                    visibleRoleOptions={visibleRoleOptions}
+                    showAllRoles={showAllRoles}
+                    onTargetCompanyChange={setTargetCompany}
+                    onTargetJobTitleChange={setTargetJobTitle}
                   />
-                )}
-
-                {activeStep.id === "experience" && (
-                  <StepOptions options={experienceOptions} selected={experience} onSelect={selectOption} />
                 )}
 
                 {activeStep.id === "timeline" && (
-                  <StepOptions options={timelineOptions} selected={timeline} onSelect={selectOption} />
-                )}
-
-                {activeStep.id === "resume" && (
-                  <ResumeQuestion resumeName={resumeName} onResumeNameChange={setResumeName} />
-                )}
-
-                {activeStep.id === "job-description" && (
-                  <JobDescriptionQuestion value={jdText} onChange={setJdText} />
-                )}
-
-                {activeStep.id === "github" && (
-                  <UrlQuestion
-                    icon={GitBranch}
-                    label="GitHub profile URL"
-                    placeholder="https://github.com/yourname"
-                    value={githubUrl}
-                    onChange={setGithubUrl}
+                  <TimelineStep
+                    interviewDate={interviewDate}
+                    noDateYet={noDateYet}
+                    onInterviewDateChange={setInterviewDate}
+                    onNoDateYetChange={(checked) => {
+                      setNoDateYet(checked);
+                      if (checked) setInterviewDate("");
+                    }}
+                    onPreparationIntensityChange={(value) =>
+                      setPreparationIntensity(
+                        value as OnboardingSubmission["preparationIntensity"],
+                      )
+                    }
+                    onPreparationTimeChange={(value) =>
+                      setPreparationTimePerDay(
+                        value as OnboardingSubmission["preparationTimePerDay"],
+                      )
+                    }
+                    preparationIntensity={preparationIntensity}
+                    preparationTimePerDay={preparationTimePerDay}
                   />
                 )}
 
-                {activeStep.id === "linkedin" && (
-                  <UrlQuestion
-                    icon={Link2}
-                    label="LinkedIn profile URL"
-                    placeholder="https://linkedin.com/in/yourname"
-                    value={linkedinUrl}
-                    onChange={setLinkedinUrl}
+                {activeStep.id === "resume" && (
+                  <ResumeQuestion
+                    resumeName={resumeName}
+                    resumeSize={resumeSize}
+                    uploading={uploadingResume}
+                    onUpload={uploadResume}
+                  />
+                )}
+
+                {activeStep.id === "target-job" && (
+                  <TargetJobStep
+                    jobDescription={jobDescription}
+                    mode={targetJobMode}
+                    onDescriptionChange={setJobDescription}
+                    onModeChange={selectOption}
+                  />
+                )}
+
+                {activeStep.id === "projects" && (
+                  <ProjectsStep
+                    mode={projectsMode}
+                    onDescriptionChange={setProjectDescription}
+                    onModeChange={selectOption}
+                    onNameChange={setProjectName}
+                    onTechStackChange={setProjectTechStack}
+                    projectDescription={projectDescription}
+                    projectName={projectName}
+                    projectTechStack={projectTechStack}
                   />
                 )}
 
                 {activeStep.id === "review" && (
                   <ReviewStep
-                    role={selectedLabels.role}
+                    addedProjects={
+                      projectsMode === "manual" && projectName.trim()
+                        ? projectName.trim()
+                        : projectsMode === "github_later"
+                          ? "GitHub later"
+                          : "Skipped for now"
+                    }
                     experience={selectedLabels.experience}
-                    timeline={selectedLabels.timeline}
+                    preparation={`${selectedLabels.preparation}, ${selectedLabels.intensity.toLowerCase()}`}
                     resumeName={resumeName}
-                    hasJd={Boolean(jdText.trim())}
-                    hasGithub={Boolean(githubUrl.trim())}
-                    hasLinkedin={Boolean(linkedinUrl.trim())}
+                    role={selectedLabels.role}
+                    targetJobStatus={
+                      targetJobMode === "paste" && jobDescription.trim()
+                        ? "Job description added"
+                        : "Skipped for now"
+                    }
+                    timeline={noDateYet ? "No date yet" : interviewDate}
+                    onEdit={(stepId) => void moveToStep(getStepIndex(stepId), -1)}
                   />
                 )}
               </StepViewport>
@@ -413,10 +678,10 @@ export function OnboardingFlow({
                   <Button
                     type="button"
                     onClick={goForward}
-                    disabled={!canContinue || generating}
+                    disabled={!canContinue}
                     className="h-11 min-w-[150px] rounded-lg bg-[#0f9f8d] px-5 font-semibold text-white shadow-[0_14px_32px_rgba(15,159,141,0.24)] transition-all duration-500 hover:bg-[#0d8d7d] hover:shadow-[0_18px_38px_rgba(15,159,141,0.28)] focus-visible:!border-transparent focus-visible:!ring-0 sm:px-6"
                   >
-                    {generating ? (
+                    {generating || savingStep ? (
                       <><LoaderCircle className="size-4 animate-spin" /> {primaryLabel}</>
                     ) : activeStep.id === "review" ? (
                       <>{primaryLabel} <Sparkles className="size-4" /></>
@@ -535,7 +800,7 @@ function StepViewport({
   direction: number;
   measureKey: string;
   slideDistance: number;
-  stepKey: StepId;
+  stepKey: OnboardingStepId;
   transition: Transition;
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -678,7 +943,7 @@ interface StepOptionsProps {
 
 function StepOptions({ options, selected, onSelect, spacious = false, footer }: StepOptionsProps) {
   return (
-    <fieldset className={`mx-auto mt-10 ${spacious ? "max-w-[720px]" : "max-w-[620px]"} ${footer ? "pb-4" : ""}`}>
+    <fieldset className={`mx-auto mt-6 ${spacious ? "max-w-[720px]" : "max-w-[620px]"} ${footer ? "pb-4" : ""}`}>
       <legend className="sr-only">Choose one option</legend>
       <div className="grid gap-3 sm:grid-cols-2">
         {options.map((option) => {
@@ -719,141 +984,388 @@ function StepOptions({ options, selected, onSelect, spacious = false, footer }: 
   );
 }
 
-function ResumeQuestion({
-  resumeName,
-  onResumeNameChange,
+function TargetRoleStep({
+  experienceLevel,
+  hiddenRoleCount,
+  onExperienceChange,
+  onRoleChange,
+  onShowAllRoles,
+  onTargetCompanyChange,
+  onTargetJobTitleChange,
+  role,
+  showAllRoles,
+  targetCompany,
+  targetJobTitle,
+  visibleRoleOptions,
 }: {
-  resumeName: string;
-  onResumeNameChange: (value: string) => void;
+  experienceLevel: string;
+  hiddenRoleCount: number;
+  onExperienceChange: (value: string) => void;
+  onRoleChange: (value: string) => void;
+  onShowAllRoles: () => void;
+  onTargetCompanyChange: (value: string) => void;
+  onTargetJobTitleChange: (value: string) => void;
+  role: string;
+  showAllRoles: boolean;
+  targetCompany: string;
+  targetJobTitle: string;
+  visibleRoleOptions: Option[];
 }) {
   return (
-    <div className="mx-auto mt-9 max-w-[320px] pb-10">
-      <label
-        htmlFor="resume"
-        className={`group flex aspect-square w-full cursor-pointer flex-col items-center justify-center rounded-[22px] border bg-white p-6 text-center outline-none shadow-[0_8px_22px_rgba(15,118,110,0.028)] transition-[border-color,background-color,box-shadow] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#9fd8d0] hover:bg-[#fdfffe] hover:shadow-[0_12px_28px_rgba(15,118,110,0.045)] ${
-          resumeName ? "border-[#8fd5cb] bg-[#fbfffe]" : "border-[#e7ecea]"
-        }`}
-      >
-        <input
-          id="resume"
-          type="file"
-          accept="application/pdf,.pdf"
-          className="sr-only"
-          onChange={(event) => onResumeNameChange(event.target.files?.[0]?.name ?? "")}
-        />
-        <span className="grid size-16 place-items-center rounded-[18px] border border-[#dff2ee] bg-[#effbf8] text-[#0f9f8d] transition-transform duration-700 group-hover:scale-[1.025]">
-          {resumeName ? <FileCheck2 className="size-7" /> : <FileUp className="size-7" />}
-        </span>
-
-        <span className="mt-5 block max-w-full truncate text-base font-semibold text-[#111827]">
-          {resumeName || "Upload PDF resume"}
-        </span>
-        <span className="mt-2 text-sm font-medium text-[#6b7280]">
-          {resumeName ? "PDF selected" : "PDF"}
-        </span>
-        <span className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#d7e8e3] bg-white px-3 text-sm font-semibold text-[#0f766e] transition-colors duration-500 group-hover:border-[#9fd8d0] group-hover:bg-[#f4fbf9]">
-          {resumeName ? "Change PDF" : "Browse PDF"}
-          {resumeName ? <Check className="size-4" /> : <ArrowRight className="size-4" />}
-        </span>
-      </label>
-    </div>
-  );
-}
-
-function JobDescriptionQuestion({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="mx-auto mt-9 max-w-[620px] pb-10">
-      <textarea
-        aria-label="Target job description"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder="Paste the job description or the key requirements..."
-        className="tg-slim-scrollbar min-h-[180px] w-full resize-none rounded-[16px] border border-[#e5e7eb] bg-[#fcfdfd] p-4 text-sm leading-6 text-[#111827] outline-none transition-colors duration-500 placeholder:text-[#9ca3af] focus:border-[#8bcfc5] focus:bg-white"
+    <div className="pb-4">
+      <StepOptions
+        options={visibleRoleOptions}
+        selected={role}
+        onSelect={onRoleChange}
+        spacious
+        footer={
+          !showAllRoles && hiddenRoleCount > 0 ? (
+            <button
+              type="button"
+              onClick={onShowAllRoles}
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-[#d7e9e4] bg-white px-4 text-sm font-semibold text-[#111827] shadow-[0_10px_26px_rgba(15,118,110,0.06)] outline-none transition-[border-color,background-color,box-shadow] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#9bd8cf] hover:bg-[#f8fffd] hover:shadow-[0_12px_30px_rgba(15,118,110,0.09)]"
+            >
+              View more roles
+              <span className="rounded-full bg-[#edf8f5] px-2 py-0.5 text-[11px] text-[#159b89]">
+                +{hiddenRoleCount}
+              </span>
+              <ArrowRight className="size-4" />
+            </button>
+          ) : undefined
+        }
       />
-    </div>
-  );
-}
 
-function UrlQuestion({
-  icon: Icon,
-  label,
-  placeholder,
-  value,
-  onChange,
-}: {
-  icon: LucideIcon;
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="mx-auto mt-9 max-w-[560px] pb-10">
-      <label htmlFor={label} className="text-sm font-semibold text-[#111827]">
-        {label}
-      </label>
-      <div className="relative mt-3">
-        <Icon className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#6b7280]" />
-        <Input
-          id={label}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
-          className="h-13 rounded-[14px] border-[#e5e7eb] bg-[#fcfdfd] pl-11 text-sm text-[#111827] transition-colors duration-500 placeholder:text-[#9ca3af] focus-visible:border-[#8bcfc5] focus-visible:bg-white focus-visible:!ring-0"
+      <div className="mx-auto mt-7 max-w-[620px]">
+        <p className="text-sm font-semibold text-[#111827]">Experience level</p>
+        <StepOptions options={experienceOptions} selected={experienceLevel} onSelect={onExperienceChange} />
+      </div>
+
+      <div className="mx-auto mt-6 grid max-w-[620px] gap-4 sm:grid-cols-2">
+        <LabeledInput
+          label="Target company"
+          optional
+          placeholder="Example: Stripe"
+          value={targetCompany}
+          onChange={onTargetCompanyChange}
+        />
+        <LabeledInput
+          label="Target job title"
+          optional
+          placeholder="Example: AI Engineer Intern"
+          value={targetJobTitle}
+          onChange={onTargetJobTitleChange}
         />
       </div>
     </div>
   );
 }
 
-function ReviewStep({
-  role,
-  experience,
-  timeline,
-  resumeName,
-  hasJd,
-  hasGithub,
-  hasLinkedin,
+function TimelineStep({
+  interviewDate,
+  noDateYet,
+  onInterviewDateChange,
+  onNoDateYetChange,
+  onPreparationIntensityChange,
+  onPreparationTimeChange,
+  preparationIntensity,
+  preparationTimePerDay,
 }: {
-  role: string;
-  experience: string;
-  timeline: string;
-  resumeName: string;
-  hasJd: boolean;
-  hasGithub: boolean;
-  hasLinkedin: boolean;
+  interviewDate: string;
+  noDateYet: boolean;
+  onInterviewDateChange: (value: string) => void;
+  onNoDateYetChange: (value: boolean) => void;
+  onPreparationIntensityChange: (value: string) => void;
+  onPreparationTimeChange: (value: string) => void;
+  preparationIntensity: string;
+  preparationTimePerDay: string;
 }) {
-  const evidence = [
-    resumeName ? "Resume added" : "Resume later",
-    hasJd ? "JD added" : "JD later",
-    hasGithub ? "GitHub added" : "GitHub later",
-    hasLinkedin ? "LinkedIn added" : "LinkedIn later",
+  return (
+    <div className="mx-auto mt-9 max-w-[680px] pb-8">
+      <div className="rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
+        <label htmlFor="interview-date" className="text-sm font-semibold text-[#111827]">
+          Interview or application date
+        </label>
+        <Input
+          id="interview-date"
+          type="date"
+          value={interviewDate}
+          disabled={noDateYet}
+          onChange={(event) => onInterviewDateChange(event.target.value)}
+          className="mt-3 h-13 rounded-[14px] border-[#e5e7eb] bg-white text-sm text-[#111827] transition-colors duration-500 focus-visible:border-[#8bcfc5] focus-visible:bg-white focus-visible:!ring-0"
+        />
+        <label className="mt-4 flex items-center gap-3 text-sm font-medium text-[#4b5563]">
+          <input
+            type="checkbox"
+            checked={noDateYet}
+            onChange={(event) => onNoDateYetChange(event.target.checked)}
+            className="size-4 rounded border-[#cadbd7] accent-[#0f9f8d]"
+          />
+          I do not have a date yet
+        </label>
+      </div>
+
+      <div className="mt-7">
+        <p className="text-sm font-semibold text-[#111827]">Preparation time per day</p>
+        <StepOptions
+          options={preparationTimeOptions}
+          selected={preparationTimePerDay}
+          onSelect={onPreparationTimeChange}
+        />
+      </div>
+
+      <div className="mt-7">
+        <p className="text-sm font-semibold text-[#111827]">Preparation intensity</p>
+        <StepOptions
+          options={intensityOptions}
+          selected={preparationIntensity}
+          onSelect={onPreparationIntensityChange}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ResumeQuestion({
+  resumeName,
+  resumeSize,
+  uploading,
+  onUpload,
+}: {
+  resumeName: string;
+  resumeSize: number;
+  uploading: boolean;
+  onUpload: (file: File | undefined) => void;
+}) {
+  return (
+    <div className="mx-auto mt-9 max-w-[620px] pb-10">
+      <div className="grid gap-5 sm:grid-cols-[minmax(220px,320px)_1fr] sm:items-center">
+        <label
+          htmlFor="resume"
+          className={`group flex aspect-square w-full cursor-pointer flex-col items-center justify-center rounded-[22px] border bg-white p-6 text-center outline-none shadow-[0_8px_22px_rgba(15,118,110,0.028)] transition-[border-color,background-color,box-shadow] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#9fd8d0] hover:bg-[#fdfffe] hover:shadow-[0_12px_28px_rgba(15,118,110,0.045)] ${
+            resumeName ? "border-[#8fd5cb] bg-[#fbfffe]" : "border-[#e7ecea]"
+          }`}
+        >
+          <input
+            id="resume"
+            type="file"
+            accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
+            className="sr-only"
+            onChange={(event) => onUpload(event.target.files?.[0])}
+          />
+          <span className="grid size-16 place-items-center rounded-[18px] border border-[#dff2ee] bg-[#effbf8] text-[#0f9f8d] transition-transform duration-700 group-hover:scale-[1.025]">
+            {uploading ? (
+              <LoaderCircle className="size-7 animate-spin" />
+            ) : resumeName ? (
+              <FileCheck2 className="size-7" />
+            ) : (
+              <FileUp className="size-7" />
+            )}
+          </span>
+
+          <span className="mt-5 block max-w-full truncate text-base font-semibold text-[#111827]">
+            {resumeName || "Upload resume"}
+          </span>
+          <span className="mt-2 text-sm font-medium text-[#6b7280]">
+            {resumeName ? formatFileSize(resumeSize) : "PDF or DOCX"}
+          </span>
+          <span className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#d7e8e3] bg-white px-3 text-sm font-semibold text-[#0f766e] transition-colors duration-500 group-hover:border-[#9fd8d0] group-hover:bg-[#f4fbf9]">
+            {resumeName ? "Change file" : "Browse file"}
+            {resumeName ? <Check className="size-4" /> : <ArrowRight className="size-4" />}
+          </span>
+        </label>
+
+        <div className="rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
+          <p className="text-sm font-semibold text-[#111827]">Trailgrad will inspect</p>
+          <ul className="mt-3 space-y-2 text-sm font-medium text-[#5f6f6b]">
+            {[
+              "skills",
+              "experience",
+              "projects",
+              "weak claims",
+              "missing proof",
+              "possible interview risks",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-2">
+                <Check className="size-4 text-[#159b89]" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TargetJobStep({
+  jobDescription,
+  mode,
+  onDescriptionChange,
+  onModeChange,
+}: {
+  jobDescription: string;
+  mode: string;
+  onDescriptionChange: (value: string) => void;
+  onModeChange: (value: string) => void;
+}) {
+  return (
+    <div className="mx-auto mt-9 max-w-[620px] pb-10">
+      <StepOptions options={targetJobOptions} selected={mode} onSelect={onModeChange} />
+      {mode === "paste" ? (
+        <textarea
+          aria-label="Target job description"
+          value={jobDescription}
+          onChange={(event) => onDescriptionChange(event.target.value)}
+          placeholder="Paste the job description or key requirements..."
+          className="tg-slim-scrollbar mt-5 min-h-[180px] w-full resize-none rounded-[16px] border border-[#e5e7eb] bg-[#fcfdfd] p-4 text-sm leading-6 text-[#111827] outline-none transition-colors duration-500 placeholder:text-[#9ca3af] focus:border-[#8bcfc5] focus:bg-white"
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function ProjectsStep({
+  mode,
+  onDescriptionChange,
+  onModeChange,
+  onNameChange,
+  onTechStackChange,
+  projectDescription,
+  projectName,
+  projectTechStack,
+}: {
+  mode: string;
+  onDescriptionChange: (value: string) => void;
+  onModeChange: (value: string) => void;
+  onNameChange: (value: string) => void;
+  onTechStackChange: (value: string) => void;
+  projectDescription: string;
+  projectName: string;
+  projectTechStack: string;
+}) {
+  return (
+    <div className="mx-auto mt-9 max-w-[620px] pb-10">
+      <StepOptions options={projectOptions} selected={mode} onSelect={onModeChange} />
+      {mode === "github_later" ? (
+        <p className="mt-5 rounded-lg border border-[#d7e8e3] bg-[#f8fffd] px-3 py-2 text-sm font-medium text-[#4b5563]">
+          GitHub connection is optional and coming later.
+        </p>
+      ) : null}
+      {mode === "manual" ? (
+        <div className="mt-5 grid gap-4">
+          <LabeledInput
+            label="Project name"
+            placeholder="Example: Resume risk analyzer"
+            value={projectName}
+            onChange={onNameChange}
+          />
+          <label htmlFor="project-description" className="text-sm font-semibold text-[#111827]">
+            Project description <OptionalLabel />
+            <textarea
+              id="project-description"
+              value={projectDescription}
+              onChange={(event) => onDescriptionChange(event.target.value)}
+              placeholder="A short summary is enough."
+              className="tg-slim-scrollbar mt-3 min-h-[120px] w-full resize-none rounded-[16px] border border-[#e5e7eb] bg-[#fcfdfd] p-4 text-sm leading-6 text-[#111827] outline-none transition-colors duration-500 placeholder:text-[#9ca3af] focus:border-[#8bcfc5] focus:bg-white"
+            />
+          </label>
+          <LabeledInput
+            label="Tech stack"
+            optional
+            placeholder="Example: Next.js, Postgres"
+            value={projectTechStack}
+            onChange={onTechStackChange}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function LabeledInput({
+  label,
+  optional,
+  placeholder,
+  value,
+  onChange,
+}: {
+  label: string;
+  optional?: boolean;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const id = label.toLowerCase().replaceAll(" ", "-");
+
+  return (
+    <label htmlFor={id} className="text-sm font-semibold text-[#111827]">
+      {label} {optional ? <OptionalLabel /> : null}
+      <Input
+        id={id}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="mt-3 h-13 rounded-[14px] border-[#e5e7eb] bg-[#fcfdfd] text-sm text-[#111827] transition-colors duration-500 placeholder:text-[#9ca3af] focus-visible:border-[#8bcfc5] focus-visible:bg-white focus-visible:!ring-0"
+      />
+    </label>
+  );
+}
+
+function OptionalLabel() {
+  return <span className="text-xs font-medium text-[#6b7280]">(optional)</span>;
+}
+
+function ReviewStep({
+  addedProjects,
+  experience,
+  onEdit,
+  preparation,
+  resumeName,
+  role,
+  targetJobStatus,
+  timeline,
+}: {
+  addedProjects: string;
+  experience: string;
+  onEdit: (stepId: OnboardingStepId) => void;
+  preparation: string;
+  resumeName: string;
+  role: string;
+  targetJobStatus: string;
+  timeline: string;
+}) {
+  const items: Array<{ label: string; value: string; step: OnboardingStepId }> = [
+    { label: "Target role", value: role, step: "target-role" },
+    { label: "Experience level", value: experience, step: "target-role" },
+    { label: "Timeline", value: timeline || "No date yet", step: "timeline" },
+    { label: "Preparation availability", value: preparation, step: "timeline" },
+    { label: "Uploaded resume", value: resumeName, step: "resume" },
+    { label: "Target job", value: targetJobStatus, step: "target-job" },
+    { label: "Added projects", value: addedProjects, step: "projects" },
   ];
 
   return (
     <div className="mx-auto mt-9 max-w-[680px] pb-8">
       <div className="rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[role, experience, timeline].map((item) => (
-            <div key={item} className="rounded-[14px] bg-white p-4 ring-1 ring-[#e5e7eb]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6b7280]">Signal</p>
-              <p className="mt-2 text-sm font-semibold text-[#111827]">{item}</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {items.map((item) => (
+            <div key={item.label} className="rounded-[14px] bg-white p-4 ring-1 ring-[#e5e7eb]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6b7280]">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-[#111827]">{item.value}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onEdit(item.step)}
+                  className="rounded-lg border border-[#d7e8e3] bg-white px-2.5 py-1 text-xs font-semibold text-[#0f766e] transition-colors duration-500 hover:border-[#9fd8d0] hover:bg-[#f4fbf9]"
+                >
+                  Edit
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {evidence.map((item) => (
-            <span key={item} className="inline-flex items-center gap-1.5 rounded-full border border-[#d7e8e3] bg-white px-3 py-1.5 text-xs font-medium text-[#4b5563]">
-              <Check className="size-3.5 text-[#159b89]" />
-              {item}
-            </span>
           ))}
         </div>
       </div>
@@ -863,4 +1375,22 @@ function ReviewStep({
 
 function getOptionTitle(options: Option[], value: string) {
   return options.find((option) => option.id === value)?.title;
+}
+
+function getStepIndex(stepId: OnboardingStepId | undefined) {
+  const index = steps.findIndex((step) => step.id === stepId);
+
+  return index >= 0 ? index : 0;
+}
+
+function formatFileSize(size: number) {
+  if (!size) {
+    return "PDF or DOCX";
+  }
+
+  if (size < 1024 * 1024) {
+    return `${Math.max(1, Math.round(size / 1024))} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
