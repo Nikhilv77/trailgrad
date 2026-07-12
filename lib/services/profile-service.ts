@@ -1,13 +1,25 @@
 import { mockDb } from "@/lib/db/mock-db";
 import {
   completeProfileOnboardingRecord,
+  getActiveTargetContextRecord,
+  getCareerContextRecord,
   getOnboardingStateRecord,
   getOrCreateProfileRecord,
+  listManualProjectRecords,
+  listResumeVersionRecords,
+  listSourceDocumentRecords,
   markOnboardingAnalyzingRecord,
   markOnboardingFailedRecord,
-  saveOnboardingResumeRecord,
+  saveOnboardingDataModelRecord,
   updateOnboardingStepRecord,
 } from "@/lib/db/profile-repository";
+import type {
+  CareerContextRecord,
+  ManualProjectRecord,
+  ResumeVersionRecord,
+  SourceDocumentRecord,
+  TargetContextRecord,
+} from "@/lib/db/types";
 import type {
   OnboardingState,
   OnboardingStatus,
@@ -86,16 +98,41 @@ export async function markOnboardingFailed(
   return markOnboardingFailedRecord(clerkUserId, analysisError);
 }
 
-export async function saveOnboardingResume(
+export async function saveOnboardingDataModel(
   clerkUserId: string,
-  resume: {
-    fileName: string;
-    contentType: string;
-    fileSize: number;
-    contentBase64: string;
-  },
-): Promise<TrailgradProfileRecord> {
-  return saveOnboardingResumeRecord(clerkUserId, resume);
+  onboarding: OnboardingSubmission,
+): Promise<void> {
+  await saveOnboardingDataModelRecord(clerkUserId, onboarding);
+}
+
+export async function getCareerContext(
+  clerkUserId: string,
+): Promise<CareerContextRecord | null> {
+  return getCareerContextRecord(clerkUserId);
+}
+
+export async function getActiveTargetContext(
+  clerkUserId: string,
+): Promise<TargetContextRecord | null> {
+  return getActiveTargetContextRecord(clerkUserId);
+}
+
+export async function listManualProjects(
+  clerkUserId: string,
+): Promise<ManualProjectRecord[]> {
+  return listManualProjectRecords(clerkUserId);
+}
+
+export async function listSourceDocuments(
+  clerkUserId: string,
+): Promise<SourceDocumentRecord[]> {
+  return listSourceDocumentRecords(clerkUserId);
+}
+
+export async function listResumeVersions(
+  clerkUserId: string,
+): Promise<ResumeVersionRecord[]> {
+  return listResumeVersionRecords(clerkUserId);
 }
 
 export async function getOrCreateTrailgradProfile(

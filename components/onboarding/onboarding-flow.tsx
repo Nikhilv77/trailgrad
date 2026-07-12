@@ -186,6 +186,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
   const [generating, setGenerating] = useState(false);
   const [savingStep, setSavingStep] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
+  const [resumeProcessingStatus, setResumeProcessingStatus] = useState("");
   const [showAllRoles, setShowAllRoles] = useState(() =>
     Boolean(
       initialState?.onboarding?.targetRole &&
@@ -424,6 +425,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
 
     setErrorMessage("");
     setUploadingResume(true);
+    setResumeProcessingStatus("Uploading resume");
 
     try {
       const formData = new FormData();
@@ -440,6 +442,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
             fileName?: string;
             contentType?: string;
             fileSize?: number;
+            processingStatus?: string;
             state?: OnboardingState;
           }
         | null;
@@ -453,6 +456,11 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
       setResumeContentType(saved?.resumeContentType ?? payload?.contentType ?? file.type);
       setResumeSize(saved?.resumeSize ?? payload?.fileSize ?? file.size);
       setResumeUploadedAt(saved?.resumeUploadedAt ?? new Date().toISOString());
+      setResumeProcessingStatus(
+        payload?.processingStatus === "EXTRACTED"
+          ? "Resume text extracted"
+          : "Resume uploaded",
+      );
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Unable to upload resume.",
@@ -613,6 +621,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
                   <ResumeQuestion
                     resumeName={resumeName}
                     resumeSize={resumeSize}
+                    processingStatus={resumeProcessingStatus}
                     uploading={uploadingResume}
                     onUpload={uploadResume}
                   />
@@ -937,13 +946,12 @@ interface StepOptionsProps {
   options: Option[];
   selected: string;
   onSelect: (value: string) => void;
-  spacious?: boolean;
   footer?: ReactNode;
 }
 
-function StepOptions({ options, selected, onSelect, spacious = false, footer }: StepOptionsProps) {
+function StepOptions({ options, selected, onSelect, footer }: StepOptionsProps) {
   return (
-    <fieldset className={`mx-auto mt-6 ${spacious ? "max-w-[720px]" : "max-w-[620px]"} ${footer ? "pb-4" : ""}`}>
+    <fieldset className={`mx-auto mt-6 max-w-[720px] ${footer ? "pb-4" : ""}`}>
       <legend className="sr-only">Choose one option</legend>
       <div className="grid gap-3 sm:grid-cols-2">
         {options.map((option) => {
@@ -1017,7 +1025,6 @@ function TargetRoleStep({
         options={visibleRoleOptions}
         selected={role}
         onSelect={onRoleChange}
-        spacious
         footer={
           !showAllRoles && hiddenRoleCount > 0 ? (
             <button
@@ -1035,12 +1042,12 @@ function TargetRoleStep({
         }
       />
 
-      <div className="mx-auto mt-7 max-w-[620px]">
+      <div className="mx-auto mt-7 max-w-[720px]">
         <p className="text-sm font-semibold text-[#111827]">Experience level</p>
         <StepOptions options={experienceOptions} selected={experienceLevel} onSelect={onExperienceChange} />
       </div>
 
-      <div className="mx-auto mt-6 grid max-w-[620px] gap-4 sm:grid-cols-2">
+      <div className="mx-auto mt-6 grid max-w-[720px] gap-3 sm:grid-cols-2">
         <LabeledInput
           label="Target company"
           optional
@@ -1080,7 +1087,7 @@ function TimelineStep({
   preparationTimePerDay: string;
 }) {
   return (
-    <div className="mx-auto mt-9 max-w-[680px] pb-8">
+    <div className="mx-auto mt-9 max-w-[720px] pb-8">
       <div className="rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
         <label htmlFor="interview-date" className="text-sm font-semibold text-[#111827]">
           Interview or application date
@@ -1128,16 +1135,18 @@ function TimelineStep({
 function ResumeQuestion({
   resumeName,
   resumeSize,
+  processingStatus,
   uploading,
   onUpload,
 }: {
   resumeName: string;
   resumeSize: number;
+  processingStatus: string;
   uploading: boolean;
   onUpload: (file: File | undefined) => void;
 }) {
   return (
-    <div className="mx-auto mt-9 max-w-[620px] pb-10">
+    <div className="mx-auto mt-9 max-w-[720px] pb-10">
       <div className="grid gap-5 sm:grid-cols-[minmax(220px,320px)_1fr] sm:items-center">
         <label
           htmlFor="resume"
@@ -1166,7 +1175,9 @@ function ResumeQuestion({
             {resumeName || "Upload resume"}
           </span>
           <span className="mt-2 text-sm font-medium text-[#6b7280]">
-            {resumeName ? formatFileSize(resumeSize) : "PDF or DOCX"}
+            {uploading
+              ? "Uploading and extracting text"
+              : processingStatus || (resumeName ? formatFileSize(resumeSize) : "PDF or DOCX")}
           </span>
           <span className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#d7e8e3] bg-white px-3 text-sm font-semibold text-[#0f766e] transition-colors duration-500 group-hover:border-[#9fd8d0] group-hover:bg-[#f4fbf9]">
             {resumeName ? "Change file" : "Browse file"}
@@ -1209,7 +1220,7 @@ function TargetJobStep({
   onModeChange: (value: string) => void;
 }) {
   return (
-    <div className="mx-auto mt-9 max-w-[620px] pb-10">
+    <div className="mx-auto mt-9 max-w-[720px] pb-10">
       <StepOptions options={targetJobOptions} selected={mode} onSelect={onModeChange} />
       {mode === "paste" ? (
         <textarea
@@ -1244,7 +1255,7 @@ function ProjectsStep({
   projectTechStack: string;
 }) {
   return (
-    <div className="mx-auto mt-9 max-w-[620px] pb-10">
+    <div className="mx-auto mt-9 max-w-[720px] pb-10">
       <StepOptions options={projectOptions} selected={mode} onSelect={onModeChange} />
       {mode === "github_later" ? (
         <p className="mt-5 rounded-lg border border-[#d7e8e3] bg-[#f8fffd] px-3 py-2 text-sm font-medium text-[#4b5563]">
@@ -1345,7 +1356,7 @@ function ReviewStep({
   ];
 
   return (
-    <div className="mx-auto mt-9 max-w-[680px] pb-8">
+    <div className="mx-auto mt-9 max-w-[720px] pb-8">
       <div className="rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
         <div className="grid gap-3 sm:grid-cols-2">
           {items.map((item) => (

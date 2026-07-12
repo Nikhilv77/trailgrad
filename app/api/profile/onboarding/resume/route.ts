@@ -1,21 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 
-import { saveOnboardingResume } from "@/lib/services/profile-service";
-
-const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
-const DOCX_CONTENT_TYPE =
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-
-function isAllowedResume(file: File) {
-  const lowerName = file.name.toLowerCase();
-
-  return (
-    file.type === "application/pdf" ||
-    file.type === DOCX_CONTENT_TYPE ||
-    lowerName.endsWith(".pdf") ||
-    lowerName.endsWith(".docx")
-  );
-}
+import { uploadAuthenticatedResume } from "@/lib/resume/upload-service";
+import {
+  ResumeUploadError,
+  getResumeUploadErrorMessage,
+  toSafeResumeUploadError,
+} from "@/lib/resume/upload-errors";
 
 export async function POST(request: Request) {
   try {
@@ -23,7 +13,10 @@ export async function POST(request: Request) {
 
     if (!userId) {
       return Response.json(
-        { error: "Authentication required." },
+        {
+          code: "AUTHENTICATION_REQUIRED",
+          error: getResumeUploadErrorMessage("AUTHENTICATION_REQUIRED"),
+        },
         { status: 401 },
       );
     }
@@ -32,51 +25,34 @@ export async function POST(request: Request) {
     const file = formData.get("resume");
 
     if (!(file instanceof File)) {
-      return Response.json(
-        { error: "Upload a PDF or DOCX resume." },
-        { status: 400 },
-      );
+      throw new ResumeUploadError("UNSUPPORTED_FILE_TYPE");
     }
 
-    if (!isAllowedResume(file)) {
-      return Response.json(
-        { error: "Resume must be a PDF or DOCX file." },
-        { status: 400 },
-      );
-    }
-
-    if (file.size > MAX_RESUME_SIZE_BYTES) {
-      return Response.json(
-        { error: "Resume must be 5 MB or smaller." },
-        { status: 400 },
-      );
-    }
-
-    const contentBase64 = Buffer.from(await file.arrayBuffer()).toString("base64");
-    const profile = await saveOnboardingResume(userId, {
+    const result = await uploadAuthenticatedResume({
+      clerkUserId: userId,
       fileName: file.name,
-      contentType: file.type || (file.name.toLowerCase().endsWith(".docx") ? DOCX_CONTENT_TYPE : "application/pdf"),
-      fileSize: file.size,
-      contentBase64,
+      contentType: file.type,
+      bytes: Buffer.from(await file.arrayBuffer()),
     });
 
     return Response.json({
-      fileName: file.name,
-      contentType: file.type,
-      fileSize: file.size,
-      state: {
-        status: profile.onboardingStatus,
-        currentStep: profile.currentOnboardingStep,
-        startedAt: profile.onboardingStartedAt,
-        completedAt: profile.onboardingCompletedAt,
-        analysisError: profile.analysisError,
-        onboarding: profile.onboarding,
-      },
+      fileName: result.fileName,
+      contentType: result.contentType,
+      fileSize: result.fileSize,
+      duplicate: result.duplicate,
+      processingStatus: result.processingStatus,
+      state: result.state,
     });
-  } catch {
+  } catch (error) {
+    const safeError = toSafeResumeUploadError(error);
+    const status = safeError.code === "AUTHENTICATION_REQUIRED" ? 401 : 400;
+
     return Response.json(
-      { error: "Unable to upload resume." },
-      { status: 500 },
+      {
+        code: safeError.code,
+        error: safeError.message,
+      },
+      { status },
     );
   }
 }

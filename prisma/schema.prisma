@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model UserProfile {
+  clerkUserId           String    @id @map("clerk_user_id")
+  onboardingStatus      String    @default("not_started") @map("onboarding_status")
+  currentOnboardingStep String    @default("target-role") @map("current_onboarding_step")
+  onboardingStartedAt   DateTime? @map("onboarding_started_at") @db.Timestamptz(6)
+  onboardingCompletedAt DateTime? @map("onboarding_completed_at") @db.Timestamptz(6)
+  analysisError         String?   @map("analysis_error")
+  onboarding            Json?
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  careerContext   CareerContext?
+  targetContexts  TargetContext[]
+  manualProjects  ManualProject[]
+  sourceDocuments SourceDocument[]
+  resumeVersions  ResumeVersion[]
+
+  @@index([onboardingStatus], map: "user_profiles_onboarding_status_idx")
+  @@index([currentOnboardingStep], map: "user_profiles_current_onboarding_step_idx")
+  @@map("user_profiles")
+}
+
+model CareerContext {
+  profileId                    String      @id @map("profile_id")
+  primaryTargetRole            String      @map("primary_target_role")
+  experienceLevel              String      @map("experience_level")
+  targetCompany                String?     @map("target_company")
+  targetJobTitle               String?     @map("target_job_title")
+  interviewOrApplicationDate   DateTime?   @map("interview_or_application_date") @db.Date
+  noDateYet                    Boolean     @default(false) @map("no_date_yet")
+  dailyPreparationMinutes      Int?        @map("daily_preparation_minutes")
+  flexiblePreparationTime      Boolean     @default(false) @map("flexible_preparation_time")
+  preparationIntensity         String      @map("preparation_intensity")
+  timezone                     String?
+  createdAt                    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                    DateTime    @default(now()) @map("updated_at") @db.Timestamptz(6)
+  profile                      UserProfile @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
+
+  @@index([primaryTargetRole], map: "career_contexts_primary_target_role_idx")
+  @@map("career_contexts")
+}
+
+model TargetContext {
+  id             String      @id
+  profileId      String      @map("profile_id")
+  role           String
+  company        String?
+  jobTitle       String?     @map("job_title")
+  jobDescription String?     @map("job_description")
+  isActive       Boolean     @default(true) @map("is_active")
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime    @default(now()) @map("updated_at") @db.Timestamptz(6)
+  profile        UserProfile @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
+
+  @@index([profileId], map: "target_contexts_profile_id_idx")
+  @@map("target_contexts")
+}
+
+model ManualProject {
+  id            String      @id
+  profileId     String      @map("profile_id")
+  name          String
+  description   String      @default("")
+  projectUrl    String?     @map("project_url")
+  repositoryUrl String?     @map("repository_url")
+  technologies  String[]    @default([])
+  currentStatus String      @default("draft") @map("current_status")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime    @default(now()) @map("updated_at") @db.Timestamptz(6)
+  profile       UserProfile @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
+
+  @@unique([profileId, name], map: "manual_projects_profile_name_idx")
+  @@index([profileId], map: "manual_projects_profile_id_idx")
+  @@index([currentStatus], map: "manual_projects_current_status_idx")
+  @@map("manual_projects")
+}
+
+model SourceDocument {
+  id                String          @id
+  profileId         String          @map("profile_id")
+  sourceType        String          @map("source_type")
+  originalFilename  String          @map("original_filename")
+  mimeType          String          @map("mime_type")
+  storagePath       String          @unique(map: "source_documents_storage_path_idx") @map("storage_path")
+  fileSize          Int             @map("file_size")
+  sha256ContentHash String          @map("sha256_content_hash")
+  processingStatus  String          @default("UPLOADED") @map("processing_status")
+  errorCode         String?         @map("error_code")
+  version           Int
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  profile           UserProfile     @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
+  resumeVersions    ResumeVersion[]
+
+  @@unique([profileId, sourceType, version], map: "source_documents_profile_type_version_idx")
+  @@unique([profileId, sourceType, sha256ContentHash], map: "source_documents_profile_type_hash_idx")
+  @@index([profileId, sourceType], map: "source_documents_profile_type_idx")
+  @@map("source_documents")
+}
+
+model ResumeVersion {
+  id                  String         @id
+  profileId           String         @map("profile_id")
+  sourceDocumentId    String         @map("source_document_id")
+  version             Int
+  extractedTextStatus String         @default("UPLOADED") @map("extracted_text_status")
+  extractedText       String?        @map("extracted_text")
+  errorCode           String?        @map("error_code")
+  active              Boolean        @default(true)
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  profile             UserProfile    @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
+  sourceDocument      SourceDocument @relation(fields: [sourceDocumentId], references: [id], onDelete: Restrict)
+
+  @@unique([profileId, version], map: "resume_versions_profile_version_idx")
+  @@index([profileId], map: "resume_versions_profile_id_idx")
+  @@map("resume_versions")
+}

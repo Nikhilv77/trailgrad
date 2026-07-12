@@ -1,5 +1,22 @@
-import { neon } from "@neondatabase/serverless";
+import { randomUUID } from "node:crypto";
 
+import type {
+  CareerContext,
+  ManualProject,
+  ResumeVersion,
+  SourceDocument,
+  TargetContext,
+  UserProfile,
+} from "@/lib/generated/prisma/client";
+import { Prisma } from "@/lib/generated/prisma/client";
+import { prisma } from "@/lib/db/prisma";
+import type {
+  CareerContextRecord,
+  ManualProjectRecord,
+  ResumeVersionRecord,
+  SourceDocumentRecord,
+  TargetContextRecord,
+} from "@/lib/db/types";
 import type {
   OnboardingState,
   OnboardingStatus,
@@ -8,88 +25,41 @@ import type {
 } from "@/lib/onboarding/types";
 import type { TrailgradProfileRecord } from "@/lib/services/profile-service";
 
-interface ProfileRow {
-  clerk_user_id: string;
-  onboarding_status: OnboardingStatus;
-  current_onboarding_step: OnboardingStepId;
-  onboarding_started_at: string | Date | null;
-  onboarding_completed_at: string | Date | null;
-  analysis_error: string | null;
-  onboarding: OnboardingSubmission | string | null;
-  created_at: string | Date;
-  updated_at: string | Date;
-}
-
-interface ResumeRecordInput {
-  fileName: string;
-  contentType: string;
-  fileSize: number;
-  contentBase64: string;
+export interface ResumeSourceReservation {
+  sourceDocument: SourceDocumentRecord;
+  isNew: boolean;
 }
 
 let ensureProfilesTablePromise: Promise<void> | null = null;
 
-function getSql() {
-  const databaseUrl = process.env.DATABASE_URL;
-
-  if (!databaseUrl) {
-    throw new Error("DATABASE_URL is required for Trailgrad profile storage.");
-  }
-
-  return neon(databaseUrl);
+function toIsoString(value: Date | null) {
+  return value ? value.toISOString() : null;
 }
 
-function toIsoString(value: string | Date | null) {
-  if (value === null) {
-    return null;
-  }
-
-  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+function toDateString(value: Date | null) {
+  return value ? value.toISOString().slice(0, 10) : null;
 }
 
-function parseOnboarding(value: ProfileRow["onboarding"]) {
-  if (!value) {
-    return null;
-  }
-
-  return typeof value === "string"
-    ? (JSON.parse(value) as OnboardingSubmission)
-    : value;
+function parseOnboarding(value: Prisma.JsonValue | null) {
+  return value ? (value as unknown as OnboardingSubmission) : null;
 }
 
-function toProfileRecord(row: ProfileRow): TrailgradProfileRecord {
-  const createdAt = toIsoString(row.created_at);
-  const updatedAt = toIsoString(row.updated_at);
+function onboardingToJson(onboarding: Partial<OnboardingSubmission>) {
+  return onboarding as Prisma.InputJsonObject;
+}
 
-  if (!createdAt || !updatedAt) {
-    throw new Error("Trailgrad profile row is missing timestamps.");
-  }
-
+function toProfileRecord(row: UserProfile): TrailgradProfileRecord {
   return {
-    clerkUserId: row.clerk_user_id,
-    onboardingStatus: row.onboarding_status,
-    currentOnboardingStep: row.current_onboarding_step,
-    onboardingStartedAt: toIsoString(row.onboarding_started_at),
-    onboardingCompletedAt: toIsoString(row.onboarding_completed_at),
-    analysisError: row.analysis_error,
+    clerkUserId: row.clerkUserId,
+    onboardingStatus: row.onboardingStatus as OnboardingStatus,
+    currentOnboardingStep: row.currentOnboardingStep as OnboardingStepId,
+    onboardingStartedAt: toIsoString(row.onboardingStartedAt),
+    onboardingCompletedAt: toIsoString(row.onboardingCompletedAt),
+    analysisError: row.analysisError,
     onboarding: parseOnboarding(row.onboarding),
-    createdAt,
-    updatedAt,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
   };
-}
-
-function selectProfileColumns() {
-  return `
-    clerk_user_id,
-    onboarding_status,
-    current_onboarding_step,
-    onboarding_started_at,
-    onboarding_completed_at,
-    analysis_error,
-    onboarding,
-    created_at,
-    updated_at
-  `;
 }
 
 function toOnboardingState(profile: TrailgradProfileRecord): OnboardingState {
@@ -103,190 +73,106 @@ function toOnboardingState(profile: TrailgradProfileRecord): OnboardingState {
   };
 }
 
+function toCareerContextRecord(row: CareerContext): CareerContextRecord {
+  return {
+    profileId: row.profileId,
+    primaryTargetRole: row.primaryTargetRole,
+    experienceLevel: row.experienceLevel,
+    targetCompany: row.targetCompany,
+    targetJobTitle: row.targetJobTitle,
+    interviewOrApplicationDate: toDateString(row.interviewOrApplicationDate),
+    noDateYet: row.noDateYet,
+    dailyPreparationMinutes: row.dailyPreparationMinutes,
+    flexiblePreparationTime: row.flexiblePreparationTime,
+    preparationIntensity: row.preparationIntensity as CareerContextRecord["preparationIntensity"],
+    timezone: row.timezone,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function toTargetContextRecord(row: TargetContext): TargetContextRecord {
+  return {
+    id: row.id,
+    profileId: row.profileId,
+    role: row.role,
+    company: row.company,
+    jobTitle: row.jobTitle,
+    jobDescription: row.jobDescription,
+    isActive: row.isActive,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function toManualProjectRecord(row: ManualProject): ManualProjectRecord {
+  return {
+    id: row.id,
+    profileId: row.profileId,
+    name: row.name,
+    description: row.description,
+    projectUrl: row.projectUrl,
+    repositoryUrl: row.repositoryUrl,
+    technologies: row.technologies.length ? row.technologies : null,
+    currentStatus: row.currentStatus,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function toSourceDocumentRecord(row: SourceDocument): SourceDocumentRecord {
+  return {
+    id: row.id,
+    profileId: row.profileId,
+    sourceType: row.sourceType as SourceDocumentRecord["sourceType"],
+    originalFilename: row.originalFilename,
+    mimeType: row.mimeType,
+    storagePath: row.storagePath,
+    fileSize: row.fileSize,
+    sha256ContentHash: row.sha256ContentHash,
+    processingStatus: row.processingStatus as SourceDocumentRecord["processingStatus"],
+    errorCode: row.errorCode,
+    version: row.version,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function toResumeVersionRecord(row: ResumeVersion): ResumeVersionRecord {
+  return {
+    id: row.id,
+    profileId: row.profileId,
+    sourceDocumentId: row.sourceDocumentId,
+    version: row.version,
+    extractedTextStatus: row.extractedTextStatus as ResumeVersionRecord["extractedTextStatus"],
+    extractedText: row.extractedText,
+    errorCode: row.errorCode,
+    active: row.active,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
 export async function ensureProfilesTable() {
   if (!ensureProfilesTablePromise) {
-    const sql = getSql();
-
-    ensureProfilesTablePromise = applyProfilesSchema(sql);
+    ensureProfilesTablePromise = Promise.resolve();
   }
 
   return ensureProfilesTablePromise;
 }
 
-async function applyProfilesSchema(sql: ReturnType<typeof getSql>) {
-  await sql.query(`
-    create table if not exists user_profiles (
-      clerk_user_id text primary key,
-      onboarding_status text not null default 'not_started',
-      current_onboarding_step text not null default 'target-role',
-      onboarding_started_at timestamptz,
-      onboarding_completed_at timestamptz,
-      analysis_error text,
-      onboarding jsonb,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now()
-    )
-  `);
-
-  await sql.query(`
-    alter table user_profiles
-      add column if not exists onboarding_status text not null default 'not_started',
-      add column if not exists current_onboarding_step text not null default 'target-role',
-      add column if not exists onboarding_started_at timestamptz,
-      add column if not exists analysis_error text
-  `);
-
-  await sql.query(`
-    alter table user_profiles
-      alter column current_onboarding_step set default 'target-role'
-  `);
-
-  await sql.query(`
-    update user_profiles
-    set current_onboarding_step = case
-      when current_onboarding_step in ('role', 'experience') then 'target-role'
-      when current_onboarding_step = 'job-description' then 'target-job'
-      when current_onboarding_step in ('github', 'linkedin') then 'projects'
-      else current_onboarding_step
-    end
-  `);
-
-  await sql.query(`
-    update user_profiles
-    set
-      onboarding_status = 'completed',
-      onboarding_started_at = coalesce(onboarding_started_at, created_at)
-    where onboarding_completed_at is not null
-  `);
-
-  await sql.query(`
-    update user_profiles
-    set
-      onboarding_status = 'in_progress',
-      onboarding_started_at = coalesce(onboarding_started_at, created_at)
-    where onboarding_completed_at is null
-      and onboarding is not null
-      and onboarding_status = 'not_started'
-  `);
-
-  await sql.query(`
-    do $$
-    begin
-      if not exists (
-        select 1
-        from pg_constraint
-        where conname = 'user_profiles_clerk_user_id_not_empty'
-      ) then
-        alter table user_profiles
-          add constraint user_profiles_clerk_user_id_not_empty
-          check (length(trim(clerk_user_id)) > 0);
-      end if;
-
-      if not exists (
-        select 1
-        from pg_constraint
-        where conname = 'user_profiles_onboarding_status_check'
-      ) then
-        alter table user_profiles
-          add constraint user_profiles_onboarding_status_check
-          check (
-            onboarding_status in (
-              'not_started',
-              'in_progress',
-              'analyzing',
-              'completed',
-              'failed'
-            )
-          );
-      end if;
-
-      alter table user_profiles
-        drop constraint if exists user_profiles_current_onboarding_step_check;
-
-      alter table user_profiles
-        add constraint user_profiles_current_onboarding_step_check
-        check (
-          current_onboarding_step in (
-            'target-role',
-            'timeline',
-            'resume',
-            'target-job',
-            'projects',
-            'review'
-          )
-        );
-
-      if not exists (
-        select 1
-        from pg_constraint
-        where conname = 'user_profiles_completed_requires_started_check'
-      ) then
-        alter table user_profiles
-          add constraint user_profiles_completed_requires_started_check
-          check (
-            onboarding_completed_at is null
-            or onboarding_started_at is not null
-          );
-      end if;
-    end $$
-  `);
-
-  await sql.query(`
-    create index if not exists user_profiles_onboarding_status_idx
-      on user_profiles (onboarding_status)
-  `);
-
-  await sql.query(`
-    create index if not exists user_profiles_current_onboarding_step_idx
-      on user_profiles (current_onboarding_step)
-  `);
-
-  await sql.query(`
-    create table if not exists user_profile_resumes (
-      clerk_user_id text primary key references user_profiles (clerk_user_id)
-        on delete cascade,
-      file_name text not null,
-      content_type text not null,
-      file_size integer not null,
-      content_base64 text not null,
-      uploaded_at timestamptz not null default now()
-    )
-  `);
-
-  await sql.query(`
-    create index if not exists user_profile_resumes_uploaded_at_idx
-      on user_profile_resumes (uploaded_at)
-  `);
-}
-
 export async function getOrCreateProfileRecord(clerkUserId: string) {
   await ensureProfilesTable();
 
-  const sql = getSql();
-  const rows = (await sql.query(
-    `
-      with inserted as (
-        insert into user_profiles (clerk_user_id)
-        values ($1)
-        on conflict (clerk_user_id) do nothing
-        returning ${selectProfileColumns()}
-      )
-      select ${selectProfileColumns()} from inserted
-      union all
-      select ${selectProfileColumns()} from user_profiles
-      where clerk_user_id = $1
-      limit 1
-    `,
-    [clerkUserId],
-  )) as ProfileRow[];
+  const profile = await prisma.userProfile.upsert({
+    where: {
+      clerkUserId,
+    },
+    create: {
+      clerkUserId,
+    },
+    update: {},
+  });
 
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error("Unable to create Trailgrad profile.");
-  }
-
-  return toProfileRecord(row);
+  return toProfileRecord(profile);
 }
 
 export async function getOnboardingStateRecord(clerkUserId: string) {
@@ -300,46 +186,46 @@ export async function updateOnboardingStepRecord(
 ) {
   await ensureProfilesTable();
 
-  const sql = getSql();
-  const rows = (await sql.query(
-    `
-      insert into user_profiles (
-        clerk_user_id,
-        onboarding_status,
-        current_onboarding_step,
-        onboarding_started_at,
-        onboarding,
-        analysis_error,
-        updated_at
-      )
-      values ($1, 'in_progress', $2, now(), $3::jsonb, null, now())
-      on conflict (clerk_user_id) do update set
-        onboarding_status = case
-          when user_profiles.onboarding_status = 'completed'
-            then user_profiles.onboarding_status
-          else 'in_progress'
-        end,
-        current_onboarding_step = excluded.current_onboarding_step,
-        onboarding_started_at = coalesce(
-          user_profiles.onboarding_started_at,
-          excluded.onboarding_started_at
-        ),
-        onboarding = coalesce(user_profiles.onboarding, '{}'::jsonb)
-          || excluded.onboarding,
-        analysis_error = null,
-        updated_at = now()
-      returning ${selectProfileColumns()}
-    `,
-    [clerkUserId, currentStep, JSON.stringify(onboarding)],
-  )) as ProfileRow[];
+  const existing = await prisma.userProfile.findUnique({
+    where: {
+      clerkUserId,
+    },
+  });
+  const existingOnboarding = parseOnboarding(existing?.onboarding ?? null);
+  const mergedOnboarding = {
+    ...(existingOnboarding ?? {}),
+    ...onboarding,
+  };
 
-  const row = rows[0];
+  const profile = existing
+    ? await prisma.userProfile.update({
+        where: {
+          clerkUserId,
+        },
+        data: {
+          onboardingStatus:
+            existing.onboardingStatus === "completed"
+              ? existing.onboardingStatus
+              : "in_progress",
+          currentOnboardingStep: currentStep,
+          onboardingStartedAt: existing.onboardingStartedAt ?? new Date(),
+          onboarding: onboardingToJson(mergedOnboarding),
+          analysisError: null,
+          updatedAt: new Date(),
+        },
+      })
+    : await prisma.userProfile.create({
+        data: {
+          clerkUserId,
+          onboardingStatus: "in_progress",
+          currentOnboardingStep: currentStep,
+          onboardingStartedAt: new Date(),
+          onboarding: onboardingToJson(mergedOnboarding),
+          analysisError: null,
+        },
+      });
 
-  if (!row) {
-    throw new Error("Unable to update Trailgrad onboarding step.");
-  }
-
-  return toProfileRecord(row);
+  return toProfileRecord(profile);
 }
 
 export async function markOnboardingAnalyzingRecord(
@@ -348,41 +234,39 @@ export async function markOnboardingAnalyzingRecord(
 ) {
   await ensureProfilesTable();
 
-  const sql = getSql();
-  const rows = (await sql.query(
-    `
-      insert into user_profiles (
-        clerk_user_id,
-        onboarding_status,
-        current_onboarding_step,
-        onboarding_started_at,
-        onboarding,
-        analysis_error,
-        updated_at
-      )
-      values ($1, 'analyzing', 'review', now(), $2::jsonb, null, now())
-      on conflict (clerk_user_id) do update set
-        onboarding_status = 'analyzing',
-        current_onboarding_step = 'review',
-        onboarding_started_at = coalesce(
-          user_profiles.onboarding_started_at,
-          excluded.onboarding_started_at
-        ),
-        onboarding = excluded.onboarding,
-        analysis_error = null,
-        updated_at = now()
-      returning ${selectProfileColumns()}
-    `,
-    [clerkUserId, JSON.stringify(onboarding)],
-  )) as ProfileRow[];
+  const existing = await prisma.userProfile.findUnique({
+    where: {
+      clerkUserId,
+    },
+  });
+  const profile = existing
+    ? await prisma.userProfile.update({
+        where: {
+          clerkUserId,
+        },
+        data: {
+          onboardingStatus: "analyzing",
+          currentOnboardingStep: "review",
+          onboardingStartedAt: existing.onboardingStartedAt ?? new Date(),
+          onboarding: onboardingToJson(onboarding),
+          analysisError: null,
+          updatedAt: new Date(),
+        },
+      })
+    : await prisma.userProfile.create({
+        data: {
+          clerkUserId,
+          onboardingStatus: "analyzing",
+          currentOnboardingStep: "review",
+          onboardingStartedAt: new Date(),
+          onboarding: onboardingToJson(onboarding),
+          analysisError: null,
+        },
+      });
 
-  const row = rows[0];
+  await saveOnboardingDataModelRecord(clerkUserId, onboarding);
 
-  if (!row) {
-    throw new Error("Unable to mark Trailgrad onboarding as analyzing.");
-  }
-
-  return toProfileRecord(row);
+  return toProfileRecord(profile);
 }
 
 export async function completeProfileOnboardingRecord(
@@ -391,46 +275,41 @@ export async function completeProfileOnboardingRecord(
 ) {
   await ensureProfilesTable();
 
-  const sql = getSql();
-  const rows = (await sql.query(
-    `
-      insert into user_profiles (
-        clerk_user_id,
-        onboarding_status,
-        current_onboarding_step,
-        onboarding_started_at,
-        onboarding_completed_at,
-        analysis_error,
-        onboarding,
-        updated_at
-      )
-      values ($1, 'completed', 'review', now(), now(), null, $2::jsonb, now())
-      on conflict (clerk_user_id) do update set
-        onboarding_status = 'completed',
-        current_onboarding_step = 'review',
-        onboarding_started_at = coalesce(
-          user_profiles.onboarding_started_at,
-          excluded.onboarding_started_at
-        ),
-        onboarding = excluded.onboarding,
-        onboarding_completed_at = coalesce(
-          user_profiles.onboarding_completed_at,
-          excluded.onboarding_completed_at
-        ),
-        analysis_error = null,
-        updated_at = now()
-      returning ${selectProfileColumns()}
-    `,
-    [clerkUserId, JSON.stringify(onboarding)],
-  )) as ProfileRow[];
+  const existing = await prisma.userProfile.findUnique({
+    where: {
+      clerkUserId,
+    },
+  });
+  const profile = existing
+    ? await prisma.userProfile.update({
+        where: {
+          clerkUserId,
+        },
+        data: {
+          onboardingStatus: "completed",
+          currentOnboardingStep: "review",
+          onboardingStartedAt: existing.onboardingStartedAt ?? new Date(),
+          onboardingCompletedAt: existing.onboardingCompletedAt ?? new Date(),
+          onboarding: onboardingToJson(onboarding),
+          analysisError: null,
+          updatedAt: new Date(),
+        },
+      })
+    : await prisma.userProfile.create({
+        data: {
+          clerkUserId,
+          onboardingStatus: "completed",
+          currentOnboardingStep: "review",
+          onboardingStartedAt: new Date(),
+          onboardingCompletedAt: new Date(),
+          onboarding: onboardingToJson(onboarding),
+          analysisError: null,
+        },
+      });
 
-  const row = rows[0];
+  await saveOnboardingDataModelRecord(clerkUserId, onboarding);
 
-  if (!row) {
-    throw new Error("Unable to complete Trailgrad onboarding.");
-  }
-
-  return toProfileRecord(row);
+  return toProfileRecord(profile);
 }
 
 export async function markOnboardingFailedRecord(
@@ -439,117 +318,491 @@ export async function markOnboardingFailedRecord(
 ) {
   await ensureProfilesTable();
 
-  const sql = getSql();
-  const rows = (await sql.query(
-    `
-      insert into user_profiles (
-        clerk_user_id,
-        onboarding_status,
-        current_onboarding_step,
-        onboarding_started_at,
-        analysis_error,
-        updated_at
-      )
-      values ($1, 'failed', 'review', now(), $2, now())
-      on conflict (clerk_user_id) do update set
-        onboarding_status = 'failed',
-        current_onboarding_step = 'review',
-        onboarding_started_at = coalesce(
-          user_profiles.onboarding_started_at,
-          excluded.onboarding_started_at
-        ),
-        analysis_error = excluded.analysis_error,
-        updated_at = now()
-      returning ${selectProfileColumns()}
-    `,
-    [clerkUserId, analysisError],
-  )) as ProfileRow[];
+  const existing = await prisma.userProfile.findUnique({
+    where: {
+      clerkUserId,
+    },
+  });
+  const profile = existing
+    ? await prisma.userProfile.update({
+        where: {
+          clerkUserId,
+        },
+        data: {
+          onboardingStatus: "failed",
+          currentOnboardingStep: "review",
+          onboardingStartedAt: existing.onboardingStartedAt ?? new Date(),
+          analysisError,
+          updatedAt: new Date(),
+        },
+      })
+    : await prisma.userProfile.create({
+        data: {
+          clerkUserId,
+          onboardingStatus: "failed",
+          currentOnboardingStep: "review",
+          onboardingStartedAt: new Date(),
+          analysisError,
+        },
+      });
 
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error("Unable to mark Trailgrad onboarding as failed.");
-  }
-
-  return toProfileRecord(row);
+  return toProfileRecord(profile);
 }
 
-export async function saveOnboardingResumeRecord(
+export async function findResumeSourceDocumentByHashRecord(
   clerkUserId: string,
-  resume: ResumeRecordInput,
+  sha256ContentHash: string,
 ) {
   await ensureProfilesTable();
 
-  const sql = getSql();
-  const rows = (await sql.query(
-    `
-      with profile as (
-        insert into user_profiles (
-          clerk_user_id,
-          onboarding_status,
-          current_onboarding_step,
-          onboarding_started_at,
-          updated_at
-        )
-        values ($1, 'in_progress', 'resume', now(), now())
-        on conflict (clerk_user_id) do update set
-          onboarding_status = case
-            when user_profiles.onboarding_status = 'completed'
-              then user_profiles.onboarding_status
-            else 'in_progress'
-          end,
-          current_onboarding_step = 'resume',
-          onboarding_started_at = coalesce(user_profiles.onboarding_started_at, now()),
-          updated_at = now()
-        returning ${selectProfileColumns()}
-      ),
-      saved_resume as (
-        insert into user_profile_resumes (
-          clerk_user_id,
-          file_name,
-          content_type,
-          file_size,
-          content_base64,
-          uploaded_at
-        )
-        select clerk_user_id, $2, $3, $4, $5, now()
-        from profile
-        on conflict (clerk_user_id) do update set
-          file_name = excluded.file_name,
-          content_type = excluded.content_type,
-          file_size = excluded.file_size,
-          content_base64 = excluded.content_base64,
-          uploaded_at = excluded.uploaded_at
-        returning file_name, content_type, file_size, uploaded_at
-      )
-      update user_profiles
-      set
-        onboarding = coalesce(user_profiles.onboarding, '{}'::jsonb)
-          || jsonb_build_object(
-            'resumeName', saved_resume.file_name,
-            'resumeContentType', saved_resume.content_type,
-            'resumeSize', saved_resume.file_size,
-            'resumeUploadedAt', saved_resume.uploaded_at
-          ),
-        updated_at = now()
-      from saved_resume
-      where user_profiles.clerk_user_id = $1
-      returning ${selectProfileColumns()}
-    `,
-    [
-      clerkUserId,
-      resume.fileName,
-      resume.contentType,
-      resume.fileSize,
-      resume.contentBase64,
-    ],
-  )) as ProfileRow[];
+  const sourceDocument = await prisma.sourceDocument.findFirst({
+    where: {
+      profileId: clerkUserId,
+      sourceType: "resume",
+      sha256ContentHash,
+    },
+  });
 
-  const row = rows[0];
+  return sourceDocument ? toSourceDocumentRecord(sourceDocument) : null;
+}
 
-  if (!row) {
-    throw new Error("Unable to save Trailgrad resume.");
+export async function reserveResumeSourceDocumentRecord(input: {
+  clerkUserId: string;
+  sourceDocumentId: string;
+  originalFilename: string;
+  mimeType: string;
+  storagePath: string;
+  fileSize: number;
+  sha256ContentHash: string;
+}): Promise<ResumeSourceReservation> {
+  await ensureProfilesTable();
+  await getOrCreateProfileRecord(input.clerkUserId);
+
+  const existing = await findResumeSourceDocumentByHashRecord(
+    input.clerkUserId,
+    input.sha256ContentHash,
+  );
+
+  if (existing) {
+    return {
+      sourceDocument: existing,
+      isNew: false,
+    };
   }
 
-  return toProfileRecord(row);
+  try {
+    const sourceDocument = await prisma.$transaction(async (tx) => {
+      const nextVersion =
+        ((await tx.sourceDocument.aggregate({
+          where: {
+            profileId: input.clerkUserId,
+            sourceType: "resume",
+          },
+          _max: {
+            version: true,
+          },
+        }))._max.version ?? 0) + 1;
+
+      return tx.sourceDocument.create({
+        data: {
+          id: input.sourceDocumentId,
+          profileId: input.clerkUserId,
+          sourceType: "resume",
+          originalFilename: input.originalFilename,
+          mimeType: input.mimeType,
+          storagePath: input.storagePath,
+          fileSize: input.fileSize,
+          sha256ContentHash: input.sha256ContentHash,
+          processingStatus: "UPLOADED",
+          version: nextVersion,
+          errorCode: null,
+        },
+      });
+    });
+
+    return {
+      sourceDocument: toSourceDocumentRecord(sourceDocument),
+      isNew: true,
+    };
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const existingAfterRace = await findResumeSourceDocumentByHashRecord(
+        input.clerkUserId,
+        input.sha256ContentHash,
+      );
+
+      if (existingAfterRace) {
+        return {
+          sourceDocument: existingAfterRace,
+          isNew: false,
+        };
+      }
+    }
+
+    throw error;
+  }
+}
+
+export async function markResumeSourceDocumentStatusRecord(
+  clerkUserId: string,
+  sourceDocumentId: string,
+  status: SourceDocumentRecord["processingStatus"],
+  errorCode?: string,
+) {
+  await ensureProfilesTable();
+
+  const sourceDocument = await prisma.sourceDocument.update({
+    where: {
+      id: sourceDocumentId,
+      profileId: clerkUserId,
+    },
+    data: {
+      processingStatus: status,
+      errorCode: errorCode ?? null,
+    },
+  });
+
+  return toSourceDocumentRecord(sourceDocument);
+}
+
+export async function activateResumeVersionRecord(input: {
+  clerkUserId: string;
+  sourceDocumentId: string;
+  extractedText: string | null;
+  extractedTextStatus: ResumeVersionRecord["extractedTextStatus"];
+  errorCode?: string;
+}) {
+  await ensureProfilesTable();
+
+  const resumeVersion = await prisma.$transaction(async (tx) => {
+    const sourceDocument = await tx.sourceDocument.findFirstOrThrow({
+      where: {
+        id: input.sourceDocumentId,
+        profileId: input.clerkUserId,
+        sourceType: "resume",
+      },
+    });
+
+    await tx.resumeVersion.updateMany({
+      where: {
+        profileId: input.clerkUserId,
+        active: true,
+      },
+      data: {
+        active: false,
+      },
+    });
+
+    const existing = await tx.resumeVersion.findFirst({
+      where: {
+        profileId: input.clerkUserId,
+        sourceDocumentId: input.sourceDocumentId,
+      },
+    });
+
+    if (existing) {
+      return tx.resumeVersion.update({
+        where: {
+          id: existing.id,
+        },
+        data: {
+          ...(input.extractedText !== null
+            ? { extractedText: input.extractedText }
+            : {}),
+          extractedTextStatus: input.extractedTextStatus,
+          errorCode: input.errorCode ?? null,
+          active: true,
+        },
+      });
+    }
+
+    return tx.resumeVersion.create({
+      data: {
+        id: randomUUID(),
+        profileId: input.clerkUserId,
+        sourceDocumentId: input.sourceDocumentId,
+        version: sourceDocument.version,
+        extractedText: input.extractedText,
+        extractedTextStatus: input.extractedTextStatus,
+        errorCode: input.errorCode ?? null,
+        active: true,
+      },
+    });
+  });
+
+  return toResumeVersionRecord(resumeVersion);
+}
+
+export async function updateOnboardingResumeMetadataRecord(
+  clerkUserId: string,
+  resume: {
+    fileName: string;
+    contentType: string;
+    fileSize: number;
+    uploadedAt?: string;
+  },
+) {
+  const existing = await prisma.userProfile.findUnique({
+    where: {
+      clerkUserId,
+    },
+  });
+  const currentOnboarding = parseOnboarding(existing?.onboarding ?? null);
+  const profile = await prisma.userProfile.update({
+    where: {
+      clerkUserId,
+    },
+    data: {
+      onboarding: onboardingToJson({
+        ...(currentOnboarding ?? {}),
+        resumeName: resume.fileName,
+        resumeContentType: resume.contentType,
+        resumeSize: resume.fileSize,
+        resumeUploadedAt: resume.uploadedAt ?? new Date().toISOString(),
+      }),
+      updatedAt: new Date(),
+    },
+  });
+
+  return toProfileRecord(profile);
+}
+
+export async function saveOnboardingDataModelRecord(
+  clerkUserId: string,
+  onboarding: OnboardingSubmission,
+) {
+  await ensureProfilesTable();
+  await getOrCreateProfileRecord(clerkUserId);
+  await upsertCareerContextRecord(clerkUserId, onboarding);
+  await upsertTargetContextRecord(clerkUserId, onboarding);
+  await upsertManualProjectRecord(clerkUserId, onboarding);
+}
+
+export async function upsertCareerContextRecord(
+  clerkUserId: string,
+  onboarding: OnboardingSubmission,
+) {
+  await ensureProfilesTable();
+
+  const careerContext = await prisma.careerContext.upsert({
+    where: {
+      profileId: clerkUserId,
+    },
+    create: {
+      profileId: clerkUserId,
+      primaryTargetRole: onboarding.targetRole,
+      experienceLevel: onboarding.experienceLevel,
+      targetCompany: emptyToNull(onboarding.targetCompany),
+      targetJobTitle: emptyToNull(onboarding.targetJobTitle),
+      interviewOrApplicationDate: getInterviewDate(onboarding),
+      noDateYet: Boolean(onboarding.noDateYet),
+      dailyPreparationMinutes: getPreparationMinutes(onboarding.preparationTimePerDay),
+      flexiblePreparationTime: onboarding.preparationTimePerDay === "flexible",
+      preparationIntensity: onboarding.preparationIntensity,
+      timezone: null,
+    },
+    update: {
+      primaryTargetRole: onboarding.targetRole,
+      experienceLevel: onboarding.experienceLevel,
+      targetCompany: emptyToNull(onboarding.targetCompany),
+      targetJobTitle: emptyToNull(onboarding.targetJobTitle),
+      interviewOrApplicationDate: getInterviewDate(onboarding),
+      noDateYet: Boolean(onboarding.noDateYet),
+      dailyPreparationMinutes: getPreparationMinutes(onboarding.preparationTimePerDay),
+      flexiblePreparationTime: onboarding.preparationTimePerDay === "flexible",
+      preparationIntensity: onboarding.preparationIntensity,
+      timezone: null,
+      updatedAt: new Date(),
+    },
+  });
+
+  return toCareerContextRecord(careerContext);
+}
+
+export async function upsertTargetContextRecord(
+  clerkUserId: string,
+  onboarding: OnboardingSubmission,
+) {
+  await ensureProfilesTable();
+
+  const targetContext = await prisma.$transaction(async (tx) => {
+    await tx.targetContext.updateMany({
+      where: {
+        profileId: clerkUserId,
+        isActive: true,
+      },
+      data: {
+        isActive: false,
+        updatedAt: new Date(),
+      },
+    });
+
+    return tx.targetContext.upsert({
+      where: {
+        id: getActiveTargetContextId(clerkUserId),
+      },
+      create: {
+        id: getActiveTargetContextId(clerkUserId),
+        profileId: clerkUserId,
+        role: onboarding.targetRole,
+        company: emptyToNull(onboarding.targetCompany),
+        jobTitle: emptyToNull(onboarding.targetJobTitle),
+        jobDescription:
+          onboarding.targetJobMode === "paste"
+            ? emptyToNull(onboarding.jobDescription)
+            : null,
+        isActive: true,
+      },
+      update: {
+        role: onboarding.targetRole,
+        company: emptyToNull(onboarding.targetCompany),
+        jobTitle: emptyToNull(onboarding.targetJobTitle),
+        jobDescription:
+          onboarding.targetJobMode === "paste"
+            ? emptyToNull(onboarding.jobDescription)
+            : null,
+        isActive: true,
+        updatedAt: new Date(),
+      },
+    });
+  });
+
+  return toTargetContextRecord(targetContext);
+}
+
+export async function upsertManualProjectRecord(
+  clerkUserId: string,
+  onboarding: OnboardingSubmission,
+) {
+  await ensureProfilesTable();
+
+  if (onboarding.projectsMode !== "manual" || !onboarding.projectName?.trim()) {
+    return null;
+  }
+
+  const manualProject = await prisma.manualProject.upsert({
+    where: {
+      profileId_name: {
+        profileId: clerkUserId,
+        name: onboarding.projectName.trim(),
+      },
+    },
+    create: {
+      id: randomUUID(),
+      profileId: clerkUserId,
+      name: onboarding.projectName.trim(),
+      description: onboarding.projectDescription?.trim() ?? "",
+      technologies: getTechnologies(onboarding.projectTechStack),
+      currentStatus: "active",
+    },
+    update: {
+      description: onboarding.projectDescription?.trim() ?? "",
+      technologies: getTechnologies(onboarding.projectTechStack),
+      currentStatus: "active",
+      updatedAt: new Date(),
+    },
+  });
+
+  return toManualProjectRecord(manualProject);
+}
+
+export async function getCareerContextRecord(clerkUserId: string) {
+  await ensureProfilesTable();
+
+  const careerContext = await prisma.careerContext.findUnique({
+    where: {
+      profileId: clerkUserId,
+    },
+  });
+
+  return careerContext ? toCareerContextRecord(careerContext) : null;
+}
+
+export async function getActiveTargetContextRecord(clerkUserId: string) {
+  await ensureProfilesTable();
+
+  const targetContext = await prisma.targetContext.findFirst({
+    where: {
+      profileId: clerkUserId,
+      isActive: true,
+    },
+  });
+
+  return targetContext ? toTargetContextRecord(targetContext) : null;
+}
+
+export async function listManualProjectRecords(clerkUserId: string) {
+  await ensureProfilesTable();
+
+  const manualProjects = await prisma.manualProject.findMany({
+    where: {
+      profileId: clerkUserId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return manualProjects.map(toManualProjectRecord);
+}
+
+export async function listSourceDocumentRecords(clerkUserId: string) {
+  await ensureProfilesTable();
+
+  const sourceDocuments = await prisma.sourceDocument.findMany({
+    where: {
+      profileId: clerkUserId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return sourceDocuments.map(toSourceDocumentRecord);
+}
+
+export async function listResumeVersionRecords(clerkUserId: string) {
+  await ensureProfilesTable();
+
+  const resumeVersions = await prisma.resumeVersion.findMany({
+    where: {
+      profileId: clerkUserId,
+    },
+    orderBy: {
+      version: "desc",
+    },
+  });
+
+  return resumeVersions.map(toResumeVersionRecord);
+}
+
+function getActiveTargetContextId(clerkUserId: string) {
+  return `active-target:${clerkUserId}`;
+}
+
+function emptyToNull(value: string | undefined) {
+  const trimmed = value?.trim();
+
+  return trimmed ? trimmed : null;
+}
+
+function getInterviewDate(onboarding: OnboardingSubmission) {
+  if (onboarding.noDateYet || !onboarding.interviewDate) {
+    return null;
+  }
+
+  return new Date(`${onboarding.interviewDate}T00:00:00.000Z`);
+}
+
+function getPreparationMinutes(value: OnboardingSubmission["preparationTimePerDay"]) {
+  return value === "flexible" ? null : Number(value);
+}
+
+function getTechnologies(value: string | undefined) {
+  return (
+    value
+      ?.split(",")
+      .map((item) => item.trim())
+      .filter(Boolean) ?? []
+  );
 }

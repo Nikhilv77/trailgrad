@@ -1,6 +1,12 @@
 import { getProject } from "@/lib/services/project-service";
 
-export async function GET(_request: Request, context: RouteContext<"/api/projects/[id]">) {
+interface ProjectRouteContext {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export async function GET(_request: Request, context: ProjectRouteContext) {
   try {
     const { id } = await context.params;
     return Response.json(await getProject(id));

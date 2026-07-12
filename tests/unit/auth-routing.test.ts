@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const onboardingPayload = {
+import type { OnboardingSubmission } from "@/lib/onboarding/types";
+
+const onboardingPayload: OnboardingSubmission = {
   targetRole: "ai-engineer",
   experienceLevel: "junior",
   noDateYet: true,
@@ -9,7 +11,7 @@ const onboardingPayload = {
   resumeName: "resume.pdf",
   targetJobMode: "skip",
   projectsMode: "skip",
-} as const;
+};
 
 class RedirectError extends Error {
   constructor(readonly url: string) {
@@ -42,11 +44,16 @@ async function loadAuthModules(userId: string | null) {
       onboardingStartedAt: string | null;
       onboardingCompletedAt: string | null;
       analysisError: string | null;
-      onboarding: typeof onboardingPayload | null;
+      onboarding: OnboardingSubmission | null;
       createdAt: string;
       updatedAt: string;
     }
   >();
+  const careerContexts = new Map<string, { profileId: string; primaryTargetRole: string }>();
+  const targetContexts = new Map<string, { profileId: string; role: string; isActive: boolean }>();
+  const manualProjects = new Map<string, Array<{ profileId: string; name: string }>>();
+  const sourceDocuments = new Map<string, Array<{ profileId: string; version: number }>>();
+  const resumeVersions = new Map<string, Array<{ profileId: string; version: number; active: boolean }>>();
 
   vi.doMock("@/lib/db/profile-repository", () => ({
     getOrCreateProfileRecord: vi.fn(async (clerkUserId: string) => {
@@ -98,7 +105,7 @@ async function loadAuthModules(userId: string | null) {
           | "target-job"
           | "projects"
           | "review",
-        onboarding: Partial<typeof onboardingPayload>,
+        onboarding: Partial<OnboardingSubmission>,
       ) => {
         const now = new Date().toISOString();
         const existingProfile = profileRecords.get(clerkUserId);
@@ -115,7 +122,7 @@ async function loadAuthModules(userId: string | null) {
           onboarding: {
             ...(existingProfile?.onboarding ?? {}),
             ...onboarding,
-          } as typeof onboardingPayload,
+          } as OnboardingSubmission,
           createdAt: existingProfile?.createdAt ?? now,
           updatedAt: now,
         };
@@ -125,7 +132,7 @@ async function loadAuthModules(userId: string | null) {
       },
     ),
     markOnboardingAnalyzingRecord: vi.fn(
-      async (clerkUserId: string, onboarding: typeof onboardingPayload) => {
+      async (clerkUserId: string, onboarding: OnboardingSubmission) => {
         const now = new Date().toISOString();
         const existingProfile = profileRecords.get(clerkUserId);
         const profile = {
@@ -145,7 +152,7 @@ async function loadAuthModules(userId: string | null) {
       },
     ),
     completeProfileOnboardingRecord: vi.fn(
-      async (clerkUserId: string, onboarding: typeof onboardingPayload) => {
+      async (clerkUserId: string, onboarding: OnboardingSubmission) => {
         const now = new Date().toISOString();
         const existingProfile = profileRecords.get(clerkUserId);
         const profile = {
@@ -184,6 +191,43 @@ async function loadAuthModules(userId: string | null) {
         profileRecords.set(clerkUserId, profile);
         return profile;
       },
+    ),
+    saveOnboardingDataModelRecord: vi.fn(
+      async (clerkUserId: string, onboarding: OnboardingSubmission) => {
+        careerContexts.set(clerkUserId, {
+          profileId: clerkUserId,
+          primaryTargetRole: onboarding.targetRole,
+        });
+        targetContexts.set(clerkUserId, {
+          profileId: clerkUserId,
+          role: onboarding.targetRole,
+          isActive: true,
+        });
+
+        if ("projectName" in onboarding && onboarding.projectName) {
+          manualProjects.set(clerkUserId, [
+            {
+              profileId: clerkUserId,
+              name: onboarding.projectName,
+            },
+          ]);
+        }
+      },
+    ),
+    getCareerContextRecord: vi.fn(async (clerkUserId: string) =>
+      careerContexts.get(clerkUserId) ?? null,
+    ),
+    getActiveTargetContextRecord: vi.fn(async (clerkUserId: string) =>
+      targetContexts.get(clerkUserId) ?? null,
+    ),
+    listManualProjectRecords: vi.fn(async (clerkUserId: string) =>
+      manualProjects.get(clerkUserId) ?? [],
+    ),
+    listSourceDocumentRecords: vi.fn(async (clerkUserId: string) =>
+      sourceDocuments.get(clerkUserId) ?? [],
+    ),
+    listResumeVersionRecords: vi.fn(async (clerkUserId: string) =>
+      resumeVersions.get(clerkUserId) ?? [],
     ),
   }));
 
@@ -320,6 +364,32 @@ describe("authenticated route decisions", () => {
       currentOnboardingStep: "review",
       analysisError: "Analysis timed out.",
     });
+  });
+
+  it("stores minimum onboarding data model by profile ID", async () => {
+    const userId = "user_data_model";
+    const { profileService } = await loadAuthModules(userId);
+    await profileService.saveOnboardingDataModel(userId, {
+      ...onboardingPayload,
+      projectsMode: "manual",
+      projectName: "Risk Analyzer",
+    });
+
+    await expect(profileService.getCareerContext(userId)).resolves.toMatchObject({
+      profileId: userId,
+      primaryTargetRole: "ai-engineer",
+    });
+    await expect(profileService.getActiveTargetContext(userId)).resolves.toMatchObject({
+      profileId: userId,
+      role: "ai-engineer",
+      isActive: true,
+    });
+    await expect(profileService.listManualProjects(userId)).resolves.toEqual([
+      {
+        profileId: userId,
+        name: "Risk Analyzer",
+      },
+    ]);
   });
 
   it("isolates onboarding state by Clerk user ID", async () => {
