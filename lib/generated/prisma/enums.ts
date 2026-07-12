@@ -9,7 +9,31 @@
 * 🟢 You can import this file directly.
 */
 
+export const AnalysisJobType = {
+  INITIAL_PROFILE: 'INITIAL_PROFILE',
+  RESUME_REANALYSIS: 'RESUME_REANALYSIS',
+  JOB_ANALYSIS: 'JOB_ANALYSIS',
+  PROFILE_REASSESSMENT: 'PROFILE_REASSESSMENT'
+} as const
+
+export type AnalysisJobType = (typeof AnalysisJobType)[keyof typeof AnalysisJobType]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const AnalysisJobStatus = {
+  QUEUED: 'QUEUED',
+  RUNNING: 'RUNNING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type AnalysisJobStatus = (typeof AnalysisJobStatus)[keyof typeof AnalysisJobStatus]
+
+
+export const ProfileAnalysisStatus = {
+  PENDING: 'PENDING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+} as const
+
+export type ProfileAnalysisStatus = (typeof ProfileAnalysisStatus)[keyof typeof ProfileAnalysisStatus]

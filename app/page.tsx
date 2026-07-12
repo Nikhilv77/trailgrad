@@ -37,7 +37,7 @@ const structuredData = [
   },
 ];
 
-export default function Page() {
+export default function Page () {
   return (
     <>
       <script

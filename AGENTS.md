@@ -6,7 +6,7 @@ Already implemented and working:
 - marketing landing page
 - Clerk authentication
 - sign-in and sign-up
-- an existing onboarding interface, currently placed before authentication
+- an existing onboarding interface, currently placed after authentication
 
 Important rules:
 

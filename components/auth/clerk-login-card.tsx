@@ -38,8 +38,8 @@ const clerkAppearance = {
     footer: "hidden",
     footerPages: "hidden",
 
-    socialButtonsRoot: "w-full",
-    socialButtons: "w-full",
+    socialButtonsRoot: "w-full tg-social-root",
+    socialButtons: "w-full tg-social-buttons",
     socialButtonsBlockButton: "tg-google-button",
     socialButtonsBlockButtonText: "tg-google-button-text",
 
@@ -47,11 +47,11 @@ const clerkAppearance = {
       display: "none",
     },
 
-    dividerRow: "tg-divider-row",
+    dividerRow: "tg-divider-row hidden",
     dividerLine: "tg-divider-line",
     dividerText: "tg-divider-text",
 
-    form: "w-full",
+    form: "w-full tg-clerk-form",
     formField: "tg-form-field",
     formFieldRow: "w-full",
     formFieldInputGroup: "w-full",
@@ -95,19 +95,21 @@ export function ClerkLoginCard({ redirectUrl }: ClerkLoginCardProps) {
         </p>
       </div>
 
-      {hasClerkPublishableKey ? (
-        <SignIn
-          routing="hash"
-          withSignUp
-          signUpUrl={authUrl}
-          fallbackRedirectUrl={authReadyUrl}
-          signUpFallbackRedirectUrl={authReadyUrl}
-          appearance={clerkAppearance}
-          fallback={<ClerkLoadingState />}
-        />
-      ) : (
-        <ClerkSetupState />
-      )}
+      <div className="min-h-[172px]">
+        {hasClerkPublishableKey ? (
+          <SignIn
+            routing="hash"
+            withSignUp
+            signUpUrl={authUrl}
+            fallbackRedirectUrl={authReadyUrl}
+            signUpFallbackRedirectUrl={authReadyUrl}
+            appearance={clerkAppearance}
+            fallback={<ClerkLoadingState />}
+          />
+        ) : (
+          <ClerkSetupState />
+        )}
+      </div>
 
       <style jsx global>{`
         [data-testid="clerk-auth-surface"] .cl-rootBox,
@@ -121,6 +123,10 @@ export function ClerkLoginCard({ redirectUrl }: ClerkLoginCardProps) {
           border: 0 !important;
           background: transparent !important;
           box-shadow: none !important;
+        }
+
+        [data-testid="clerk-auth-surface"] .cl-main {
+          display: block !important;
         }
 
         [data-testid="clerk-auth-surface"] .cl-header,
@@ -196,7 +202,8 @@ export function ClerkLoginCard({ redirectUrl }: ClerkLoginCardProps) {
         /* Divider */
 
         [data-testid="clerk-auth-surface"] .tg-divider-row {
-          margin: 16px 0 !important;
+          display: none !important;
+          margin: 0 !important;
         }
 
         [data-testid="clerk-auth-surface"] .tg-divider-line {
@@ -214,14 +221,40 @@ export function ClerkLoginCard({ redirectUrl }: ClerkLoginCardProps) {
 
         /* Form */
 
+        [data-testid="clerk-auth-surface"] .tg-social-root,
+        [data-testid="clerk-auth-surface"] .tg-social-buttons {
+          margin-bottom: 0 !important;
+          padding-bottom: 0 !important;
+        }
+
+        [data-testid="clerk-auth-surface"] .cl-socialButtonsRoot {
+          margin-bottom: 0 !important;
+          padding-bottom: 0 !important;
+        }
+
+        [data-testid="clerk-auth-surface"] .tg-clerk-form {
+          gap: 0 !important;
+          margin-top: 14px !important;
+        }
+
+        [data-testid="clerk-auth-surface"] .cl-form {
+          margin-top: 14px !important;
+        }
+
+        [data-testid="clerk-auth-surface"] .cl-dividerRow + .cl-form,
+        [data-testid="clerk-auth-surface"] .cl-socialButtonsRoot + .cl-form,
+        [data-testid="clerk-auth-surface"] .cl-socialButtonsRoot ~ .cl-form {
+          margin-top: 14px !important;
+        }
+
         [data-testid="clerk-auth-surface"] .tg-form-field {
           width: 100% !important;
-          margin-bottom: 12px !important;
+          margin-bottom: 7px !important;
         }
 
         [data-testid="clerk-auth-surface"] .tg-form-label {
           display: block !important;
-          margin-bottom: 6px !important;
+          margin-bottom: 4px !important;
 
           color: #244b50 !important;
           font-size: 12px !important;
@@ -235,6 +268,7 @@ export function ClerkLoginCard({ redirectUrl }: ClerkLoginCardProps) {
           padding: 0 14px !important;
 
           border: 1px solid #c9dfda !important;
+          border-radius: 12px !important;
           background: #ffffff !important;
           color: #082f35 !important;
 
@@ -272,6 +306,7 @@ export function ClerkLoginCard({ redirectUrl }: ClerkLoginCardProps) {
           width: 100% !important;
           height: 44px !important;
           min-height: 44px !important;
+          margin-top: 0 !important;
           padding: 0 18px !important;
 
           border: 1px solid #0f8f7e !important;
@@ -332,6 +367,26 @@ export function ClerkLoginCard({ redirectUrl }: ClerkLoginCardProps) {
           border: 1px solid #c9dfda !important;
           background: #ffffff !important;
         }
+
+        @keyframes tg-auth-shimmer {
+          0% {
+            background-position: 120% 0;
+          }
+          100% {
+            background-position: -120% 0;
+          }
+        }
+
+        [data-testid="clerk-auth-surface"] .tg-auth-shimmer {
+          background-image: linear-gradient(
+            90deg,
+            rgba(231, 242, 239, 0.78) 0%,
+            rgba(255, 255, 255, 0.96) 48%,
+            rgba(211, 239, 234, 0.82) 100%
+          );
+          background-size: 220% 100%;
+          animation: tg-auth-shimmer 1.1s ease-in-out infinite;
+        }
       `}</style>
     </div>
   );
@@ -339,10 +394,15 @@ export function ClerkLoginCard({ redirectUrl }: ClerkLoginCardProps) {
 
 function ClerkLoadingState() {
   return (
-    <div className="space-y-3">
-      <div className="h-11 animate-pulse rounded-xl bg-[#159b89]/8" />
-      <div className="h-11 animate-pulse rounded-xl bg-[#159b89]/6" />
-      <div className="h-11 animate-pulse rounded-xl bg-[#159b89]/10" />
+    <div className="min-h-[172px] space-y-3" aria-hidden="true">
+      <div className="tg-auth-shimmer h-11 rounded-xl shadow-[inset_0_0_0_1px_rgba(199,225,220,0.9)]" />
+
+      <div className="space-y-2">
+        <div className="tg-auth-shimmer h-3 w-20 rounded-full" />
+        <div className="tg-auth-shimmer h-11 rounded-xl shadow-[inset_0_0_0_1px_rgba(201,223,218,0.9)]" />
+      </div>
+
+      <div className="tg-auth-shimmer h-11 rounded-xl shadow-[0_9px_20px_rgba(15,118,110,0.08)]" />
     </div>
   );
 }

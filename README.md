@@ -20,6 +20,8 @@ Diagnose candidate risks
 - Clerk for authentication
 - Neon PostgreSQL
 - Prisma ORM
+- Inngest for durable background jobs
+- Gemini API through a server-only AI provider boundary
 - Cloudflare R2 or any S3-compatible private object storage for resume files
 - Vitest for unit tests
 - Playwright for e2e tests
@@ -57,6 +59,13 @@ Incomplete authenticated users are redirected back to `/onboarding` when they op
 - `lib/db/profile-repository.ts` - Prisma-backed profile and onboarding repository
 - `lib/resume/upload-service.ts` - resume validation, storage, extraction, dedupe, and versioning
 - `lib/storage/private-object-storage.ts` - server-only S3-compatible storage adapter
+- `lib/inngest/client.ts` - Inngest client and typed Trailgrad events
+- `lib/inngest/functions.ts` - durable background job handlers
+- `lib/ai/provider-factory.ts` - server-only AI provider factory used by future workflows
+- `lib/ai/providers/gemini-provider.ts` - Gemini structured-output provider
+- `lib/ai/configuration.ts` - AI provider, model, timeout, retry, budget, and data-policy configuration
+- `lib/ai/schemas/` - Zod schemas for AI structured outputs
+- `lib/ai/prompts/` - shared Trailgrad AI rules and operation prompts
 - `prisma/schema.prisma` - canonical database schema
 - `prisma/migrations/` - canonical database migration history
 
@@ -72,8 +81,13 @@ Implemented tables:
 - `manual_projects` - onboarding-entered projects
 - `source_documents` - private uploaded document metadata, storage path, SHA-256 hash, processing status, and version
 - `resume_versions` - versioned resume records, extracted text status, extracted text, and active flag
+- `analysis_jobs` - durable analysis job state, progress stage, retry count, idempotency key, and safe errors
+- `profile_analyses` - one compact MVP structured analysis per resume version and target context
+- `ai_runs` - safe AI metadata only: provider/model, operation, prompt version, token counts, cost estimate, duration, status, fallback flag, and safe error code
 
 The old base64 resume storage path has been removed. Original resume bytes are not stored in Neon.
+
+`ai_runs` must not store resume text, job-description text, complete prompts, complete model outputs, interview answers, personal contact information, addresses, or API keys.
 
 ## Resume Upload
 
@@ -132,6 +146,16 @@ S3_BUCKET=
 S3_ACCESS_KEY_ID=
 S3_SECRET_ACCESS_KEY=
 RESUME_MAX_UPLOAD_BYTES=5242880
+AI_PROVIDER=gemini
+AI_DATA_POLICY=synthetic_only
+GEMINI_API_KEY=
+GEMINI_EXTRACTION_MODEL=gemini-3.1-flash-lite
+GEMINI_ANALYSIS_MODEL=gemini-3.1-flash-lite
+GEMINI_FALLBACK_MODEL=gemini-3.5-flash
+AI_DEFAULT_TIMEOUT_MS=30000
+AI_MAX_RETRIES=1
+AI_MONTHLY_BUDGET_USD=0
+AI_MAX_OUTPUT_TOKENS=3072
 ```
 
 For Cloudflare R2:
@@ -143,6 +167,12 @@ S3_BUCKET=<private-bucket-name>
 ```
 
 Use the R2 S3 client Access Key ID and Secret Access Key. Do not use `NEXT_PUBLIC_` for storage secrets.
+
+AI secrets are server-only. Do not prefix `GEMINI_API_KEY` or future provider secrets with `NEXT_PUBLIC_`.
+
+By default, `AI_DATA_POLICY=synthetic_only`. In this mode Trailgrad blocks model calls that attempt to send real candidate resumes, real job descriptions, or personal candidate data. Only synthetic fixtures or explicitly marked development data may be sent. To use real candidate data in a properly configured environment, set `AI_DATA_POLICY=real_user_data_allowed` intentionally; Trailgrad never enables that mode automatically and never relies only on `NODE_ENV` for data protection.
+
+The AI foundation implements Gemini structured JSON output and safe metadata logging. The MVP onboarding analysis workflow queues an Inngest `INITIAL_PROFILE` job after onboarding submission, analyzes the extracted resume plus target context, stores one compact `profile_analyses` result, and completes onboarding when the job succeeds. To process it locally, run the Next.js app and an Inngest dev worker pointed at `/api/inngest`. With `AI_DATA_POLICY=synthetic_only`, real resumes and job descriptions are blocked; use synthetic fixtures or intentionally set `AI_DATA_POLICY=real_user_data_allowed` in a properly configured environment.
 
 ## Development
 
@@ -201,4 +231,6 @@ pnpm test
 - Do not store original resume bytes in Neon.
 - Keep object storage private and use signed URLs only when a user must access their own file.
 - Do not implement fake integrations. GitHub connection is intentionally presented as optional/coming later when not implemented.
-- AI analysis is not implemented in the resume upload workflow yet. Upload and text extraction stop before OpenAI analysis.
+- Resume upload still stops at private storage and text extraction. The first AI call happens later, after onboarding submission, through the Inngest MVP profile analysis job.
+- The AI provider architecture currently implements only Gemini. It is intentionally shaped so paid Gemini or a future OpenAI provider can be added later without rewriting Trailgrad workflows.
+- Gemini free-tier development must use synthetic or anonymized data only.

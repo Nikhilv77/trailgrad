@@ -23,10 +23,34 @@ model UserProfile {
   manualProjects  ManualProject[]
   sourceDocuments SourceDocument[]
   resumeVersions  ResumeVersion[]
+  analysisJobs    AnalysisJob[]
+  aiRuns          AiRun[]
+  profileAnalyses ProfileAnalysis[]
 
   @@index([onboardingStatus], map: "user_profiles_onboarding_status_idx")
   @@index([currentOnboardingStep], map: "user_profiles_current_onboarding_step_idx")
   @@map("user_profiles")
+}
+
+enum AnalysisJobType {
+  INITIAL_PROFILE
+  RESUME_REANALYSIS
+  JOB_ANALYSIS
+  PROFILE_REASSESSMENT
+}
+
+enum AnalysisJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ProfileAnalysisStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }
 
 model CareerContext {
@@ -60,6 +84,7 @@ model TargetContext {
   createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime    @default(now()) @map("updated_at") @db.Timestamptz(6)
   profile        UserProfile @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
+  profileAnalyses ProfileAnalysis[]
 
   @@index([profileId], map: "target_contexts_profile_id_idx")
   @@map("target_contexts")
@@ -99,11 +124,67 @@ model SourceDocument {
   createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   profile           UserProfile     @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
   resumeVersions    ResumeVersion[]
+  analysisJobs      AnalysisJob[]
 
   @@unique([profileId, sourceType, version], map: "source_documents_profile_type_version_idx")
   @@unique([profileId, sourceType, sha256ContentHash], map: "source_documents_profile_type_hash_idx")
   @@index([profileId, sourceType], map: "source_documents_profile_type_idx")
   @@map("source_documents")
+}
+
+model AnalysisJob {
+  id               String            @id
+  profileId        String            @map("profile_id")
+  sourceDocumentId String?           @map("source_document_id")
+  type             AnalysisJobType
+  status           AnalysisJobStatus @default(QUEUED)
+  currentStage     String            @default("resume_analysis") @map("current_stage")
+  progressPercent  Int               @default(0) @map("progress_percent")
+  idempotencyKey   String            @unique(map: "analysis_jobs_idempotency_key_idx") @map("idempotency_key")
+  attemptCount     Int               @default(0) @map("attempt_count")
+  safeErrorCode    String?           @map("safe_error_code")
+  safeErrorMessage String?           @map("safe_error_message")
+  startedAt        DateTime?         @map("started_at") @db.Timestamptz(6)
+  completedAt      DateTime?         @map("completed_at") @db.Timestamptz(6)
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime          @default(now()) @map("updated_at") @db.Timestamptz(6)
+  profile          UserProfile       @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
+  sourceDocument   SourceDocument?   @relation(fields: [sourceDocumentId], references: [id], onDelete: Restrict)
+  aiRuns           AiRun[]
+
+  @@index([profileId, status], map: "analysis_jobs_profile_status_idx")
+  @@index([sourceDocumentId], map: "analysis_jobs_source_document_id_idx")
+  @@index([type, status], map: "analysis_jobs_type_status_idx")
+  @@index([createdAt], map: "analysis_jobs_created_at_idx")
+  @@map("analysis_jobs")
+}
+
+model AiRun {
+  id               String       @id
+  profileId        String?      @map("profile_id")
+  analysisJobId    String?      @map("analysis_job_id")
+  provider         String
+  operation        String
+  model            String
+  promptVersion    String       @map("prompt_version")
+  inputTokens      Int?         @map("input_tokens")
+  outputTokens     Int?         @map("output_tokens")
+  cachedTokens     Int?         @map("cached_tokens")
+  estimatedCostUsd Decimal      @default(0) @map("estimated_cost_usd") @db.Decimal(12, 6)
+  durationMs       Int          @map("duration_ms")
+  status           String
+  usedFallback     Boolean      @default(false) @map("used_fallback")
+  safeErrorCode    String?      @map("safe_error_code")
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  profile          UserProfile? @relation(fields: [profileId], references: [clerkUserId], onDelete: SetNull)
+  analysisJob      AnalysisJob? @relation(fields: [analysisJobId], references: [id], onDelete: SetNull)
+
+  @@index([profileId, createdAt], map: "ai_runs_profile_created_at_idx")
+  @@index([analysisJobId], map: "ai_runs_analysis_job_id_idx")
+  @@index([provider, model], map: "ai_runs_provider_model_idx")
+  @@index([operation], map: "ai_runs_operation_idx")
+  @@index([createdAt], map: "ai_runs_created_at_idx")
+  @@map("ai_runs")
 }
 
 model ResumeVersion {
@@ -118,8 +199,33 @@ model ResumeVersion {
   createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   profile             UserProfile    @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
   sourceDocument      SourceDocument @relation(fields: [sourceDocumentId], references: [id], onDelete: Restrict)
+  profileAnalyses     ProfileAnalysis[]
 
   @@unique([profileId, version], map: "resume_versions_profile_version_idx")
   @@index([profileId], map: "resume_versions_profile_id_idx")
   @@map("resume_versions")
+}
+
+model ProfileAnalysis {
+  id              String                @id
+  profileId       String                @map("profile_id")
+  resumeVersionId String                @map("resume_version_id")
+  targetContextId String?               @map("target_context_id")
+  status          ProfileAnalysisStatus @default(PENDING)
+  result          Json?
+  promptVersion   String                @map("prompt_version")
+  provider        String
+  model           String
+  safeErrorCode   String?               @map("safe_error_code")
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime              @default(now()) @map("updated_at") @db.Timestamptz(6)
+  profile         UserProfile           @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
+  resumeVersion   ResumeVersion         @relation(fields: [resumeVersionId], references: [id], onDelete: Restrict)
+  targetContext   TargetContext?        @relation(fields: [targetContextId], references: [id], onDelete: SetNull)
+
+  @@index([profileId, status], map: "profile_analyses_profile_status_idx")
+  @@index([resumeVersionId], map: "profile_analyses_resume_version_id_idx")
+  @@index([targetContextId], map: "profile_analyses_target_context_id_idx")
+  @@index([createdAt], map: "profile_analyses_created_at_idx")
+  @@map("profile_analyses")
 }

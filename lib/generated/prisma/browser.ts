@@ -43,7 +43,22 @@ export type ManualProject = Prisma.ManualProjectModel
  */
 export type SourceDocument = Prisma.SourceDocumentModel
 /**
+ * Model AnalysisJob
+ * 
+ */
+export type AnalysisJob = Prisma.AnalysisJobModel
+/**
+ * Model AiRun
+ * 
+ */
+export type AiRun = Prisma.AiRunModel
+/**
  * Model ResumeVersion
  * 
  */
 export type ResumeVersion = Prisma.ResumeVersionModel
+/**
+ * Model ProfileAnalysis
+ * 
+ */
+export type ProfileAnalysis = Prisma.ProfileAnalysisModel

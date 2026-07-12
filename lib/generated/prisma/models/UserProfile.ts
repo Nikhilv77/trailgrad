@@ -215,6 +215,9 @@ export type UserProfileWhereInput = {
   manualProjects?: Prisma.ManualProjectListRelationFilter
   sourceDocuments?: Prisma.SourceDocumentListRelationFilter
   resumeVersions?: Prisma.ResumeVersionListRelationFilter
+  analysisJobs?: Prisma.AnalysisJobListRelationFilter
+  aiRuns?: Prisma.AiRunListRelationFilter
+  profileAnalyses?: Prisma.ProfileAnalysisListRelationFilter
 }
 
 export type UserProfileOrderByWithRelationInput = {
@@ -232,6 +235,9 @@ export type UserProfileOrderByWithRelationInput = {
   manualProjects?: Prisma.ManualProjectOrderByRelationAggregateInput
   sourceDocuments?: Prisma.SourceDocumentOrderByRelationAggregateInput
   resumeVersions?: Prisma.ResumeVersionOrderByRelationAggregateInput
+  analysisJobs?: Prisma.AnalysisJobOrderByRelationAggregateInput
+  aiRuns?: Prisma.AiRunOrderByRelationAggregateInput
+  profileAnalyses?: Prisma.ProfileAnalysisOrderByRelationAggregateInput
 }
 
 export type UserProfileWhereUniqueInput = Prisma.AtLeast<{
@@ -252,6 +258,9 @@ export type UserProfileWhereUniqueInput = Prisma.AtLeast<{
   manualProjects?: Prisma.ManualProjectListRelationFilter
   sourceDocuments?: Prisma.SourceDocumentListRelationFilter
   resumeVersions?: Prisma.ResumeVersionListRelationFilter
+  analysisJobs?: Prisma.AnalysisJobListRelationFilter
+  aiRuns?: Prisma.AiRunListRelationFilter
+  profileAnalyses?: Prisma.ProfileAnalysisListRelationFilter
 }, "clerkUserId">
 
 export type UserProfileOrderByWithAggregationInput = {
@@ -299,6 +308,9 @@ export type UserProfileCreateInput = {
   manualProjects?: Prisma.ManualProjectCreateNestedManyWithoutProfileInput
   sourceDocuments?: Prisma.SourceDocumentCreateNestedManyWithoutProfileInput
   resumeVersions?: Prisma.ResumeVersionCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUncheckedCreateInput = {
@@ -316,6 +328,9 @@ export type UserProfileUncheckedCreateInput = {
   manualProjects?: Prisma.ManualProjectUncheckedCreateNestedManyWithoutProfileInput
   sourceDocuments?: Prisma.SourceDocumentUncheckedCreateNestedManyWithoutProfileInput
   resumeVersions?: Prisma.ResumeVersionUncheckedCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunUncheckedCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUpdateInput = {
@@ -333,6 +348,9 @@ export type UserProfileUpdateInput = {
   manualProjects?: Prisma.ManualProjectUpdateManyWithoutProfileNestedInput
   sourceDocuments?: Prisma.SourceDocumentUpdateManyWithoutProfileNestedInput
   resumeVersions?: Prisma.ResumeVersionUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileUncheckedUpdateInput = {
@@ -350,6 +368,9 @@ export type UserProfileUncheckedUpdateInput = {
   manualProjects?: Prisma.ManualProjectUncheckedUpdateManyWithoutProfileNestedInput
   sourceDocuments?: Prisma.SourceDocumentUncheckedUpdateManyWithoutProfileNestedInput
   resumeVersions?: Prisma.ResumeVersionUncheckedUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUncheckedUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileCreateManyInput = {
@@ -427,6 +448,11 @@ export type UserProfileScalarRelationFilter = {
   isNot?: Prisma.UserProfileWhereInput
 }
 
+export type UserProfileNullableScalarRelationFilter = {
+  is?: Prisma.UserProfileWhereInput | null
+  isNot?: Prisma.UserProfileWhereInput | null
+}
+
 export type StringFieldUpdateOperationsInput = {
   set?: string
 }
@@ -499,6 +525,36 @@ export type UserProfileUpdateOneRequiredWithoutSourceDocumentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserProfileUpdateToOneWithWhereWithoutSourceDocumentsInput, Prisma.UserProfileUpdateWithoutSourceDocumentsInput>, Prisma.UserProfileUncheckedUpdateWithoutSourceDocumentsInput>
 }
 
+export type UserProfileCreateNestedOneWithoutAnalysisJobsInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutAnalysisJobsInput, Prisma.UserProfileUncheckedCreateWithoutAnalysisJobsInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutAnalysisJobsInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+}
+
+export type UserProfileUpdateOneRequiredWithoutAnalysisJobsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutAnalysisJobsInput, Prisma.UserProfileUncheckedCreateWithoutAnalysisJobsInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutAnalysisJobsInput
+  upsert?: Prisma.UserProfileUpsertWithoutAnalysisJobsInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserProfileUpdateToOneWithWhereWithoutAnalysisJobsInput, Prisma.UserProfileUpdateWithoutAnalysisJobsInput>, Prisma.UserProfileUncheckedUpdateWithoutAnalysisJobsInput>
+}
+
+export type UserProfileCreateNestedOneWithoutAiRunsInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutAiRunsInput, Prisma.UserProfileUncheckedCreateWithoutAiRunsInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutAiRunsInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+}
+
+export type UserProfileUpdateOneWithoutAiRunsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutAiRunsInput, Prisma.UserProfileUncheckedCreateWithoutAiRunsInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutAiRunsInput
+  upsert?: Prisma.UserProfileUpsertWithoutAiRunsInput
+  disconnect?: Prisma.UserProfileWhereInput | boolean
+  delete?: Prisma.UserProfileWhereInput | boolean
+  connect?: Prisma.UserProfileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserProfileUpdateToOneWithWhereWithoutAiRunsInput, Prisma.UserProfileUpdateWithoutAiRunsInput>, Prisma.UserProfileUncheckedUpdateWithoutAiRunsInput>
+}
+
 export type UserProfileCreateNestedOneWithoutResumeVersionsInput = {
   create?: Prisma.XOR<Prisma.UserProfileCreateWithoutResumeVersionsInput, Prisma.UserProfileUncheckedCreateWithoutResumeVersionsInput>
   connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutResumeVersionsInput
@@ -511,6 +567,20 @@ export type UserProfileUpdateOneRequiredWithoutResumeVersionsNestedInput = {
   upsert?: Prisma.UserProfileUpsertWithoutResumeVersionsInput
   connect?: Prisma.UserProfileWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserProfileUpdateToOneWithWhereWithoutResumeVersionsInput, Prisma.UserProfileUpdateWithoutResumeVersionsInput>, Prisma.UserProfileUncheckedUpdateWithoutResumeVersionsInput>
+}
+
+export type UserProfileCreateNestedOneWithoutProfileAnalysesInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutProfileAnalysesInput, Prisma.UserProfileUncheckedCreateWithoutProfileAnalysesInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutProfileAnalysesInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+}
+
+export type UserProfileUpdateOneRequiredWithoutProfileAnalysesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserProfileCreateWithoutProfileAnalysesInput, Prisma.UserProfileUncheckedCreateWithoutProfileAnalysesInput>
+  connectOrCreate?: Prisma.UserProfileCreateOrConnectWithoutProfileAnalysesInput
+  upsert?: Prisma.UserProfileUpsertWithoutProfileAnalysesInput
+  connect?: Prisma.UserProfileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserProfileUpdateToOneWithWhereWithoutProfileAnalysesInput, Prisma.UserProfileUpdateWithoutProfileAnalysesInput>, Prisma.UserProfileUncheckedUpdateWithoutProfileAnalysesInput>
 }
 
 export type UserProfileCreateWithoutCareerContextInput = {
@@ -527,6 +597,9 @@ export type UserProfileCreateWithoutCareerContextInput = {
   manualProjects?: Prisma.ManualProjectCreateNestedManyWithoutProfileInput
   sourceDocuments?: Prisma.SourceDocumentCreateNestedManyWithoutProfileInput
   resumeVersions?: Prisma.ResumeVersionCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUncheckedCreateWithoutCareerContextInput = {
@@ -543,6 +616,9 @@ export type UserProfileUncheckedCreateWithoutCareerContextInput = {
   manualProjects?: Prisma.ManualProjectUncheckedCreateNestedManyWithoutProfileInput
   sourceDocuments?: Prisma.SourceDocumentUncheckedCreateNestedManyWithoutProfileInput
   resumeVersions?: Prisma.ResumeVersionUncheckedCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunUncheckedCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileCreateOrConnectWithoutCareerContextInput = {
@@ -575,6 +651,9 @@ export type UserProfileUpdateWithoutCareerContextInput = {
   manualProjects?: Prisma.ManualProjectUpdateManyWithoutProfileNestedInput
   sourceDocuments?: Prisma.SourceDocumentUpdateManyWithoutProfileNestedInput
   resumeVersions?: Prisma.ResumeVersionUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileUncheckedUpdateWithoutCareerContextInput = {
@@ -591,6 +670,9 @@ export type UserProfileUncheckedUpdateWithoutCareerContextInput = {
   manualProjects?: Prisma.ManualProjectUncheckedUpdateManyWithoutProfileNestedInput
   sourceDocuments?: Prisma.SourceDocumentUncheckedUpdateManyWithoutProfileNestedInput
   resumeVersions?: Prisma.ResumeVersionUncheckedUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUncheckedUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileCreateWithoutTargetContextsInput = {
@@ -607,6 +689,9 @@ export type UserProfileCreateWithoutTargetContextsInput = {
   manualProjects?: Prisma.ManualProjectCreateNestedManyWithoutProfileInput
   sourceDocuments?: Prisma.SourceDocumentCreateNestedManyWithoutProfileInput
   resumeVersions?: Prisma.ResumeVersionCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUncheckedCreateWithoutTargetContextsInput = {
@@ -623,6 +708,9 @@ export type UserProfileUncheckedCreateWithoutTargetContextsInput = {
   manualProjects?: Prisma.ManualProjectUncheckedCreateNestedManyWithoutProfileInput
   sourceDocuments?: Prisma.SourceDocumentUncheckedCreateNestedManyWithoutProfileInput
   resumeVersions?: Prisma.ResumeVersionUncheckedCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunUncheckedCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileCreateOrConnectWithoutTargetContextsInput = {
@@ -655,6 +743,9 @@ export type UserProfileUpdateWithoutTargetContextsInput = {
   manualProjects?: Prisma.ManualProjectUpdateManyWithoutProfileNestedInput
   sourceDocuments?: Prisma.SourceDocumentUpdateManyWithoutProfileNestedInput
   resumeVersions?: Prisma.ResumeVersionUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileUncheckedUpdateWithoutTargetContextsInput = {
@@ -671,6 +762,9 @@ export type UserProfileUncheckedUpdateWithoutTargetContextsInput = {
   manualProjects?: Prisma.ManualProjectUncheckedUpdateManyWithoutProfileNestedInput
   sourceDocuments?: Prisma.SourceDocumentUncheckedUpdateManyWithoutProfileNestedInput
   resumeVersions?: Prisma.ResumeVersionUncheckedUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUncheckedUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileCreateWithoutManualProjectsInput = {
@@ -687,6 +781,9 @@ export type UserProfileCreateWithoutManualProjectsInput = {
   targetContexts?: Prisma.TargetContextCreateNestedManyWithoutProfileInput
   sourceDocuments?: Prisma.SourceDocumentCreateNestedManyWithoutProfileInput
   resumeVersions?: Prisma.ResumeVersionCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUncheckedCreateWithoutManualProjectsInput = {
@@ -703,6 +800,9 @@ export type UserProfileUncheckedCreateWithoutManualProjectsInput = {
   targetContexts?: Prisma.TargetContextUncheckedCreateNestedManyWithoutProfileInput
   sourceDocuments?: Prisma.SourceDocumentUncheckedCreateNestedManyWithoutProfileInput
   resumeVersions?: Prisma.ResumeVersionUncheckedCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunUncheckedCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileCreateOrConnectWithoutManualProjectsInput = {
@@ -735,6 +835,9 @@ export type UserProfileUpdateWithoutManualProjectsInput = {
   targetContexts?: Prisma.TargetContextUpdateManyWithoutProfileNestedInput
   sourceDocuments?: Prisma.SourceDocumentUpdateManyWithoutProfileNestedInput
   resumeVersions?: Prisma.ResumeVersionUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileUncheckedUpdateWithoutManualProjectsInput = {
@@ -751,6 +854,9 @@ export type UserProfileUncheckedUpdateWithoutManualProjectsInput = {
   targetContexts?: Prisma.TargetContextUncheckedUpdateManyWithoutProfileNestedInput
   sourceDocuments?: Prisma.SourceDocumentUncheckedUpdateManyWithoutProfileNestedInput
   resumeVersions?: Prisma.ResumeVersionUncheckedUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUncheckedUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileCreateWithoutSourceDocumentsInput = {
@@ -767,6 +873,9 @@ export type UserProfileCreateWithoutSourceDocumentsInput = {
   targetContexts?: Prisma.TargetContextCreateNestedManyWithoutProfileInput
   manualProjects?: Prisma.ManualProjectCreateNestedManyWithoutProfileInput
   resumeVersions?: Prisma.ResumeVersionCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUncheckedCreateWithoutSourceDocumentsInput = {
@@ -783,6 +892,9 @@ export type UserProfileUncheckedCreateWithoutSourceDocumentsInput = {
   targetContexts?: Prisma.TargetContextUncheckedCreateNestedManyWithoutProfileInput
   manualProjects?: Prisma.ManualProjectUncheckedCreateNestedManyWithoutProfileInput
   resumeVersions?: Prisma.ResumeVersionUncheckedCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunUncheckedCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileCreateOrConnectWithoutSourceDocumentsInput = {
@@ -815,6 +927,9 @@ export type UserProfileUpdateWithoutSourceDocumentsInput = {
   targetContexts?: Prisma.TargetContextUpdateManyWithoutProfileNestedInput
   manualProjects?: Prisma.ManualProjectUpdateManyWithoutProfileNestedInput
   resumeVersions?: Prisma.ResumeVersionUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileUncheckedUpdateWithoutSourceDocumentsInput = {
@@ -831,6 +946,193 @@ export type UserProfileUncheckedUpdateWithoutSourceDocumentsInput = {
   targetContexts?: Prisma.TargetContextUncheckedUpdateManyWithoutProfileNestedInput
   manualProjects?: Prisma.ManualProjectUncheckedUpdateManyWithoutProfileNestedInput
   resumeVersions?: Prisma.ResumeVersionUncheckedUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUncheckedUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileCreateWithoutAnalysisJobsInput = {
+  clerkUserId: string
+  onboardingStatus?: string
+  currentOnboardingStep?: string
+  onboardingStartedAt?: Date | string | null
+  onboardingCompletedAt?: Date | string | null
+  analysisError?: string | null
+  onboarding?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  careerContext?: Prisma.CareerContextCreateNestedOneWithoutProfileInput
+  targetContexts?: Prisma.TargetContextCreateNestedManyWithoutProfileInput
+  manualProjects?: Prisma.ManualProjectCreateNestedManyWithoutProfileInput
+  sourceDocuments?: Prisma.SourceDocumentCreateNestedManyWithoutProfileInput
+  resumeVersions?: Prisma.ResumeVersionCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileUncheckedCreateWithoutAnalysisJobsInput = {
+  clerkUserId: string
+  onboardingStatus?: string
+  currentOnboardingStep?: string
+  onboardingStartedAt?: Date | string | null
+  onboardingCompletedAt?: Date | string | null
+  analysisError?: string | null
+  onboarding?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  careerContext?: Prisma.CareerContextUncheckedCreateNestedOneWithoutProfileInput
+  targetContexts?: Prisma.TargetContextUncheckedCreateNestedManyWithoutProfileInput
+  manualProjects?: Prisma.ManualProjectUncheckedCreateNestedManyWithoutProfileInput
+  sourceDocuments?: Prisma.SourceDocumentUncheckedCreateNestedManyWithoutProfileInput
+  resumeVersions?: Prisma.ResumeVersionUncheckedCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunUncheckedCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileCreateOrConnectWithoutAnalysisJobsInput = {
+  where: Prisma.UserProfileWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutAnalysisJobsInput, Prisma.UserProfileUncheckedCreateWithoutAnalysisJobsInput>
+}
+
+export type UserProfileUpsertWithoutAnalysisJobsInput = {
+  update: Prisma.XOR<Prisma.UserProfileUpdateWithoutAnalysisJobsInput, Prisma.UserProfileUncheckedUpdateWithoutAnalysisJobsInput>
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutAnalysisJobsInput, Prisma.UserProfileUncheckedCreateWithoutAnalysisJobsInput>
+  where?: Prisma.UserProfileWhereInput
+}
+
+export type UserProfileUpdateToOneWithWhereWithoutAnalysisJobsInput = {
+  where?: Prisma.UserProfileWhereInput
+  data: Prisma.XOR<Prisma.UserProfileUpdateWithoutAnalysisJobsInput, Prisma.UserProfileUncheckedUpdateWithoutAnalysisJobsInput>
+}
+
+export type UserProfileUpdateWithoutAnalysisJobsInput = {
+  clerkUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  onboardingStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  currentOnboardingStep?: Prisma.StringFieldUpdateOperationsInput | string
+  onboardingStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboarding?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  careerContext?: Prisma.CareerContextUpdateOneWithoutProfileNestedInput
+  targetContexts?: Prisma.TargetContextUpdateManyWithoutProfileNestedInput
+  manualProjects?: Prisma.ManualProjectUpdateManyWithoutProfileNestedInput
+  sourceDocuments?: Prisma.SourceDocumentUpdateManyWithoutProfileNestedInput
+  resumeVersions?: Prisma.ResumeVersionUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileUncheckedUpdateWithoutAnalysisJobsInput = {
+  clerkUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  onboardingStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  currentOnboardingStep?: Prisma.StringFieldUpdateOperationsInput | string
+  onboardingStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboarding?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  careerContext?: Prisma.CareerContextUncheckedUpdateOneWithoutProfileNestedInput
+  targetContexts?: Prisma.TargetContextUncheckedUpdateManyWithoutProfileNestedInput
+  manualProjects?: Prisma.ManualProjectUncheckedUpdateManyWithoutProfileNestedInput
+  sourceDocuments?: Prisma.SourceDocumentUncheckedUpdateManyWithoutProfileNestedInput
+  resumeVersions?: Prisma.ResumeVersionUncheckedUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUncheckedUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileCreateWithoutAiRunsInput = {
+  clerkUserId: string
+  onboardingStatus?: string
+  currentOnboardingStep?: string
+  onboardingStartedAt?: Date | string | null
+  onboardingCompletedAt?: Date | string | null
+  analysisError?: string | null
+  onboarding?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  careerContext?: Prisma.CareerContextCreateNestedOneWithoutProfileInput
+  targetContexts?: Prisma.TargetContextCreateNestedManyWithoutProfileInput
+  manualProjects?: Prisma.ManualProjectCreateNestedManyWithoutProfileInput
+  sourceDocuments?: Prisma.SourceDocumentCreateNestedManyWithoutProfileInput
+  resumeVersions?: Prisma.ResumeVersionCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileUncheckedCreateWithoutAiRunsInput = {
+  clerkUserId: string
+  onboardingStatus?: string
+  currentOnboardingStep?: string
+  onboardingStartedAt?: Date | string | null
+  onboardingCompletedAt?: Date | string | null
+  analysisError?: string | null
+  onboarding?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  careerContext?: Prisma.CareerContextUncheckedCreateNestedOneWithoutProfileInput
+  targetContexts?: Prisma.TargetContextUncheckedCreateNestedManyWithoutProfileInput
+  manualProjects?: Prisma.ManualProjectUncheckedCreateNestedManyWithoutProfileInput
+  sourceDocuments?: Prisma.SourceDocumentUncheckedCreateNestedManyWithoutProfileInput
+  resumeVersions?: Prisma.ResumeVersionUncheckedCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileCreateOrConnectWithoutAiRunsInput = {
+  where: Prisma.UserProfileWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutAiRunsInput, Prisma.UserProfileUncheckedCreateWithoutAiRunsInput>
+}
+
+export type UserProfileUpsertWithoutAiRunsInput = {
+  update: Prisma.XOR<Prisma.UserProfileUpdateWithoutAiRunsInput, Prisma.UserProfileUncheckedUpdateWithoutAiRunsInput>
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutAiRunsInput, Prisma.UserProfileUncheckedCreateWithoutAiRunsInput>
+  where?: Prisma.UserProfileWhereInput
+}
+
+export type UserProfileUpdateToOneWithWhereWithoutAiRunsInput = {
+  where?: Prisma.UserProfileWhereInput
+  data: Prisma.XOR<Prisma.UserProfileUpdateWithoutAiRunsInput, Prisma.UserProfileUncheckedUpdateWithoutAiRunsInput>
+}
+
+export type UserProfileUpdateWithoutAiRunsInput = {
+  clerkUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  onboardingStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  currentOnboardingStep?: Prisma.StringFieldUpdateOperationsInput | string
+  onboardingStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboarding?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  careerContext?: Prisma.CareerContextUpdateOneWithoutProfileNestedInput
+  targetContexts?: Prisma.TargetContextUpdateManyWithoutProfileNestedInput
+  manualProjects?: Prisma.ManualProjectUpdateManyWithoutProfileNestedInput
+  sourceDocuments?: Prisma.SourceDocumentUpdateManyWithoutProfileNestedInput
+  resumeVersions?: Prisma.ResumeVersionUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileUncheckedUpdateWithoutAiRunsInput = {
+  clerkUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  onboardingStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  currentOnboardingStep?: Prisma.StringFieldUpdateOperationsInput | string
+  onboardingStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboarding?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  careerContext?: Prisma.CareerContextUncheckedUpdateOneWithoutProfileNestedInput
+  targetContexts?: Prisma.TargetContextUncheckedUpdateManyWithoutProfileNestedInput
+  manualProjects?: Prisma.ManualProjectUncheckedUpdateManyWithoutProfileNestedInput
+  sourceDocuments?: Prisma.SourceDocumentUncheckedUpdateManyWithoutProfileNestedInput
+  resumeVersions?: Prisma.ResumeVersionUncheckedUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileCreateWithoutResumeVersionsInput = {
@@ -847,6 +1149,9 @@ export type UserProfileCreateWithoutResumeVersionsInput = {
   targetContexts?: Prisma.TargetContextCreateNestedManyWithoutProfileInput
   manualProjects?: Prisma.ManualProjectCreateNestedManyWithoutProfileInput
   sourceDocuments?: Prisma.SourceDocumentCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileUncheckedCreateWithoutResumeVersionsInput = {
@@ -863,6 +1168,9 @@ export type UserProfileUncheckedCreateWithoutResumeVersionsInput = {
   targetContexts?: Prisma.TargetContextUncheckedCreateNestedManyWithoutProfileInput
   manualProjects?: Prisma.ManualProjectUncheckedCreateNestedManyWithoutProfileInput
   sourceDocuments?: Prisma.SourceDocumentUncheckedCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunUncheckedCreateNestedManyWithoutProfileInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type UserProfileCreateOrConnectWithoutResumeVersionsInput = {
@@ -895,6 +1203,9 @@ export type UserProfileUpdateWithoutResumeVersionsInput = {
   targetContexts?: Prisma.TargetContextUpdateManyWithoutProfileNestedInput
   manualProjects?: Prisma.ManualProjectUpdateManyWithoutProfileNestedInput
   sourceDocuments?: Prisma.SourceDocumentUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutProfileNestedInput
 }
 
 export type UserProfileUncheckedUpdateWithoutResumeVersionsInput = {
@@ -911,6 +1222,101 @@ export type UserProfileUncheckedUpdateWithoutResumeVersionsInput = {
   targetContexts?: Prisma.TargetContextUncheckedUpdateManyWithoutProfileNestedInput
   manualProjects?: Prisma.ManualProjectUncheckedUpdateManyWithoutProfileNestedInput
   sourceDocuments?: Prisma.SourceDocumentUncheckedUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUncheckedUpdateManyWithoutProfileNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileCreateWithoutProfileAnalysesInput = {
+  clerkUserId: string
+  onboardingStatus?: string
+  currentOnboardingStep?: string
+  onboardingStartedAt?: Date | string | null
+  onboardingCompletedAt?: Date | string | null
+  analysisError?: string | null
+  onboarding?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  careerContext?: Prisma.CareerContextCreateNestedOneWithoutProfileInput
+  targetContexts?: Prisma.TargetContextCreateNestedManyWithoutProfileInput
+  manualProjects?: Prisma.ManualProjectCreateNestedManyWithoutProfileInput
+  sourceDocuments?: Prisma.SourceDocumentCreateNestedManyWithoutProfileInput
+  resumeVersions?: Prisma.ResumeVersionCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileUncheckedCreateWithoutProfileAnalysesInput = {
+  clerkUserId: string
+  onboardingStatus?: string
+  currentOnboardingStep?: string
+  onboardingStartedAt?: Date | string | null
+  onboardingCompletedAt?: Date | string | null
+  analysisError?: string | null
+  onboarding?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  careerContext?: Prisma.CareerContextUncheckedCreateNestedOneWithoutProfileInput
+  targetContexts?: Prisma.TargetContextUncheckedCreateNestedManyWithoutProfileInput
+  manualProjects?: Prisma.ManualProjectUncheckedCreateNestedManyWithoutProfileInput
+  sourceDocuments?: Prisma.SourceDocumentUncheckedCreateNestedManyWithoutProfileInput
+  resumeVersions?: Prisma.ResumeVersionUncheckedCreateNestedManyWithoutProfileInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutProfileInput
+  aiRuns?: Prisma.AiRunUncheckedCreateNestedManyWithoutProfileInput
+}
+
+export type UserProfileCreateOrConnectWithoutProfileAnalysesInput = {
+  where: Prisma.UserProfileWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutProfileAnalysesInput, Prisma.UserProfileUncheckedCreateWithoutProfileAnalysesInput>
+}
+
+export type UserProfileUpsertWithoutProfileAnalysesInput = {
+  update: Prisma.XOR<Prisma.UserProfileUpdateWithoutProfileAnalysesInput, Prisma.UserProfileUncheckedUpdateWithoutProfileAnalysesInput>
+  create: Prisma.XOR<Prisma.UserProfileCreateWithoutProfileAnalysesInput, Prisma.UserProfileUncheckedCreateWithoutProfileAnalysesInput>
+  where?: Prisma.UserProfileWhereInput
+}
+
+export type UserProfileUpdateToOneWithWhereWithoutProfileAnalysesInput = {
+  where?: Prisma.UserProfileWhereInput
+  data: Prisma.XOR<Prisma.UserProfileUpdateWithoutProfileAnalysesInput, Prisma.UserProfileUncheckedUpdateWithoutProfileAnalysesInput>
+}
+
+export type UserProfileUpdateWithoutProfileAnalysesInput = {
+  clerkUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  onboardingStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  currentOnboardingStep?: Prisma.StringFieldUpdateOperationsInput | string
+  onboardingStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboarding?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  careerContext?: Prisma.CareerContextUpdateOneWithoutProfileNestedInput
+  targetContexts?: Prisma.TargetContextUpdateManyWithoutProfileNestedInput
+  manualProjects?: Prisma.ManualProjectUpdateManyWithoutProfileNestedInput
+  sourceDocuments?: Prisma.SourceDocumentUpdateManyWithoutProfileNestedInput
+  resumeVersions?: Prisma.ResumeVersionUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUpdateManyWithoutProfileNestedInput
+}
+
+export type UserProfileUncheckedUpdateWithoutProfileAnalysesInput = {
+  clerkUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  onboardingStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  currentOnboardingStep?: Prisma.StringFieldUpdateOperationsInput | string
+  onboardingStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboarding?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  careerContext?: Prisma.CareerContextUncheckedUpdateOneWithoutProfileNestedInput
+  targetContexts?: Prisma.TargetContextUncheckedUpdateManyWithoutProfileNestedInput
+  manualProjects?: Prisma.ManualProjectUncheckedUpdateManyWithoutProfileNestedInput
+  sourceDocuments?: Prisma.SourceDocumentUncheckedUpdateManyWithoutProfileNestedInput
+  resumeVersions?: Prisma.ResumeVersionUncheckedUpdateManyWithoutProfileNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutProfileNestedInput
+  aiRuns?: Prisma.AiRunUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 
@@ -923,6 +1329,9 @@ export type UserProfileCountOutputType = {
   manualProjects: number
   sourceDocuments: number
   resumeVersions: number
+  analysisJobs: number
+  aiRuns: number
+  profileAnalyses: number
 }
 
 export type UserProfileCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -930,6 +1339,9 @@ export type UserProfileCountOutputTypeSelect<ExtArgs extends runtime.Types.Exten
   manualProjects?: boolean | UserProfileCountOutputTypeCountManualProjectsArgs
   sourceDocuments?: boolean | UserProfileCountOutputTypeCountSourceDocumentsArgs
   resumeVersions?: boolean | UserProfileCountOutputTypeCountResumeVersionsArgs
+  analysisJobs?: boolean | UserProfileCountOutputTypeCountAnalysisJobsArgs
+  aiRuns?: boolean | UserProfileCountOutputTypeCountAiRunsArgs
+  profileAnalyses?: boolean | UserProfileCountOutputTypeCountProfileAnalysesArgs
 }
 
 /**
@@ -970,6 +1382,27 @@ export type UserProfileCountOutputTypeCountResumeVersionsArgs<ExtArgs extends ru
   where?: Prisma.ResumeVersionWhereInput
 }
 
+/**
+ * UserProfileCountOutputType without action
+ */
+export type UserProfileCountOutputTypeCountAnalysisJobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AnalysisJobWhereInput
+}
+
+/**
+ * UserProfileCountOutputType without action
+ */
+export type UserProfileCountOutputTypeCountAiRunsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AiRunWhereInput
+}
+
+/**
+ * UserProfileCountOutputType without action
+ */
+export type UserProfileCountOutputTypeCountProfileAnalysesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProfileAnalysisWhereInput
+}
+
 
 export type UserProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   clerkUserId?: boolean
@@ -986,6 +1419,9 @@ export type UserProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   manualProjects?: boolean | Prisma.UserProfile$manualProjectsArgs<ExtArgs>
   sourceDocuments?: boolean | Prisma.UserProfile$sourceDocumentsArgs<ExtArgs>
   resumeVersions?: boolean | Prisma.UserProfile$resumeVersionsArgs<ExtArgs>
+  analysisJobs?: boolean | Prisma.UserProfile$analysisJobsArgs<ExtArgs>
+  aiRuns?: boolean | Prisma.UserProfile$aiRunsArgs<ExtArgs>
+  profileAnalyses?: boolean | Prisma.UserProfile$profileAnalysesArgs<ExtArgs>
   _count?: boolean | Prisma.UserProfileCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["userProfile"]>
 
@@ -1032,6 +1468,9 @@ export type UserProfileInclude<ExtArgs extends runtime.Types.Extensions.Internal
   manualProjects?: boolean | Prisma.UserProfile$manualProjectsArgs<ExtArgs>
   sourceDocuments?: boolean | Prisma.UserProfile$sourceDocumentsArgs<ExtArgs>
   resumeVersions?: boolean | Prisma.UserProfile$resumeVersionsArgs<ExtArgs>
+  analysisJobs?: boolean | Prisma.UserProfile$analysisJobsArgs<ExtArgs>
+  aiRuns?: boolean | Prisma.UserProfile$aiRunsArgs<ExtArgs>
+  profileAnalyses?: boolean | Prisma.UserProfile$profileAnalysesArgs<ExtArgs>
   _count?: boolean | Prisma.UserProfileCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserProfileIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1045,6 +1484,9 @@ export type $UserProfilePayload<ExtArgs extends runtime.Types.Extensions.Interna
     manualProjects: Prisma.$ManualProjectPayload<ExtArgs>[]
     sourceDocuments: Prisma.$SourceDocumentPayload<ExtArgs>[]
     resumeVersions: Prisma.$ResumeVersionPayload<ExtArgs>[]
+    analysisJobs: Prisma.$AnalysisJobPayload<ExtArgs>[]
+    aiRuns: Prisma.$AiRunPayload<ExtArgs>[]
+    profileAnalyses: Prisma.$ProfileAnalysisPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     clerkUserId: string
@@ -1455,6 +1897,9 @@ export interface Prisma__UserProfileClient<T, Null = never, ExtArgs extends runt
   manualProjects<T extends Prisma.UserProfile$manualProjectsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$manualProjectsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ManualProjectPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sourceDocuments<T extends Prisma.UserProfile$sourceDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$sourceDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SourceDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   resumeVersions<T extends Prisma.UserProfile$resumeVersionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$resumeVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ResumeVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  analysisJobs<T extends Prisma.UserProfile$analysisJobsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$analysisJobsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnalysisJobPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  aiRuns<T extends Prisma.UserProfile$aiRunsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$aiRunsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiRunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  profileAnalyses<T extends Prisma.UserProfile$profileAnalysesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfile$profileAnalysesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProfileAnalysisPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1998,6 +2443,78 @@ export type UserProfile$resumeVersionsArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.ResumeVersionScalarFieldEnum | Prisma.ResumeVersionScalarFieldEnum[]
+}
+
+/**
+ * UserProfile.analysisJobs
+ */
+export type UserProfile$analysisJobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AnalysisJob
+   */
+  select?: Prisma.AnalysisJobSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AnalysisJob
+   */
+  omit?: Prisma.AnalysisJobOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AnalysisJobInclude<ExtArgs> | null
+  where?: Prisma.AnalysisJobWhereInput
+  orderBy?: Prisma.AnalysisJobOrderByWithRelationInput | Prisma.AnalysisJobOrderByWithRelationInput[]
+  cursor?: Prisma.AnalysisJobWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AnalysisJobScalarFieldEnum | Prisma.AnalysisJobScalarFieldEnum[]
+}
+
+/**
+ * UserProfile.aiRuns
+ */
+export type UserProfile$aiRunsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AiRun
+   */
+  select?: Prisma.AiRunSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AiRun
+   */
+  omit?: Prisma.AiRunOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AiRunInclude<ExtArgs> | null
+  where?: Prisma.AiRunWhereInput
+  orderBy?: Prisma.AiRunOrderByWithRelationInput | Prisma.AiRunOrderByWithRelationInput[]
+  cursor?: Prisma.AiRunWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AiRunScalarFieldEnum | Prisma.AiRunScalarFieldEnum[]
+}
+
+/**
+ * UserProfile.profileAnalyses
+ */
+export type UserProfile$profileAnalysesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProfileAnalysis
+   */
+  select?: Prisma.ProfileAnalysisSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProfileAnalysis
+   */
+  omit?: Prisma.ProfileAnalysisOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileAnalysisInclude<ExtArgs> | null
+  where?: Prisma.ProfileAnalysisWhereInput
+  orderBy?: Prisma.ProfileAnalysisOrderByWithRelationInput | Prisma.ProfileAnalysisOrderByWithRelationInput[]
+  cursor?: Prisma.ProfileAnalysisWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProfileAnalysisScalarFieldEnum | Prisma.ProfileAnalysisScalarFieldEnum[]
 }
 
 /**

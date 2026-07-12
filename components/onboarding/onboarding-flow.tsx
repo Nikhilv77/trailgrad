@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,6 +23,7 @@ import {
   Layers3,
   LoaderCircle,
   MonitorSmartphone,
+  PencilLine,
   Rocket,
   ServerCog,
   Sparkles,
@@ -41,6 +42,7 @@ import type {
 interface Option {
   id: string;
   title: string;
+  description: string;
   icon: LucideIcon;
   badge?: string;
 }
@@ -48,6 +50,7 @@ interface Option {
 interface OnboardingStep {
   id: OnboardingStepId;
   title: string;
+  description: string;
   optional?: boolean;
 }
 
@@ -55,73 +58,67 @@ const steps: OnboardingStep[] = [
   {
     id: "target-role",
     title: "Where are you headed?",
+    description: "Pick the role and level Trailgrad should judge you against.",
   },
   {
     id: "timeline",
     title: "When do you want to be ready?",
+    description: "Set the prep pace so recommendations fit your actual week.",
   },
   {
     id: "resume",
     title: "Add your resume.",
+    description: "This becomes the evidence Trailgrad checks for risks and gaps.",
   },
   {
     id: "target-job",
     title: "Add a target job.",
-    optional: true,
-  },
-  {
-    id: "projects",
-    title: "Add project context.",
+    description: "Optional, but it makes the analysis sharper for one opening.",
     optional: true,
   },
   {
     id: "review",
     title: "Review your setup.",
+    description: "Confirm the inputs before Trailgrad builds your first profile.",
   },
 ];
 
 const roleOptions: Option[] = [
-  { id: "ai-engineer", title: "AI Engineer", icon: Sparkles, badge: "Popular" },
-  { id: "ml-engineer", title: "ML Engineer", icon: BrainCircuit },
-  { id: "software-engineer", title: "Software Engineer", icon: Code2 },
-  { id: "frontend-engineer", title: "Frontend Engineer", icon: MonitorSmartphone },
-  { id: "backend-engineer", title: "Backend Engineer", icon: ServerCog },
-  { id: "full-stack-engineer", title: "Full Stack Engineer", icon: BrainCircuit },
-  { id: "data-scientist", title: "Data Scientist", icon: Layers3 },
-  { id: "data-analyst", title: "Data Analyst", icon: ChartColumn },
-  { id: "data-engineer", title: "Data Engineer", icon: Database },
-  { id: "product", title: "Product & strategy", icon: BriefcaseBusiness },
+  { id: "ai-engineer", title: "AI Engineer", description: "LLM apps, agents, evals", icon: Sparkles, badge: "Popular" },
+  { id: "ml-engineer", title: "ML Engineer", description: "Models, pipelines, deployment", icon: BrainCircuit },
+  { id: "software-engineer", title: "Software Engineer", description: "General product engineering", icon: Code2 },
+  { id: "frontend-engineer", title: "Frontend Engineer", description: "React, UI, product polish", icon: MonitorSmartphone },
+  { id: "backend-engineer", title: "Backend Engineer", description: "APIs, systems, databases", icon: ServerCog },
+  { id: "full-stack-engineer", title: "Full Stack Engineer", description: "Frontend plus backend ownership", icon: BrainCircuit },
+  { id: "data-scientist", title: "Data Scientist", description: "Analysis, modeling, experiments", icon: Layers3 },
+  { id: "data-analyst", title: "Data Analyst", description: "SQL, dashboards, insights", icon: ChartColumn },
+  { id: "data-engineer", title: "Data Engineer", description: "Pipelines, warehouses, quality", icon: Database },
+  { id: "product", title: "Product & strategy", description: "PM, strategy, execution", icon: BriefcaseBusiness },
 ];
 
 const experienceOptions: Option[] = [
-  { id: "student-new-graduate", title: "Student or new graduate", icon: GraduationCap },
-  { id: "junior", title: "Junior", icon: Rocket, badge: "Common" },
-  { id: "mid-level", title: "Mid-level", icon: BriefcaseBusiness },
-  { id: "senior", title: "Senior", icon: BrainCircuit },
+  { id: "student-new-graduate", title: "Student or new graduate", description: "Coursework, internships, projects", icon: GraduationCap },
+  { id: "junior", title: "Junior", description: "0-2 years or early career", icon: Rocket, badge: "Common" },
+  { id: "mid-level", title: "Mid-level", description: "Independent feature ownership", icon: BriefcaseBusiness },
+  { id: "senior", title: "Senior", description: "Architecture and leadership", icon: BrainCircuit },
 ];
 
 const preparationTimeOptions: Option[] = [
-  { id: "15", title: "15 minutes", icon: Clock3 },
-  { id: "30", title: "30 minutes", icon: Clock3, badge: "Steady" },
-  { id: "60", title: "60 minutes", icon: CalendarClock },
-  { id: "flexible", title: "Flexible", icon: Rocket },
+  { id: "15", title: "15 minutes", description: "Tiny daily improvement", icon: Clock3 },
+  { id: "30", title: "30 minutes", description: "Solid daily progress", icon: Clock3, badge: "Steady" },
+  { id: "60", title: "60 minutes", description: "Deeper project and practice work", icon: CalendarClock },
+  { id: "flexible", title: "Flexible", description: "Varies each day", icon: Rocket },
 ];
 
 const intensityOptions: Option[] = [
-  { id: "light", title: "Light", icon: Clock3 },
-  { id: "standard", title: "Standard", icon: CalendarClock, badge: "Balanced" },
-  { id: "intensive", title: "Intensive", icon: Rocket },
+  { id: "light", title: "Light", description: "Low pressure, keep momentum", icon: Clock3 },
+  { id: "standard", title: "Standard", description: "Focused but sustainable", icon: CalendarClock, badge: "Balanced" },
+  { id: "intensive", title: "Intensive", description: "Fastest path, more effort", icon: Rocket },
 ];
 
 const targetJobOptions: Option[] = [
-  { id: "paste", title: "Paste a job description", icon: BriefcaseBusiness },
-  { id: "skip", title: "Skip for now", icon: ArrowRight },
-];
-
-const projectOptions: Option[] = [
-  { id: "manual", title: "Add a project manually", icon: Code2 },
-  { id: "github_later", title: "Connect GitHub later", icon: ServerCog, badge: "Coming later" },
-  { id: "skip", title: "Skip for now", icon: ArrowRight },
+  { id: "paste", title: "Paste a job description", description: "Tailor risks to one role", icon: BriefcaseBusiness },
+  { id: "skip", title: "Skip for now", description: "Use your target role only", icon: ArrowRight },
 ];
 
 interface OnboardingFlowProps {
@@ -151,6 +148,12 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
   const [noDateYet, setNoDateYet] = useState(
     Boolean(initialState?.onboarding?.noDateYet),
   );
+  const [timelineDisplay, setTimelineDisplay] = useState(() =>
+    getTimelineDisplay(
+      initialState?.onboarding?.interviewDate ?? "",
+      Boolean(initialState?.onboarding?.noDateYet),
+    ),
+  );
   const [preparationTimePerDay, setPreparationTimePerDay] = useState<
     OnboardingSubmission["preparationTimePerDay"] | ""
   >(initialState?.onboarding?.preparationTimePerDay ?? "");
@@ -170,18 +173,6 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
   >(initialState?.onboarding?.targetJobMode ?? "");
   const [jobDescription, setJobDescription] = useState(
     initialState?.onboarding?.jobDescription ?? "",
-  );
-  const [projectsMode, setProjectsMode] = useState<
-    OnboardingSubmission["projectsMode"] | ""
-  >(initialState?.onboarding?.projectsMode ?? "");
-  const [projectName, setProjectName] = useState(
-    initialState?.onboarding?.projectName ?? "",
-  );
-  const [projectDescription, setProjectDescription] = useState(
-    initialState?.onboarding?.projectDescription ?? "",
-  );
-  const [projectTechStack, setProjectTechStack] = useState(
-    initialState?.onboarding?.projectTechStack ?? "",
   );
   const [generating, setGenerating] = useState(false);
   const [savingStep, setSavingStep] = useState(false);
@@ -223,13 +214,19 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
     [experienceLevel, preparationIntensity, preparationTimePerDay, targetRole],
   );
 
+  useEffect(() => {
+    window.requestAnimationFrame(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: reduceMotion ? "auto" : "smooth",
+      });
+    });
+  }, [currentStep, reduceMotion]);
+
   function selectOption(value: string) {
     if (activeStep.id === "target-role") setTargetRole(value);
     if (activeStep.id === "target-job") {
       setTargetJobMode(value as OnboardingSubmission["targetJobMode"]);
-    }
-    if (activeStep.id === "projects") {
-      setProjectsMode(value as OnboardingSubmission["projectsMode"]);
     }
   }
 
@@ -328,12 +325,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
       ...(resumeUploadedAt ? { resumeUploadedAt } : {}),
       targetJobMode: targetJobMode || "skip",
       ...(jobDescription.trim() ? { jobDescription: jobDescription.trim() } : {}),
-      projectsMode: projectsMode || "skip",
-      ...(projectName.trim() ? { projectName: projectName.trim() } : {}),
-      ...(projectDescription.trim()
-        ? { projectDescription: projectDescription.trim() }
-        : {}),
-      ...(projectTechStack.trim() ? { projectTechStack: projectTechStack.trim() } : {}),
+      projectsMode: "skip",
     };
   }
 
@@ -353,10 +345,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
       ...(resumeUploadedAt ? { resumeUploadedAt } : {}),
       ...(targetJobMode ? { targetJobMode } : {}),
       jobDescription: jobDescription.trim(),
-      ...(projectsMode ? { projectsMode } : {}),
-      projectName: projectName.trim(),
-      projectDescription: projectDescription.trim(),
-      projectTechStack: projectTechStack.trim(),
+      projectsMode: "skip",
     };
   }
 
@@ -379,16 +368,11 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
       return "Upload a PDF or DOCX resume before continuing.";
     }
 
-    if (stepId === "projects" && projectsMode === "manual" && !projectName.trim()) {
-      return "Add a project name or choose another project option.";
-    }
-
     if (stepId === "review") {
       return (
         validateStep("target-role") ||
         validateStep("timeline") ||
-        validateStep("resume") ||
-        validateStep("projects")
+        validateStep("resume")
       );
     }
 
@@ -529,7 +513,9 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
   const canContinue = !generating && !savingStep && !uploadingResume;
   const primaryLabel =
     generating
-      ? "Building profile"
+      ? "Starting analysis"
+      : savingStep
+        ? "Saving"
       : activeStep.id === "review"
         ? "Build my Trailgrad Profile"
         : activeStep.optional
@@ -568,8 +554,8 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
               </div>
 
               <StepViewport
+                busy={savingStep || generating}
                 direction={direction}
-                measureKey={`${activeStep.id}-${showAllRoles}-${targetJobMode}-${projectsMode}`}
                 slideDistance={slideDistance}
                 stepKey={activeStep.id}
                 transition={transition}
@@ -598,10 +584,14 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
                     interviewDate={interviewDate}
                     noDateYet={noDateYet}
                     onInterviewDateChange={setInterviewDate}
-                    onNoDateYetChange={(checked) => {
-                      setNoDateYet(checked);
-                      if (checked) setInterviewDate("");
-                    }}
+	                    onNoDateYetChange={(checked) => {
+	                      setNoDateYet(checked);
+	                      if (checked) {
+	                        setInterviewDate("");
+	                        setTimelineDisplay("No date yet");
+	                      }
+	                    }}
+	                    onTimelineDisplayChange={setTimelineDisplay}
                     onPreparationIntensityChange={(value) =>
                       setPreparationIntensity(
                         value as OnboardingSubmission["preparationIntensity"],
@@ -636,28 +626,8 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
                   />
                 )}
 
-                {activeStep.id === "projects" && (
-                  <ProjectsStep
-                    mode={projectsMode}
-                    onDescriptionChange={setProjectDescription}
-                    onModeChange={selectOption}
-                    onNameChange={setProjectName}
-                    onTechStackChange={setProjectTechStack}
-                    projectDescription={projectDescription}
-                    projectName={projectName}
-                    projectTechStack={projectTechStack}
-                  />
-                )}
-
                 {activeStep.id === "review" && (
                   <ReviewStep
-                    addedProjects={
-                      projectsMode === "manual" && projectName.trim()
-                        ? projectName.trim()
-                        : projectsMode === "github_later"
-                          ? "GitHub later"
-                          : "Skipped for now"
-                    }
                     experience={selectedLabels.experience}
                     preparation={`${selectedLabels.preparation}, ${selectedLabels.intensity.toLowerCase()}`}
                     resumeName={resumeName}
@@ -667,9 +637,9 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
                         ? "Job description added"
                         : "Skipped for now"
                     }
-                    timeline={noDateYet ? "No date yet" : interviewDate}
-                    onEdit={(stepId) => void moveToStep(getStepIndex(stepId), -1)}
-                  />
+	                    timeline={timelineDisplay || (noDateYet ? "No date yet" : interviewDate)}
+	                    onEdit={(stepId) => void moveToStep(getStepIndex(stepId), -1)}
+	                  />
                 )}
               </StepViewport>
 
@@ -680,15 +650,15 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
                   </p>
                 ) : null}
 
-                <div className="flex items-center justify-between gap-3">
-                  <Button type="button" variant="ghost" onClick={goBack} className="h-11 rounded-lg px-3 text-[#4b5563] transition-all duration-500 hover:bg-[#edf6f3] focus-visible:!border-transparent focus-visible:!ring-0">
+                <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <Button type="button" variant="ghost" onClick={goBack} disabled={!canContinue} className="h-11 justify-start rounded-lg px-3 text-[#4b5563] transition-all duration-500 hover:bg-[#edf6f3] focus-visible:!border-transparent focus-visible:!ring-0 sm:justify-center">
                     <ArrowLeft className="size-4" /> {currentStep === 0 ? "Back home" : "Back"}
                   </Button>
                   <Button
                     type="button"
                     onClick={goForward}
                     disabled={!canContinue}
-                    className="h-11 min-w-[150px] rounded-lg bg-[#0f9f8d] px-5 font-semibold text-white shadow-[0_14px_32px_rgba(15,159,141,0.24)] transition-all duration-500 hover:bg-[#0d8d7d] hover:shadow-[0_18px_38px_rgba(15,159,141,0.28)] focus-visible:!border-transparent focus-visible:!ring-0 sm:px-6"
+                    className="h-auto min-h-11 w-full min-w-0 whitespace-normal rounded-lg bg-[#0f9f8d] px-4 py-3 text-center font-semibold leading-5 text-white shadow-[0_14px_32px_rgba(15,159,141,0.24)] transition-all duration-500 hover:bg-[#0d8d7d] hover:shadow-[0_18px_38px_rgba(15,159,141,0.28)] focus-visible:!border-transparent focus-visible:!ring-0 disabled:opacity-80 sm:h-11 sm:w-auto sm:min-w-[176px] sm:whitespace-nowrap sm:px-6 sm:py-0"
                   >
                     {generating || savingStep ? (
                       <><LoaderCircle className="size-4 animate-spin" /> {primaryLabel}</>
@@ -722,6 +692,26 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
           animation: tg-onboarding-heading-word 520ms
             cubic-bezier(0.16, 1, 0.3, 1) forwards;
           will-change: opacity, transform;
+        }
+
+        @keyframes tg-shimmer {
+          0% {
+            background-position: 120% 0;
+          }
+          100% {
+            background-position: -120% 0;
+          }
+        }
+
+        .tg-shimmer {
+          background-image: linear-gradient(
+            90deg,
+            rgba(231, 242, 239, 0.75) 0%,
+            rgba(255, 255, 255, 0.96) 48%,
+            rgba(211, 239, 234, 0.78) 100%
+          );
+          background-size: 220% 100%;
+          animation: tg-shimmer 1.1s ease-in-out infinite;
         }
 
         .tg-onboarding-teal-clouds {
@@ -798,77 +788,87 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
 }
 
 function StepViewport({
+  busy,
   children,
   direction,
-  measureKey,
   slideDistance,
   stepKey,
   transition,
 }: {
+  busy: boolean;
   children: ReactNode;
   direction: number;
-  measureKey: string;
   slideDistance: number;
   stepKey: OnboardingStepId;
   transition: Transition;
 }) {
-  const contentRef = useRef<HTMLDivElement>(null);
-  const frameRef = useRef<number | null>(null);
-  const [height, setHeight] = useState<number>();
-
-  useLayoutEffect(() => {
-    const content = contentRef.current;
-
-    if (!content) {
-      return;
-    }
-
-    const measure = () => {
-      const nextHeight = Math.max(content.getBoundingClientRect().height, content.scrollHeight);
-
-      if (nextHeight < 1) {
-        return;
-      }
-
-      setHeight((currentHeight) =>
-        currentHeight !== undefined && Math.abs(currentHeight - nextHeight) < 0.5 ? currentHeight : nextHeight,
-      );
-    };
-
-    measure();
-    frameRef.current = window.requestAnimationFrame(measure);
-
-    const observer = new ResizeObserver(measure);
-    observer.observe(content);
-
-    return () => {
-      if (frameRef.current !== null) {
-        window.cancelAnimationFrame(frameRef.current);
-      }
-
-      observer.disconnect();
-    };
-  }, [measureKey]);
+  const contentTransition =
+    transition.duration === 0
+      ? transition
+      : { duration: 0.26, ease: [0.16, 1, 0.3, 1] as const };
 
   return (
-    <div
-      className="tg-step-viewport relative overflow-hidden transition-[height] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
-      style={{ height: height === undefined ? "auto" : `${height}px` }}
+    <motion.div
+      layout
+      aria-busy={busy}
+      className="tg-step-viewport relative overflow-visible"
+      transition={transition.duration === 0 ? transition : { layout: contentTransition }}
     >
-      <AnimatePresence custom={direction} initial={false}>
+      <AnimatePresence custom={direction} initial={false} mode="popLayout">
         <motion.div
           key={stepKey}
+          layout
           custom={direction}
-          initial={{ opacity: 0, x: direction * slideDistance, filter: "blur(5px)" }}
-          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-          exit={{ opacity: 0, x: direction * -slideDistance, filter: "blur(4px)" }}
-          transition={transition}
-          className={`tg-step-pane ${height === undefined ? "relative" : "absolute inset-x-0 top-0"} will-change-transform`}
+          initial={{
+            opacity: 0,
+            x: direction * Math.min(slideDistance, 8),
+            y: 8,
+            scale: 0.992,
+          }}
+          animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+          exit={{
+            opacity: 0,
+            x: direction * -Math.min(slideDistance, 8),
+            y: -6,
+            scale: 0.996,
+          }}
+          transition={contentTransition}
+          className="tg-step-pane relative will-change-transform"
         >
-          <div ref={contentRef} className="pt-10">{children}</div>
+          <div className="pt-10">{children}</div>
         </motion.div>
       </AnimatePresence>
-    </div>
+      <AnimatePresence>
+        {busy ? (
+          <motion.div
+            key="onboarding-step-loading"
+            aria-hidden="true"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
+            className="pointer-events-none absolute inset-0 z-20 overflow-hidden rounded-[22px] bg-white/78 px-2 pt-10 backdrop-blur-[2px]"
+          >
+            <div className="mx-auto max-w-[720px]">
+              <div className="mx-auto space-y-3 text-center">
+                <div className="tg-shimmer mx-auto h-10 w-[min(78%,420px)] rounded-full" />
+                <div className="tg-shimmer mx-auto h-4 w-[min(62%,320px)] rounded-full" />
+              </div>
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                <div className="tg-shimmer h-24 rounded-[16px]" />
+                <div className="tg-shimmer h-24 rounded-[16px]" />
+                <div className="tg-shimmer h-24 rounded-[16px]" />
+                <div className="tg-shimmer h-24 rounded-[16px]" />
+              </div>
+              <div className="mt-6 space-y-3">
+                <div className="tg-shimmer h-11 rounded-[14px]" />
+                <div className="tg-shimmer h-11 rounded-[14px]" />
+              </div>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -938,6 +938,9 @@ function StepHeading({ step, reduceMotion }: { step: OnboardingStep; reduceMotio
               </span>
             ))}
       </h1>
+      <p className="mx-auto mt-3 max-w-[500px] text-sm font-medium leading-6 text-[#5f6f6b]">
+        {step.description}
+      </p>
     </div>
   );
 }
@@ -964,14 +967,14 @@ function StepOptions({ options, selected, onSelect, footer }: StepOptionsProps) 
               type="button"
               aria-pressed={active}
               onClick={() => onSelect(option.id)}
-              className={`group relative flex min-h-[88px] items-center gap-4 overflow-hidden rounded-[16px] border p-4 text-left outline-none transition-[border-color,background-color,box-shadow] duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              className={`group relative flex min-h-[96px] items-center gap-4 overflow-hidden rounded-[16px] border p-4 text-left outline-none transition-[border-color,background-color,box-shadow] duration-200 ease-out ${
                 active
                   ? "border-[#20b8a4] bg-[#f0fdfa] shadow-[0_16px_34px_rgba(15,118,110,0.11)]"
                   : "border-[#e5e7eb] bg-white hover:border-[#b7ddd7] hover:bg-[#fbfffe] hover:shadow-[0_14px_34px_rgba(15,118,110,0.08)]"
               }`}
             >
-              <span aria-hidden="true" className={`absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent transition-opacity duration-1000 ${active ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
-              <span className={`grid size-11 shrink-0 place-items-center rounded-[14px] transition-all duration-1000 ${active ? "bg-[#0f9f8d] text-white shadow-[0_12px_24px_rgba(15,159,141,0.22)]" : "bg-[#f3f4f6] text-[#4b5563] group-hover:bg-[#ecfdf9] group-hover:text-[#0f766e]"}`}>
+              <span aria-hidden="true" className={`absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent transition-opacity duration-200 ${active ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
+              <span className={`grid size-11 shrink-0 place-items-center rounded-[14px] transition-all duration-200 ease-out ${active ? "bg-[#0f9f8d] text-white shadow-[0_12px_24px_rgba(15,159,141,0.22)]" : "bg-[#f3f4f6] text-[#4b5563] group-hover:bg-[#ecfdf9] group-hover:text-[#0f766e]"}`}>
                 <Icon className="size-5" />
               </span>
               <span className="min-w-0">
@@ -979,8 +982,11 @@ function StepOptions({ options, selected, onSelect, footer }: StepOptionsProps) 
                   {option.title}
                   {option.badge && <span className="rounded-full bg-[#fff2dc] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-[#966329]">{option.badge}</span>}
                 </span>
+                <span className="mt-1 block text-sm font-medium leading-5 text-[#6b7280]">
+                  {option.description}
+                </span>
               </span>
-              <span className={`ml-auto grid size-5 shrink-0 place-items-center rounded-full border transition-all duration-1000 ${active ? "border-[#2b9f8f] bg-[#2b9f8f] text-white" : "border-[#cadbd7] text-transparent group-hover:border-[#9ccfc6]"}`}>
+              <span className={`ml-auto grid size-5 shrink-0 place-items-center rounded-full border transition-all duration-150 ease-out ${active ? "border-[#2b9f8f] bg-[#2b9f8f] text-white" : "border-[#cadbd7] text-transparent group-hover:border-[#9ccfc6]"}`}>
                 <Check className="size-3" />
               </span>
             </button>
@@ -1043,7 +1049,10 @@ function TargetRoleStep({
       />
 
       <div className="mx-auto mt-7 max-w-[720px]">
-        <p className="text-sm font-semibold text-[#111827]">Experience level</p>
+        <SectionPrompt
+          title="Experience level"
+          description="This calibrates the strictness of the analysis."
+        />
         <StepOptions options={experienceOptions} selected={experienceLevel} onSelect={onExperienceChange} />
       </div>
 
@@ -1072,6 +1081,7 @@ function TimelineStep({
   noDateYet,
   onInterviewDateChange,
   onNoDateYetChange,
+  onTimelineDisplayChange,
   onPreparationIntensityChange,
   onPreparationTimeChange,
   preparationIntensity,
@@ -1081,6 +1091,7 @@ function TimelineStep({
   noDateYet: boolean;
   onInterviewDateChange: (value: string) => void;
   onNoDateYetChange: (value: boolean) => void;
+  onTimelineDisplayChange: (value: string) => void;
   onPreparationIntensityChange: (value: string) => void;
   onPreparationTimeChange: (value: string) => void;
   preparationIntensity: string;
@@ -1088,31 +1099,19 @@ function TimelineStep({
 }) {
   return (
     <div className="mx-auto mt-9 max-w-[720px] pb-8">
-      <div className="rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
-        <label htmlFor="interview-date" className="text-sm font-semibold text-[#111827]">
-          Interview or application date
-        </label>
-        <Input
-          id="interview-date"
-          type="date"
-          value={interviewDate}
-          disabled={noDateYet}
-          onChange={(event) => onInterviewDateChange(event.target.value)}
-          className="mt-3 h-13 rounded-[14px] border-[#e5e7eb] bg-white text-sm text-[#111827] transition-colors duration-500 focus-visible:border-[#8bcfc5] focus-visible:bg-white focus-visible:!ring-0"
-        />
-        <label className="mt-4 flex items-center gap-3 text-sm font-medium text-[#4b5563]">
-          <input
-            type="checkbox"
-            checked={noDateYet}
-            onChange={(event) => onNoDateYetChange(event.target.checked)}
-            className="size-4 rounded border-[#cadbd7] accent-[#0f9f8d]"
-          />
-          I do not have a date yet
-        </label>
-      </div>
+      <DateCapture
+        date={interviewDate}
+        noDateYet={noDateYet}
+        onDateChange={onInterviewDateChange}
+        onNoDateYetChange={onNoDateYetChange}
+        onTimelineDisplayChange={onTimelineDisplayChange}
+      />
 
       <div className="mt-7">
-        <p className="text-sm font-semibold text-[#111827]">Preparation time per day</p>
+        <SectionPrompt
+          title="Preparation time per day"
+          description="Trailgrad will size tasks around this."
+        />
         <StepOptions
           options={preparationTimeOptions}
           selected={preparationTimePerDay}
@@ -1121,12 +1120,110 @@ function TimelineStep({
       </div>
 
       <div className="mt-7">
-        <p className="text-sm font-semibold text-[#111827]">Preparation intensity</p>
+        <SectionPrompt
+          title="Preparation intensity"
+          description="Choose the pace you can actually sustain."
+        />
         <StepOptions
           options={intensityOptions}
           selected={preparationIntensity}
           onSelect={onPreparationIntensityChange}
         />
+      </div>
+    </div>
+  );
+}
+
+function DateCapture({
+  date,
+  noDateYet,
+  onDateChange,
+  onNoDateYetChange,
+  onTimelineDisplayChange,
+}: {
+  date: string;
+  noDateYet: boolean;
+  onDateChange: (value: string) => void;
+  onNoDateYetChange: (value: boolean) => void;
+  onTimelineDisplayChange: (value: string) => void;
+}) {
+  const dateOptions = [
+    {
+      id: "two-weeks",
+      title: "7-15 days",
+      description: "Interview soon",
+      value: addDaysIso(14),
+    },
+    {
+      id: "one-month",
+      title: "1 month",
+      description: "Steady prep window",
+      value: addDaysIso(30),
+    },
+    {
+      id: "three-months",
+      title: "3 months",
+      description: "Build deeper proof",
+      value: addDaysIso(90),
+    },
+    {
+      id: "no-date",
+      title: "No date yet",
+      description: "Keep planning flexible",
+      value: "",
+    },
+  ];
+
+  return (
+    <div>
+      <SectionPrompt
+        title="Timeline"
+        description="Choose the closest prep window. You can change it later."
+      />
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        {dateOptions.map((option) => {
+          const active =
+            option.id === "no-date"
+              ? noDateYet
+              : date === option.value && !noDateYet;
+
+          return (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => {
+                if (option.id === "no-date") {
+                  onNoDateYetChange(true);
+                  onDateChange("");
+                  onTimelineDisplayChange(option.title);
+                  return;
+                }
+
+                onNoDateYetChange(false);
+                onDateChange(option.value);
+                onTimelineDisplayChange(option.title);
+              }}
+              className={`flex min-h-[78px] items-center justify-between gap-3 rounded-[16px] border p-4 text-left transition-[border-color,background-color,box-shadow] duration-150 ease-out ${
+                active
+                  ? "border-[#20b8a4] bg-[#f0fdfa] shadow-[0_16px_34px_rgba(15,118,110,0.1)]"
+                  : "border-[#e5e7eb] bg-white hover:border-[#b7ddd7] hover:bg-[#fbfffe]"
+              }`}
+            >
+              <span>
+                <span className="block text-sm font-semibold text-[#111827]">
+                  {option.title}
+                </span>
+                <span className="mt-1 block text-sm font-medium text-[#6b7280]">
+                  {option.description}
+                </span>
+              </span>
+              <span className={`grid size-5 shrink-0 place-items-center rounded-full border transition-colors duration-150 ease-out ${active ? "border-[#2b9f8f] bg-[#2b9f8f] text-white" : "border-[#cadbd7] text-transparent"}`}>
+                <Check className="size-3" />
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -1147,10 +1244,10 @@ function ResumeQuestion({
 }) {
   return (
     <div className="mx-auto mt-9 max-w-[720px] pb-10">
-      <div className="grid gap-5 sm:grid-cols-[minmax(220px,320px)_1fr] sm:items-center">
+      <div className="grid gap-5 sm:grid-cols-[minmax(0,320px)_minmax(0,1fr)] sm:items-center">
         <label
           htmlFor="resume"
-          className={`group flex aspect-square w-full cursor-pointer flex-col items-center justify-center rounded-[22px] border bg-white p-6 text-center outline-none shadow-[0_8px_22px_rgba(15,118,110,0.028)] transition-[border-color,background-color,box-shadow] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#9fd8d0] hover:bg-[#fdfffe] hover:shadow-[0_12px_28px_rgba(15,118,110,0.045)] ${
+          className={`group flex min-h-[260px] min-w-0 cursor-pointer flex-col items-center justify-center rounded-[22px] border bg-white p-6 text-center outline-none shadow-[0_8px_22px_rgba(15,118,110,0.028)] transition-[border-color,background-color,box-shadow] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#9fd8d0] hover:bg-[#fdfffe] hover:shadow-[0_12px_28px_rgba(15,118,110,0.045)] sm:aspect-square ${
             resumeName ? "border-[#8fd5cb] bg-[#fbfffe]" : "border-[#e7ecea]"
           }`}
         >
@@ -1171,10 +1268,10 @@ function ResumeQuestion({
             )}
           </span>
 
-          <span className="mt-5 block max-w-full truncate text-base font-semibold text-[#111827]">
+          <span className="mt-5 line-clamp-2 max-w-full break-all text-base font-semibold leading-5 text-[#111827]">
             {resumeName || "Upload resume"}
           </span>
-          <span className="mt-2 text-sm font-medium text-[#6b7280]">
+          <span className="mt-2 max-w-full break-words text-sm font-medium text-[#6b7280]">
             {uploading
               ? "Uploading and extracting text"
               : processingStatus || (resumeName ? formatFileSize(resumeSize) : "PDF or DOCX")}
@@ -1185,7 +1282,7 @@ function ResumeQuestion({
           </span>
         </label>
 
-        <div className="rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
+        <div className="min-w-0 rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
           <p className="text-sm font-semibold text-[#111827]">Trailgrad will inspect</p>
           <ul className="mt-3 space-y-2 text-sm font-medium text-[#5f6f6b]">
             {[
@@ -1220,75 +1317,28 @@ function TargetJobStep({
   onModeChange: (value: string) => void;
 }) {
   return (
-    <div className="mx-auto mt-9 max-w-[720px] pb-10">
+    <div className="mx-auto mt-8 max-w-[720px] pb-4">
       <StepOptions options={targetJobOptions} selected={mode} onSelect={onModeChange} />
-      {mode === "paste" ? (
-        <textarea
-          aria-label="Target job description"
-          value={jobDescription}
-          onChange={(event) => onDescriptionChange(event.target.value)}
-          placeholder="Paste the job description or key requirements..."
-          className="tg-slim-scrollbar mt-5 min-h-[180px] w-full resize-none rounded-[16px] border border-[#e5e7eb] bg-[#fcfdfd] p-4 text-sm leading-6 text-[#111827] outline-none transition-colors duration-500 placeholder:text-[#9ca3af] focus:border-[#8bcfc5] focus:bg-white"
-        />
-      ) : null}
-    </div>
-  );
-}
-
-function ProjectsStep({
-  mode,
-  onDescriptionChange,
-  onModeChange,
-  onNameChange,
-  onTechStackChange,
-  projectDescription,
-  projectName,
-  projectTechStack,
-}: {
-  mode: string;
-  onDescriptionChange: (value: string) => void;
-  onModeChange: (value: string) => void;
-  onNameChange: (value: string) => void;
-  onTechStackChange: (value: string) => void;
-  projectDescription: string;
-  projectName: string;
-  projectTechStack: string;
-}) {
-  return (
-    <div className="mx-auto mt-9 max-w-[720px] pb-10">
-      <StepOptions options={projectOptions} selected={mode} onSelect={onModeChange} />
-      {mode === "github_later" ? (
-        <p className="mt-5 rounded-lg border border-[#d7e8e3] bg-[#f8fffd] px-3 py-2 text-sm font-medium text-[#4b5563]">
-          GitHub connection is optional and coming later.
-        </p>
-      ) : null}
-      {mode === "manual" ? (
-        <div className="mt-5 grid gap-4">
-          <LabeledInput
-            label="Project name"
-            placeholder="Example: Resume risk analyzer"
-            value={projectName}
-            onChange={onNameChange}
-          />
-          <label htmlFor="project-description" className="text-sm font-semibold text-[#111827]">
-            Project description <OptionalLabel />
+      <AnimatePresence initial={false}>
+        {mode === "paste" ? (
+          <motion.div
+            key="target-job-description"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          >
             <textarea
-              id="project-description"
-              value={projectDescription}
+              id="job-description"
+              aria-label="Target job description"
+              value={jobDescription}
               onChange={(event) => onDescriptionChange(event.target.value)}
-              placeholder="A short summary is enough."
-              className="tg-slim-scrollbar mt-3 min-h-[120px] w-full resize-none rounded-[16px] border border-[#e5e7eb] bg-[#fcfdfd] p-4 text-sm leading-6 text-[#111827] outline-none transition-colors duration-500 placeholder:text-[#9ca3af] focus:border-[#8bcfc5] focus:bg-white"
+              placeholder="Paste the job description or a few key requirements."
+              className="tg-slim-scrollbar mt-4 min-h-[168px] w-full resize-none rounded-[18px] border border-[#d7e8e3] bg-[#fcfdfd] p-4 text-sm leading-6 text-[#111827] shadow-[0_10px_28px_rgba(15,118,110,0.045)] outline-none transition-colors duration-500 placeholder:text-[#9ca3af] focus:border-[#8bcfc5] focus:bg-white"
             />
-          </label>
-          <LabeledInput
-            label="Tech stack"
-            optional
-            placeholder="Example: Next.js, Postgres"
-            value={projectTechStack}
-            onChange={onTechStackChange}
-          />
-        </div>
-      ) : null}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1326,8 +1376,24 @@ function OptionalLabel() {
   return <span className="text-xs font-medium text-[#6b7280]">(optional)</span>;
 }
 
+function SectionPrompt({
+  description,
+  title,
+}: {
+  description: string;
+  title: string;
+}) {
+  return (
+    <div>
+      <p className="text-sm font-semibold text-[#111827]">{title}</p>
+      <p className="mt-1 text-sm font-medium leading-5 text-[#6b7280]">
+        {description}
+      </p>
+    </div>
+  );
+}
+
 function ReviewStep({
-  addedProjects,
   experience,
   onEdit,
   preparation,
@@ -1336,7 +1402,6 @@ function ReviewStep({
   targetJobStatus,
   timeline,
 }: {
-  addedProjects: string;
   experience: string;
   onEdit: (stepId: OnboardingStepId) => void;
   preparation: string;
@@ -1352,7 +1417,6 @@ function ReviewStep({
     { label: "Preparation availability", value: preparation, step: "timeline" },
     { label: "Uploaded resume", value: resumeName, step: "resume" },
     { label: "Target job", value: targetJobStatus, step: "target-job" },
-    { label: "Added projects", value: addedProjects, step: "projects" },
   ];
 
   return (
@@ -1371,9 +1435,11 @@ function ReviewStep({
                 <button
                   type="button"
                   onClick={() => onEdit(item.step)}
-                  className="rounded-lg border border-[#d7e8e3] bg-white px-2.5 py-1 text-xs font-semibold text-[#0f766e] transition-colors duration-500 hover:border-[#9fd8d0] hover:bg-[#f4fbf9]"
+                  aria-label={`Edit ${item.label}`}
+                  title={`Edit ${item.label}`}
+                  className="grid size-9 shrink-0 place-items-center rounded-lg border border-[#d7e8e3] bg-white text-[#0f766e] transition-colors duration-500 hover:border-[#9fd8d0] hover:bg-[#f4fbf9]"
                 >
-                  Edit
+                  <PencilLine className="size-4" />
                 </button>
               </div>
             </div>
@@ -1392,6 +1458,27 @@ function getStepIndex(stepId: OnboardingStepId | undefined) {
   const index = steps.findIndex((step) => step.id === stepId);
 
   return index >= 0 ? index : 0;
+}
+
+function addDaysIso(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+
+  return date.toISOString().slice(0, 10);
+}
+
+function getTimelineDisplay(date: string, noDateYet: boolean) {
+  if (noDateYet || !date) {
+    return "No date yet";
+  }
+
+  const timelineOptions = [
+    { date: addDaysIso(14), label: "7-15 days" },
+    { date: addDaysIso(30), label: "1 month" },
+    { date: addDaysIso(90), label: "3 months" },
+  ];
+
+  return timelineOptions.find((option) => option.date === date)?.label ?? date;
 }
 
 function formatFileSize(size: number) {

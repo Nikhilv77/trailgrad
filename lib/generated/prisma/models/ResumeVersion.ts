@@ -250,6 +250,7 @@ export type ResumeVersionWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"ResumeVersion"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
   sourceDocument?: Prisma.XOR<Prisma.SourceDocumentScalarRelationFilter, Prisma.SourceDocumentWhereInput>
+  profileAnalyses?: Prisma.ProfileAnalysisListRelationFilter
 }
 
 export type ResumeVersionOrderByWithRelationInput = {
@@ -264,6 +265,7 @@ export type ResumeVersionOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   profile?: Prisma.UserProfileOrderByWithRelationInput
   sourceDocument?: Prisma.SourceDocumentOrderByWithRelationInput
+  profileAnalyses?: Prisma.ProfileAnalysisOrderByRelationAggregateInput
 }
 
 export type ResumeVersionWhereUniqueInput = Prisma.AtLeast<{
@@ -282,6 +284,7 @@ export type ResumeVersionWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"ResumeVersion"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
   sourceDocument?: Prisma.XOR<Prisma.SourceDocumentScalarRelationFilter, Prisma.SourceDocumentWhereInput>
+  profileAnalyses?: Prisma.ProfileAnalysisListRelationFilter
 }, "id" | "profileId_version">
 
 export type ResumeVersionOrderByWithAggregationInput = {
@@ -326,6 +329,7 @@ export type ResumeVersionCreateInput = {
   createdAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutResumeVersionsInput
   sourceDocument: Prisma.SourceDocumentCreateNestedOneWithoutResumeVersionsInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutResumeVersionInput
 }
 
 export type ResumeVersionUncheckedCreateInput = {
@@ -338,6 +342,7 @@ export type ResumeVersionUncheckedCreateInput = {
   errorCode?: string | null
   active?: boolean
   createdAt?: Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutResumeVersionInput
 }
 
 export type ResumeVersionUpdateInput = {
@@ -350,6 +355,7 @@ export type ResumeVersionUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutResumeVersionsNestedInput
   sourceDocument?: Prisma.SourceDocumentUpdateOneRequiredWithoutResumeVersionsNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutResumeVersionNestedInput
 }
 
 export type ResumeVersionUncheckedUpdateInput = {
@@ -362,6 +368,7 @@ export type ResumeVersionUncheckedUpdateInput = {
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutResumeVersionNestedInput
 }
 
 export type ResumeVersionCreateManyInput = {
@@ -457,6 +464,11 @@ export type ResumeVersionSumOrderByAggregateInput = {
   version?: Prisma.SortOrder
 }
 
+export type ResumeVersionScalarRelationFilter = {
+  is?: Prisma.ResumeVersionWhereInput
+  isNot?: Prisma.ResumeVersionWhereInput
+}
+
 export type ResumeVersionCreateNestedManyWithoutProfileInput = {
   create?: Prisma.XOR<Prisma.ResumeVersionCreateWithoutProfileInput, Prisma.ResumeVersionUncheckedCreateWithoutProfileInput> | Prisma.ResumeVersionCreateWithoutProfileInput[] | Prisma.ResumeVersionUncheckedCreateWithoutProfileInput[]
   connectOrCreate?: Prisma.ResumeVersionCreateOrConnectWithoutProfileInput | Prisma.ResumeVersionCreateOrConnectWithoutProfileInput[]
@@ -541,6 +553,20 @@ export type ResumeVersionUncheckedUpdateManyWithoutSourceDocumentNestedInput = {
   deleteMany?: Prisma.ResumeVersionScalarWhereInput | Prisma.ResumeVersionScalarWhereInput[]
 }
 
+export type ResumeVersionCreateNestedOneWithoutProfileAnalysesInput = {
+  create?: Prisma.XOR<Prisma.ResumeVersionCreateWithoutProfileAnalysesInput, Prisma.ResumeVersionUncheckedCreateWithoutProfileAnalysesInput>
+  connectOrCreate?: Prisma.ResumeVersionCreateOrConnectWithoutProfileAnalysesInput
+  connect?: Prisma.ResumeVersionWhereUniqueInput
+}
+
+export type ResumeVersionUpdateOneRequiredWithoutProfileAnalysesNestedInput = {
+  create?: Prisma.XOR<Prisma.ResumeVersionCreateWithoutProfileAnalysesInput, Prisma.ResumeVersionUncheckedCreateWithoutProfileAnalysesInput>
+  connectOrCreate?: Prisma.ResumeVersionCreateOrConnectWithoutProfileAnalysesInput
+  upsert?: Prisma.ResumeVersionUpsertWithoutProfileAnalysesInput
+  connect?: Prisma.ResumeVersionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ResumeVersionUpdateToOneWithWhereWithoutProfileAnalysesInput, Prisma.ResumeVersionUpdateWithoutProfileAnalysesInput>, Prisma.ResumeVersionUncheckedUpdateWithoutProfileAnalysesInput>
+}
+
 export type ResumeVersionCreateWithoutProfileInput = {
   id: string
   version: number
@@ -550,6 +576,7 @@ export type ResumeVersionCreateWithoutProfileInput = {
   active?: boolean
   createdAt?: Date | string
   sourceDocument: Prisma.SourceDocumentCreateNestedOneWithoutResumeVersionsInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutResumeVersionInput
 }
 
 export type ResumeVersionUncheckedCreateWithoutProfileInput = {
@@ -561,6 +588,7 @@ export type ResumeVersionUncheckedCreateWithoutProfileInput = {
   errorCode?: string | null
   active?: boolean
   createdAt?: Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutResumeVersionInput
 }
 
 export type ResumeVersionCreateOrConnectWithoutProfileInput = {
@@ -613,6 +641,7 @@ export type ResumeVersionCreateWithoutSourceDocumentInput = {
   active?: boolean
   createdAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutResumeVersionsInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutResumeVersionInput
 }
 
 export type ResumeVersionUncheckedCreateWithoutSourceDocumentInput = {
@@ -624,6 +653,7 @@ export type ResumeVersionUncheckedCreateWithoutSourceDocumentInput = {
   errorCode?: string | null
   active?: boolean
   createdAt?: Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutResumeVersionInput
 }
 
 export type ResumeVersionCreateOrConnectWithoutSourceDocumentInput = {
@@ -652,6 +682,70 @@ export type ResumeVersionUpdateManyWithWhereWithoutSourceDocumentInput = {
   data: Prisma.XOR<Prisma.ResumeVersionUpdateManyMutationInput, Prisma.ResumeVersionUncheckedUpdateManyWithoutSourceDocumentInput>
 }
 
+export type ResumeVersionCreateWithoutProfileAnalysesInput = {
+  id: string
+  version: number
+  extractedTextStatus?: string
+  extractedText?: string | null
+  errorCode?: string | null
+  active?: boolean
+  createdAt?: Date | string
+  profile: Prisma.UserProfileCreateNestedOneWithoutResumeVersionsInput
+  sourceDocument: Prisma.SourceDocumentCreateNestedOneWithoutResumeVersionsInput
+}
+
+export type ResumeVersionUncheckedCreateWithoutProfileAnalysesInput = {
+  id: string
+  profileId: string
+  sourceDocumentId: string
+  version: number
+  extractedTextStatus?: string
+  extractedText?: string | null
+  errorCode?: string | null
+  active?: boolean
+  createdAt?: Date | string
+}
+
+export type ResumeVersionCreateOrConnectWithoutProfileAnalysesInput = {
+  where: Prisma.ResumeVersionWhereUniqueInput
+  create: Prisma.XOR<Prisma.ResumeVersionCreateWithoutProfileAnalysesInput, Prisma.ResumeVersionUncheckedCreateWithoutProfileAnalysesInput>
+}
+
+export type ResumeVersionUpsertWithoutProfileAnalysesInput = {
+  update: Prisma.XOR<Prisma.ResumeVersionUpdateWithoutProfileAnalysesInput, Prisma.ResumeVersionUncheckedUpdateWithoutProfileAnalysesInput>
+  create: Prisma.XOR<Prisma.ResumeVersionCreateWithoutProfileAnalysesInput, Prisma.ResumeVersionUncheckedCreateWithoutProfileAnalysesInput>
+  where?: Prisma.ResumeVersionWhereInput
+}
+
+export type ResumeVersionUpdateToOneWithWhereWithoutProfileAnalysesInput = {
+  where?: Prisma.ResumeVersionWhereInput
+  data: Prisma.XOR<Prisma.ResumeVersionUpdateWithoutProfileAnalysesInput, Prisma.ResumeVersionUncheckedUpdateWithoutProfileAnalysesInput>
+}
+
+export type ResumeVersionUpdateWithoutProfileAnalysesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  extractedTextStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  extractedText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profile?: Prisma.UserProfileUpdateOneRequiredWithoutResumeVersionsNestedInput
+  sourceDocument?: Prisma.SourceDocumentUpdateOneRequiredWithoutResumeVersionsNestedInput
+}
+
+export type ResumeVersionUncheckedUpdateWithoutProfileAnalysesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceDocumentId?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  extractedTextStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  extractedText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type ResumeVersionCreateManyProfileInput = {
   id: string
   sourceDocumentId: string
@@ -672,6 +766,7 @@ export type ResumeVersionUpdateWithoutProfileInput = {
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sourceDocument?: Prisma.SourceDocumentUpdateOneRequiredWithoutResumeVersionsNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutResumeVersionNestedInput
 }
 
 export type ResumeVersionUncheckedUpdateWithoutProfileInput = {
@@ -683,6 +778,7 @@ export type ResumeVersionUncheckedUpdateWithoutProfileInput = {
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutResumeVersionNestedInput
 }
 
 export type ResumeVersionUncheckedUpdateManyWithoutProfileInput = {
@@ -716,6 +812,7 @@ export type ResumeVersionUpdateWithoutSourceDocumentInput = {
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutResumeVersionsNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutResumeVersionNestedInput
 }
 
 export type ResumeVersionUncheckedUpdateWithoutSourceDocumentInput = {
@@ -727,6 +824,7 @@ export type ResumeVersionUncheckedUpdateWithoutSourceDocumentInput = {
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   active?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutResumeVersionNestedInput
 }
 
 export type ResumeVersionUncheckedUpdateManyWithoutSourceDocumentInput = {
@@ -741,6 +839,35 @@ export type ResumeVersionUncheckedUpdateManyWithoutSourceDocumentInput = {
 }
 
 
+/**
+ * Count Type ResumeVersionCountOutputType
+ */
+
+export type ResumeVersionCountOutputType = {
+  profileAnalyses: number
+}
+
+export type ResumeVersionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  profileAnalyses?: boolean | ResumeVersionCountOutputTypeCountProfileAnalysesArgs
+}
+
+/**
+ * ResumeVersionCountOutputType without action
+ */
+export type ResumeVersionCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ResumeVersionCountOutputType
+   */
+  select?: Prisma.ResumeVersionCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * ResumeVersionCountOutputType without action
+ */
+export type ResumeVersionCountOutputTypeCountProfileAnalysesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProfileAnalysisWhereInput
+}
+
 
 export type ResumeVersionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -754,6 +881,8 @@ export type ResumeVersionSelect<ExtArgs extends runtime.Types.Extensions.Interna
   createdAt?: boolean
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   sourceDocument?: boolean | Prisma.SourceDocumentDefaultArgs<ExtArgs>
+  profileAnalyses?: boolean | Prisma.ResumeVersion$profileAnalysesArgs<ExtArgs>
+  _count?: boolean | Prisma.ResumeVersionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["resumeVersion"]>
 
 export type ResumeVersionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -800,6 +929,8 @@ export type ResumeVersionOmit<ExtArgs extends runtime.Types.Extensions.InternalA
 export type ResumeVersionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   sourceDocument?: boolean | Prisma.SourceDocumentDefaultArgs<ExtArgs>
+  profileAnalyses?: boolean | Prisma.ResumeVersion$profileAnalysesArgs<ExtArgs>
+  _count?: boolean | Prisma.ResumeVersionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ResumeVersionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
@@ -815,6 +946,7 @@ export type $ResumeVersionPayload<ExtArgs extends runtime.Types.Extensions.Inter
   objects: {
     profile: Prisma.$UserProfilePayload<ExtArgs>
     sourceDocument: Prisma.$SourceDocumentPayload<ExtArgs>
+    profileAnalyses: Prisma.$ProfileAnalysisPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1222,6 +1354,7 @@ export interface Prisma__ResumeVersionClient<T, Null = never, ExtArgs extends ru
   readonly [Symbol.toStringTag]: "PrismaPromise"
   profile<T extends Prisma.UserProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__UserProfileClient<runtime.Types.Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   sourceDocument<T extends Prisma.SourceDocumentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SourceDocumentDefaultArgs<ExtArgs>>): Prisma.Prisma__SourceDocumentClient<runtime.Types.Result.GetResult<Prisma.$SourceDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  profileAnalyses<T extends Prisma.ResumeVersion$profileAnalysesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ResumeVersion$profileAnalysesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProfileAnalysisPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1658,6 +1791,30 @@ export type ResumeVersionDeleteManyArgs<ExtArgs extends runtime.Types.Extensions
    * Limit how many ResumeVersions to delete.
    */
   limit?: number
+}
+
+/**
+ * ResumeVersion.profileAnalyses
+ */
+export type ResumeVersion$profileAnalysesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProfileAnalysis
+   */
+  select?: Prisma.ProfileAnalysisSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProfileAnalysis
+   */
+  omit?: Prisma.ProfileAnalysisOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileAnalysisInclude<ExtArgs> | null
+  where?: Prisma.ProfileAnalysisWhereInput
+  orderBy?: Prisma.ProfileAnalysisOrderByWithRelationInput | Prisma.ProfileAnalysisOrderByWithRelationInput[]
+  cursor?: Prisma.ProfileAnalysisWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProfileAnalysisScalarFieldEnum | Prisma.ProfileAnalysisScalarFieldEnum[]
 }
 
 /**

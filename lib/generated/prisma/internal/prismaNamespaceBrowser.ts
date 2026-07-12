@@ -56,7 +56,10 @@ export const ModelName = {
   TargetContext: 'TargetContext',
   ManualProject: 'ManualProject',
   SourceDocument: 'SourceDocument',
-  ResumeVersion: 'ResumeVersion'
+  AnalysisJob: 'AnalysisJob',
+  AiRun: 'AiRun',
+  ResumeVersion: 'ResumeVersion',
+  ProfileAnalysis: 'ProfileAnalysis'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -158,6 +161,49 @@ export const SourceDocumentScalarFieldEnum = {
 export type SourceDocumentScalarFieldEnum = (typeof SourceDocumentScalarFieldEnum)[keyof typeof SourceDocumentScalarFieldEnum]
 
 
+export const AnalysisJobScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  sourceDocumentId: 'sourceDocumentId',
+  type: 'type',
+  status: 'status',
+  currentStage: 'currentStage',
+  progressPercent: 'progressPercent',
+  idempotencyKey: 'idempotencyKey',
+  attemptCount: 'attemptCount',
+  safeErrorCode: 'safeErrorCode',
+  safeErrorMessage: 'safeErrorMessage',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AnalysisJobScalarFieldEnum = (typeof AnalysisJobScalarFieldEnum)[keyof typeof AnalysisJobScalarFieldEnum]
+
+
+export const AiRunScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  analysisJobId: 'analysisJobId',
+  provider: 'provider',
+  operation: 'operation',
+  model: 'model',
+  promptVersion: 'promptVersion',
+  inputTokens: 'inputTokens',
+  outputTokens: 'outputTokens',
+  cachedTokens: 'cachedTokens',
+  estimatedCostUsd: 'estimatedCostUsd',
+  durationMs: 'durationMs',
+  status: 'status',
+  usedFallback: 'usedFallback',
+  safeErrorCode: 'safeErrorCode',
+  createdAt: 'createdAt'
+} as const
+
+export type AiRunScalarFieldEnum = (typeof AiRunScalarFieldEnum)[keyof typeof AiRunScalarFieldEnum]
+
+
 export const ResumeVersionScalarFieldEnum = {
   id: 'id',
   profileId: 'profileId',
@@ -171,6 +217,24 @@ export const ResumeVersionScalarFieldEnum = {
 } as const
 
 export type ResumeVersionScalarFieldEnum = (typeof ResumeVersionScalarFieldEnum)[keyof typeof ResumeVersionScalarFieldEnum]
+
+
+export const ProfileAnalysisScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  resumeVersionId: 'resumeVersionId',
+  targetContextId: 'targetContextId',
+  status: 'status',
+  result: 'result',
+  promptVersion: 'promptVersion',
+  provider: 'provider',
+  model: 'model',
+  safeErrorCode: 'safeErrorCode',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProfileAnalysisScalarFieldEnum = (typeof ProfileAnalysisScalarFieldEnum)[keyof typeof ProfileAnalysisScalarFieldEnum]
 
 
 export const SortOrder = {

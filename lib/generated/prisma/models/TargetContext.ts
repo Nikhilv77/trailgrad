@@ -215,6 +215,7 @@ export type TargetContextWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"TargetContext"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"TargetContext"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
+  profileAnalyses?: Prisma.ProfileAnalysisListRelationFilter
 }
 
 export type TargetContextOrderByWithRelationInput = {
@@ -228,6 +229,7 @@ export type TargetContextOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   profile?: Prisma.UserProfileOrderByWithRelationInput
+  profileAnalyses?: Prisma.ProfileAnalysisOrderByRelationAggregateInput
 }
 
 export type TargetContextWhereUniqueInput = Prisma.AtLeast<{
@@ -244,6 +246,7 @@ export type TargetContextWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"TargetContext"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"TargetContext"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
+  profileAnalyses?: Prisma.ProfileAnalysisListRelationFilter
 }, "id">
 
 export type TargetContextOrderByWithAggregationInput = {
@@ -286,6 +289,7 @@ export type TargetContextCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutTargetContextsInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutTargetContextInput
 }
 
 export type TargetContextUncheckedCreateInput = {
@@ -298,6 +302,7 @@ export type TargetContextUncheckedCreateInput = {
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutTargetContextInput
 }
 
 export type TargetContextUpdateInput = {
@@ -310,6 +315,7 @@ export type TargetContextUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutTargetContextsNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutTargetContextNestedInput
 }
 
 export type TargetContextUncheckedUpdateInput = {
@@ -322,6 +328,7 @@ export type TargetContextUncheckedUpdateInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutTargetContextNestedInput
 }
 
 export type TargetContextCreateManyInput = {
@@ -405,6 +412,11 @@ export type TargetContextMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
+export type TargetContextNullableScalarRelationFilter = {
+  is?: Prisma.TargetContextWhereInput | null
+  isNot?: Prisma.TargetContextWhereInput | null
+}
+
 export type TargetContextCreateNestedManyWithoutProfileInput = {
   create?: Prisma.XOR<Prisma.TargetContextCreateWithoutProfileInput, Prisma.TargetContextUncheckedCreateWithoutProfileInput> | Prisma.TargetContextCreateWithoutProfileInput[] | Prisma.TargetContextUncheckedCreateWithoutProfileInput[]
   connectOrCreate?: Prisma.TargetContextCreateOrConnectWithoutProfileInput | Prisma.TargetContextCreateOrConnectWithoutProfileInput[]
@@ -447,6 +459,22 @@ export type TargetContextUncheckedUpdateManyWithoutProfileNestedInput = {
   deleteMany?: Prisma.TargetContextScalarWhereInput | Prisma.TargetContextScalarWhereInput[]
 }
 
+export type TargetContextCreateNestedOneWithoutProfileAnalysesInput = {
+  create?: Prisma.XOR<Prisma.TargetContextCreateWithoutProfileAnalysesInput, Prisma.TargetContextUncheckedCreateWithoutProfileAnalysesInput>
+  connectOrCreate?: Prisma.TargetContextCreateOrConnectWithoutProfileAnalysesInput
+  connect?: Prisma.TargetContextWhereUniqueInput
+}
+
+export type TargetContextUpdateOneWithoutProfileAnalysesNestedInput = {
+  create?: Prisma.XOR<Prisma.TargetContextCreateWithoutProfileAnalysesInput, Prisma.TargetContextUncheckedCreateWithoutProfileAnalysesInput>
+  connectOrCreate?: Prisma.TargetContextCreateOrConnectWithoutProfileAnalysesInput
+  upsert?: Prisma.TargetContextUpsertWithoutProfileAnalysesInput
+  disconnect?: Prisma.TargetContextWhereInput | boolean
+  delete?: Prisma.TargetContextWhereInput | boolean
+  connect?: Prisma.TargetContextWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TargetContextUpdateToOneWithWhereWithoutProfileAnalysesInput, Prisma.TargetContextUpdateWithoutProfileAnalysesInput>, Prisma.TargetContextUncheckedUpdateWithoutProfileAnalysesInput>
+}
+
 export type TargetContextCreateWithoutProfileInput = {
   id: string
   role: string
@@ -456,6 +484,7 @@ export type TargetContextCreateWithoutProfileInput = {
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutTargetContextInput
 }
 
 export type TargetContextUncheckedCreateWithoutProfileInput = {
@@ -467,6 +496,7 @@ export type TargetContextUncheckedCreateWithoutProfileInput = {
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutTargetContextInput
 }
 
 export type TargetContextCreateOrConnectWithoutProfileInput = {
@@ -510,6 +540,70 @@ export type TargetContextScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"TargetContext"> | Date | string
 }
 
+export type TargetContextCreateWithoutProfileAnalysesInput = {
+  id: string
+  role: string
+  company?: string | null
+  jobTitle?: string | null
+  jobDescription?: string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  profile: Prisma.UserProfileCreateNestedOneWithoutTargetContextsInput
+}
+
+export type TargetContextUncheckedCreateWithoutProfileAnalysesInput = {
+  id: string
+  profileId: string
+  role: string
+  company?: string | null
+  jobTitle?: string | null
+  jobDescription?: string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type TargetContextCreateOrConnectWithoutProfileAnalysesInput = {
+  where: Prisma.TargetContextWhereUniqueInput
+  create: Prisma.XOR<Prisma.TargetContextCreateWithoutProfileAnalysesInput, Prisma.TargetContextUncheckedCreateWithoutProfileAnalysesInput>
+}
+
+export type TargetContextUpsertWithoutProfileAnalysesInput = {
+  update: Prisma.XOR<Prisma.TargetContextUpdateWithoutProfileAnalysesInput, Prisma.TargetContextUncheckedUpdateWithoutProfileAnalysesInput>
+  create: Prisma.XOR<Prisma.TargetContextCreateWithoutProfileAnalysesInput, Prisma.TargetContextUncheckedCreateWithoutProfileAnalysesInput>
+  where?: Prisma.TargetContextWhereInput
+}
+
+export type TargetContextUpdateToOneWithWhereWithoutProfileAnalysesInput = {
+  where?: Prisma.TargetContextWhereInput
+  data: Prisma.XOR<Prisma.TargetContextUpdateWithoutProfileAnalysesInput, Prisma.TargetContextUncheckedUpdateWithoutProfileAnalysesInput>
+}
+
+export type TargetContextUpdateWithoutProfileAnalysesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profile?: Prisma.UserProfileUpdateOneRequiredWithoutTargetContextsNestedInput
+}
+
+export type TargetContextUncheckedUpdateWithoutProfileAnalysesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type TargetContextCreateManyProfileInput = {
   id: string
   role: string
@@ -530,6 +624,7 @@ export type TargetContextUpdateWithoutProfileInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutTargetContextNestedInput
 }
 
 export type TargetContextUncheckedUpdateWithoutProfileInput = {
@@ -541,6 +636,7 @@ export type TargetContextUncheckedUpdateWithoutProfileInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutTargetContextNestedInput
 }
 
 export type TargetContextUncheckedUpdateManyWithoutProfileInput = {
@@ -555,6 +651,35 @@ export type TargetContextUncheckedUpdateManyWithoutProfileInput = {
 }
 
 
+/**
+ * Count Type TargetContextCountOutputType
+ */
+
+export type TargetContextCountOutputType = {
+  profileAnalyses: number
+}
+
+export type TargetContextCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  profileAnalyses?: boolean | TargetContextCountOutputTypeCountProfileAnalysesArgs
+}
+
+/**
+ * TargetContextCountOutputType without action
+ */
+export type TargetContextCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TargetContextCountOutputType
+   */
+  select?: Prisma.TargetContextCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * TargetContextCountOutputType without action
+ */
+export type TargetContextCountOutputTypeCountProfileAnalysesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProfileAnalysisWhereInput
+}
+
 
 export type TargetContextSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -567,6 +692,8 @@ export type TargetContextSelect<ExtArgs extends runtime.Types.Extensions.Interna
   createdAt?: boolean
   updatedAt?: boolean
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
+  profileAnalyses?: boolean | Prisma.TargetContext$profileAnalysesArgs<ExtArgs>
+  _count?: boolean | Prisma.TargetContextCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["targetContext"]>
 
 export type TargetContextSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -610,6 +737,8 @@ export type TargetContextSelectScalar = {
 export type TargetContextOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "profileId" | "role" | "company" | "jobTitle" | "jobDescription" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["targetContext"]>
 export type TargetContextInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
+  profileAnalyses?: boolean | Prisma.TargetContext$profileAnalysesArgs<ExtArgs>
+  _count?: boolean | Prisma.TargetContextCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TargetContextIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
@@ -622,6 +751,7 @@ export type $TargetContextPayload<ExtArgs extends runtime.Types.Extensions.Inter
   name: "TargetContext"
   objects: {
     profile: Prisma.$UserProfilePayload<ExtArgs>
+    profileAnalyses: Prisma.$ProfileAnalysisPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1028,6 +1158,7 @@ readonly fields: TargetContextFieldRefs;
 export interface Prisma__TargetContextClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   profile<T extends Prisma.UserProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__UserProfileClient<runtime.Types.Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  profileAnalyses<T extends Prisma.TargetContext$profileAnalysesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TargetContext$profileAnalysesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProfileAnalysisPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1464,6 +1595,30 @@ export type TargetContextDeleteManyArgs<ExtArgs extends runtime.Types.Extensions
    * Limit how many TargetContexts to delete.
    */
   limit?: number
+}
+
+/**
+ * TargetContext.profileAnalyses
+ */
+export type TargetContext$profileAnalysesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProfileAnalysis
+   */
+  select?: Prisma.ProfileAnalysisSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProfileAnalysis
+   */
+  omit?: Prisma.ProfileAnalysisOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileAnalysisInclude<ExtArgs> | null
+  where?: Prisma.ProfileAnalysisWhereInput
+  orderBy?: Prisma.ProfileAnalysisOrderByWithRelationInput | Prisma.ProfileAnalysisOrderByWithRelationInput[]
+  cursor?: Prisma.ProfileAnalysisWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProfileAnalysisScalarFieldEnum | Prisma.ProfileAnalysisScalarFieldEnum[]
 }
 
 /**

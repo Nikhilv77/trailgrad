@@ -278,6 +278,7 @@ export type SourceDocumentWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"SourceDocument"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
   resumeVersions?: Prisma.ResumeVersionListRelationFilter
+  analysisJobs?: Prisma.AnalysisJobListRelationFilter
 }
 
 export type SourceDocumentOrderByWithRelationInput = {
@@ -295,6 +296,7 @@ export type SourceDocumentOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   profile?: Prisma.UserProfileOrderByWithRelationInput
   resumeVersions?: Prisma.ResumeVersionOrderByRelationAggregateInput
+  analysisJobs?: Prisma.AnalysisJobOrderByRelationAggregateInput
 }
 
 export type SourceDocumentWhereUniqueInput = Prisma.AtLeast<{
@@ -317,6 +319,7 @@ export type SourceDocumentWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"SourceDocument"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
   resumeVersions?: Prisma.ResumeVersionListRelationFilter
+  analysisJobs?: Prisma.AnalysisJobListRelationFilter
 }, "id" | "storagePath" | "profileId_sourceType_version" | "profileId_sourceType_sha256ContentHash">
 
 export type SourceDocumentOrderByWithAggregationInput = {
@@ -371,6 +374,7 @@ export type SourceDocumentCreateInput = {
   createdAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutSourceDocumentsInput
   resumeVersions?: Prisma.ResumeVersionCreateNestedManyWithoutSourceDocumentInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutSourceDocumentInput
 }
 
 export type SourceDocumentUncheckedCreateInput = {
@@ -387,6 +391,7 @@ export type SourceDocumentUncheckedCreateInput = {
   version: number
   createdAt?: Date | string
   resumeVersions?: Prisma.ResumeVersionUncheckedCreateNestedManyWithoutSourceDocumentInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutSourceDocumentInput
 }
 
 export type SourceDocumentUpdateInput = {
@@ -403,6 +408,7 @@ export type SourceDocumentUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutSourceDocumentsNestedInput
   resumeVersions?: Prisma.ResumeVersionUpdateManyWithoutSourceDocumentNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutSourceDocumentNestedInput
 }
 
 export type SourceDocumentUncheckedUpdateInput = {
@@ -419,6 +425,7 @@ export type SourceDocumentUncheckedUpdateInput = {
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resumeVersions?: Prisma.ResumeVersionUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutSourceDocumentNestedInput
 }
 
 export type SourceDocumentCreateManyInput = {
@@ -542,6 +549,11 @@ export type SourceDocumentSumOrderByAggregateInput = {
   version?: Prisma.SortOrder
 }
 
+export type SourceDocumentNullableScalarRelationFilter = {
+  is?: Prisma.SourceDocumentWhereInput | null
+  isNot?: Prisma.SourceDocumentWhereInput | null
+}
+
 export type SourceDocumentScalarRelationFilter = {
   is?: Prisma.SourceDocumentWhereInput
   isNot?: Prisma.SourceDocumentWhereInput
@@ -597,6 +609,22 @@ export type IntFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type SourceDocumentCreateNestedOneWithoutAnalysisJobsInput = {
+  create?: Prisma.XOR<Prisma.SourceDocumentCreateWithoutAnalysisJobsInput, Prisma.SourceDocumentUncheckedCreateWithoutAnalysisJobsInput>
+  connectOrCreate?: Prisma.SourceDocumentCreateOrConnectWithoutAnalysisJobsInput
+  connect?: Prisma.SourceDocumentWhereUniqueInput
+}
+
+export type SourceDocumentUpdateOneWithoutAnalysisJobsNestedInput = {
+  create?: Prisma.XOR<Prisma.SourceDocumentCreateWithoutAnalysisJobsInput, Prisma.SourceDocumentUncheckedCreateWithoutAnalysisJobsInput>
+  connectOrCreate?: Prisma.SourceDocumentCreateOrConnectWithoutAnalysisJobsInput
+  upsert?: Prisma.SourceDocumentUpsertWithoutAnalysisJobsInput
+  disconnect?: Prisma.SourceDocumentWhereInput | boolean
+  delete?: Prisma.SourceDocumentWhereInput | boolean
+  connect?: Prisma.SourceDocumentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SourceDocumentUpdateToOneWithWhereWithoutAnalysisJobsInput, Prisma.SourceDocumentUpdateWithoutAnalysisJobsInput>, Prisma.SourceDocumentUncheckedUpdateWithoutAnalysisJobsInput>
+}
+
 export type SourceDocumentCreateNestedOneWithoutResumeVersionsInput = {
   create?: Prisma.XOR<Prisma.SourceDocumentCreateWithoutResumeVersionsInput, Prisma.SourceDocumentUncheckedCreateWithoutResumeVersionsInput>
   connectOrCreate?: Prisma.SourceDocumentCreateOrConnectWithoutResumeVersionsInput
@@ -624,6 +652,7 @@ export type SourceDocumentCreateWithoutProfileInput = {
   version: number
   createdAt?: Date | string
   resumeVersions?: Prisma.ResumeVersionCreateNestedManyWithoutSourceDocumentInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutSourceDocumentInput
 }
 
 export type SourceDocumentUncheckedCreateWithoutProfileInput = {
@@ -639,6 +668,7 @@ export type SourceDocumentUncheckedCreateWithoutProfileInput = {
   version: number
   createdAt?: Date | string
   resumeVersions?: Prisma.ResumeVersionUncheckedCreateNestedManyWithoutSourceDocumentInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutSourceDocumentInput
 }
 
 export type SourceDocumentCreateOrConnectWithoutProfileInput = {
@@ -685,6 +715,86 @@ export type SourceDocumentScalarWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"SourceDocument"> | Date | string
 }
 
+export type SourceDocumentCreateWithoutAnalysisJobsInput = {
+  id: string
+  sourceType: string
+  originalFilename: string
+  mimeType: string
+  storagePath: string
+  fileSize: number
+  sha256ContentHash: string
+  processingStatus?: string
+  errorCode?: string | null
+  version: number
+  createdAt?: Date | string
+  profile: Prisma.UserProfileCreateNestedOneWithoutSourceDocumentsInput
+  resumeVersions?: Prisma.ResumeVersionCreateNestedManyWithoutSourceDocumentInput
+}
+
+export type SourceDocumentUncheckedCreateWithoutAnalysisJobsInput = {
+  id: string
+  profileId: string
+  sourceType: string
+  originalFilename: string
+  mimeType: string
+  storagePath: string
+  fileSize: number
+  sha256ContentHash: string
+  processingStatus?: string
+  errorCode?: string | null
+  version: number
+  createdAt?: Date | string
+  resumeVersions?: Prisma.ResumeVersionUncheckedCreateNestedManyWithoutSourceDocumentInput
+}
+
+export type SourceDocumentCreateOrConnectWithoutAnalysisJobsInput = {
+  where: Prisma.SourceDocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.SourceDocumentCreateWithoutAnalysisJobsInput, Prisma.SourceDocumentUncheckedCreateWithoutAnalysisJobsInput>
+}
+
+export type SourceDocumentUpsertWithoutAnalysisJobsInput = {
+  update: Prisma.XOR<Prisma.SourceDocumentUpdateWithoutAnalysisJobsInput, Prisma.SourceDocumentUncheckedUpdateWithoutAnalysisJobsInput>
+  create: Prisma.XOR<Prisma.SourceDocumentCreateWithoutAnalysisJobsInput, Prisma.SourceDocumentUncheckedCreateWithoutAnalysisJobsInput>
+  where?: Prisma.SourceDocumentWhereInput
+}
+
+export type SourceDocumentUpdateToOneWithWhereWithoutAnalysisJobsInput = {
+  where?: Prisma.SourceDocumentWhereInput
+  data: Prisma.XOR<Prisma.SourceDocumentUpdateWithoutAnalysisJobsInput, Prisma.SourceDocumentUncheckedUpdateWithoutAnalysisJobsInput>
+}
+
+export type SourceDocumentUpdateWithoutAnalysisJobsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceType?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFilename?: Prisma.StringFieldUpdateOperationsInput | string
+  mimeType?: Prisma.StringFieldUpdateOperationsInput | string
+  storagePath?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  sha256ContentHash?: Prisma.StringFieldUpdateOperationsInput | string
+  processingStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profile?: Prisma.UserProfileUpdateOneRequiredWithoutSourceDocumentsNestedInput
+  resumeVersions?: Prisma.ResumeVersionUpdateManyWithoutSourceDocumentNestedInput
+}
+
+export type SourceDocumentUncheckedUpdateWithoutAnalysisJobsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceType?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFilename?: Prisma.StringFieldUpdateOperationsInput | string
+  mimeType?: Prisma.StringFieldUpdateOperationsInput | string
+  storagePath?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  sha256ContentHash?: Prisma.StringFieldUpdateOperationsInput | string
+  processingStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  resumeVersions?: Prisma.ResumeVersionUncheckedUpdateManyWithoutSourceDocumentNestedInput
+}
+
 export type SourceDocumentCreateWithoutResumeVersionsInput = {
   id: string
   sourceType: string
@@ -698,6 +808,7 @@ export type SourceDocumentCreateWithoutResumeVersionsInput = {
   version: number
   createdAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutSourceDocumentsInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutSourceDocumentInput
 }
 
 export type SourceDocumentUncheckedCreateWithoutResumeVersionsInput = {
@@ -713,6 +824,7 @@ export type SourceDocumentUncheckedCreateWithoutResumeVersionsInput = {
   errorCode?: string | null
   version: number
   createdAt?: Date | string
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutSourceDocumentInput
 }
 
 export type SourceDocumentCreateOrConnectWithoutResumeVersionsInput = {
@@ -744,6 +856,7 @@ export type SourceDocumentUpdateWithoutResumeVersionsInput = {
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutSourceDocumentsNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutSourceDocumentNestedInput
 }
 
 export type SourceDocumentUncheckedUpdateWithoutResumeVersionsInput = {
@@ -759,6 +872,7 @@ export type SourceDocumentUncheckedUpdateWithoutResumeVersionsInput = {
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutSourceDocumentNestedInput
 }
 
 export type SourceDocumentCreateManyProfileInput = {
@@ -788,6 +902,7 @@ export type SourceDocumentUpdateWithoutProfileInput = {
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resumeVersions?: Prisma.ResumeVersionUpdateManyWithoutSourceDocumentNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutSourceDocumentNestedInput
 }
 
 export type SourceDocumentUncheckedUpdateWithoutProfileInput = {
@@ -803,6 +918,7 @@ export type SourceDocumentUncheckedUpdateWithoutProfileInput = {
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   resumeVersions?: Prisma.ResumeVersionUncheckedUpdateManyWithoutSourceDocumentNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutSourceDocumentNestedInput
 }
 
 export type SourceDocumentUncheckedUpdateManyWithoutProfileInput = {
@@ -826,10 +942,12 @@ export type SourceDocumentUncheckedUpdateManyWithoutProfileInput = {
 
 export type SourceDocumentCountOutputType = {
   resumeVersions: number
+  analysisJobs: number
 }
 
 export type SourceDocumentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   resumeVersions?: boolean | SourceDocumentCountOutputTypeCountResumeVersionsArgs
+  analysisJobs?: boolean | SourceDocumentCountOutputTypeCountAnalysisJobsArgs
 }
 
 /**
@@ -849,6 +967,13 @@ export type SourceDocumentCountOutputTypeCountResumeVersionsArgs<ExtArgs extends
   where?: Prisma.ResumeVersionWhereInput
 }
 
+/**
+ * SourceDocumentCountOutputType without action
+ */
+export type SourceDocumentCountOutputTypeCountAnalysisJobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AnalysisJobWhereInput
+}
+
 
 export type SourceDocumentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -865,6 +990,7 @@ export type SourceDocumentSelect<ExtArgs extends runtime.Types.Extensions.Intern
   createdAt?: boolean
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   resumeVersions?: boolean | Prisma.SourceDocument$resumeVersionsArgs<ExtArgs>
+  analysisJobs?: boolean | Prisma.SourceDocument$analysisJobsArgs<ExtArgs>
   _count?: boolean | Prisma.SourceDocumentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["sourceDocument"]>
 
@@ -919,6 +1045,7 @@ export type SourceDocumentOmit<ExtArgs extends runtime.Types.Extensions.Internal
 export type SourceDocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   resumeVersions?: boolean | Prisma.SourceDocument$resumeVersionsArgs<ExtArgs>
+  analysisJobs?: boolean | Prisma.SourceDocument$analysisJobsArgs<ExtArgs>
   _count?: boolean | Prisma.SourceDocumentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type SourceDocumentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -933,6 +1060,7 @@ export type $SourceDocumentPayload<ExtArgs extends runtime.Types.Extensions.Inte
   objects: {
     profile: Prisma.$UserProfilePayload<ExtArgs>
     resumeVersions: Prisma.$ResumeVersionPayload<ExtArgs>[]
+    analysisJobs: Prisma.$AnalysisJobPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1343,6 +1471,7 @@ export interface Prisma__SourceDocumentClient<T, Null = never, ExtArgs extends r
   readonly [Symbol.toStringTag]: "PrismaPromise"
   profile<T extends Prisma.UserProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__UserProfileClient<runtime.Types.Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   resumeVersions<T extends Prisma.SourceDocument$resumeVersionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SourceDocument$resumeVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ResumeVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  analysisJobs<T extends Prisma.SourceDocument$analysisJobsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SourceDocument$analysisJobsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnalysisJobPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1806,6 +1935,30 @@ export type SourceDocument$resumeVersionsArgs<ExtArgs extends runtime.Types.Exte
   take?: number
   skip?: number
   distinct?: Prisma.ResumeVersionScalarFieldEnum | Prisma.ResumeVersionScalarFieldEnum[]
+}
+
+/**
+ * SourceDocument.analysisJobs
+ */
+export type SourceDocument$analysisJobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AnalysisJob
+   */
+  select?: Prisma.AnalysisJobSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AnalysisJob
+   */
+  omit?: Prisma.AnalysisJobOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AnalysisJobInclude<ExtArgs> | null
+  where?: Prisma.AnalysisJobWhereInput
+  orderBy?: Prisma.AnalysisJobOrderByWithRelationInput | Prisma.AnalysisJobOrderByWithRelationInput[]
+  cursor?: Prisma.AnalysisJobWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AnalysisJobScalarFieldEnum | Prisma.AnalysisJobScalarFieldEnum[]
 }
 
 /**

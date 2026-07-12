@@ -3,6 +3,7 @@
 import { type MouseEvent as ReactMouseEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
+import { HashLoader } from "react-spinners";
 
 export function PageTransition({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -121,8 +122,16 @@ export function PageTransition({ children }: { children: ReactNode }) {
         }`}
       >
         <div className="absolute inset-[-12%] bg-[radial-gradient(circle_at_28%_28%,rgba(20,184,166,0.18),transparent_34%),radial-gradient(circle_at_74%_68%,rgba(15,118,110,0.12),transparent_38%),linear-gradient(135deg,#fbfefd_0%,#eff8f5_52%,#f9fcfb_100%)]" />
-        <div className="absolute left-1/2 top-1/2 h-[3px] w-[180px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full bg-[#d8eee9]">
-          <span className="tg-route-loader block h-full w-1/2 rounded-full bg-[#159b89]" />
+        <div className="absolute left-1/2 top-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center">
+          <HashLoader
+            color="#159b89"
+            loading={active && !reduceMotion}
+            size={54}
+            speedMultiplier={0.9}
+            cssOverride={{
+              filter: "drop-shadow(0 16px 34px rgba(15, 118, 110, 0.16))",
+            }}
+          />
         </div>
       </div>
     </div>

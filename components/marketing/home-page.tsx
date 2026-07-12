@@ -125,11 +125,11 @@ function IntroHeading({
 function HeroStackImages({ visible }: { visible: boolean }) {
   return (
     <div
-      className={`relative isolate mx-auto h-[350px] w-full max-w-[660px] overflow-visible transition-opacity duration-500 ease-out sm:h-[455px] sm:max-w-[800px] lg:h-[500px] lg:max-w-[900px] ${
+      className={`relative isolate mx-auto h-[320px] w-full max-w-[660px] overflow-visible transition-opacity duration-500 ease-out sm:h-[455px] sm:max-w-[800px] lg:h-[500px] lg:max-w-[900px] ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >
-      <div className="absolute right-[7%] top-[1%] z-0 w-[51%] rotate-[2.4deg] opacity-[0.74] sm:right-[8%] sm:w-[50%] lg:right-[9%] lg:w-[49%]">
+      <div className="absolute right-[5%] top-[10%] z-0 w-[55%] rotate-[2.4deg] opacity-[0.74] sm:right-[8%] sm:top-[1%] sm:w-[50%] lg:right-[9%] lg:w-[49%]">
         <div className="tg-preview-float-delayed rounded-[16px] border border-white/90 bg-white/55 p-1 shadow-[0_18px_44px_rgba(15,118,110,0.10)] backdrop-blur-[2px] sm:rounded-[22px]">
           <Image
             src="/images/landing/profile-preview-20260710.webp"
@@ -143,7 +143,7 @@ function HeroStackImages({ visible }: { visible: boolean }) {
         </div>
       </div>
 
-      <div className="absolute left-[10%] top-[18%] z-10 w-[58%] -rotate-[1.6deg] sm:left-[12%] sm:top-[17%] sm:w-[56%] lg:left-[13%] lg:top-[16%] lg:w-[55%]">
+      <div className="absolute left-[7%] top-[30%] z-10 w-[66%] -rotate-[1.6deg] sm:left-[12%] sm:top-[17%] sm:w-[56%] lg:left-[13%] lg:top-[16%] lg:w-[55%]">
         <div className="tg-preview-float rounded-[18px] border border-white bg-white/65 p-1 shadow-[0_24px_58px_rgba(15,118,110,0.15)] backdrop-blur-[2px] sm:rounded-[24px]">
           <Image
             src="/images/landing/interview-dashboard-20260710.webp"

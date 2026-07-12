@@ -231,6 +231,14 @@ async function loadAuthModules(userId: string | null) {
     ),
   }));
 
+  vi.doMock("@/lib/services/onboarding-analysis-status-service", () => ({
+    getReconciledOnboardingState: vi.fn(async (clerkUserId: string) => {
+      const { getOnboardingState } = await import("@/lib/services/profile-service");
+
+      return getOnboardingState(clerkUserId);
+    }),
+  }));
+
   vi.doMock("next/navigation", () => ({
     redirect: (url: string) => {
       throw new RedirectError(url);

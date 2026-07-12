@@ -8,7 +8,7 @@ import {
   getSingleSearchParam,
   requireAuthenticatedUser,
 } from "@/lib/auth/server";
-import { getOnboardingState } from "@/lib/services/profile-service";
+import { getReconciledOnboardingState } from "@/lib/services/onboarding-analysis-status-service";
 
 export const metadata: Metadata = {
   title: "Build your workspace",
@@ -37,7 +37,7 @@ export default async function OnboardingPage({
         : `?${new URLSearchParams({ redirect_url: completionRedirectUrl }).toString()}`
     }`,
   });
-  const onboardingState = await getOnboardingState(user.userId);
+  const onboardingState = await getReconciledOnboardingState(user.userId);
 
   if (onboardingState.status === "completed") {
     redirect(DEFAULT_AUTHENTICATED_ROUTE);
