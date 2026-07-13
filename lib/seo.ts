@@ -2,15 +2,13 @@ export const siteConfig = {
   name: "Trailgrad",
   url: process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://trailgrad.com",
   description:
-    "Trailgrad turns your resume, projects, and target role into a personalized interview-readiness plan with resume review, project prep, mock practice, and AI feedback.",
+    "Trailgrad turns your resume and target role into a personalized interview-readiness snapshot with resume review, risks, questions, and a focused action plan.",
   shortDescription:
-    "AI interview readiness for resumes, projects, job descriptions, and mock practice.",
+    "AI interview readiness for resumes, target roles, and job descriptions.",
   keywords: [
     "AI interview preparation",
     "interview readiness",
     "resume review",
-    "mock interview practice",
-    "project interview prep",
     "job description match",
     "career readiness",
     "AI career coach",

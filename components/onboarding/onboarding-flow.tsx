@@ -847,14 +847,10 @@ function StepViewport({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.16, ease: "easeOut" }}
-            className="pointer-events-none absolute inset-0 z-20 overflow-hidden rounded-[22px] bg-white/78 px-2 pt-10 backdrop-blur-[2px]"
+            className="pointer-events-none absolute inset-x-0 bottom-0 top-[132px] z-20 overflow-hidden rounded-b-[22px] bg-white/78 px-2 backdrop-blur-[2px] sm:top-[142px]"
           >
             <div className="mx-auto max-w-[720px]">
-              <div className="mx-auto space-y-3 text-center">
-                <div className="tg-shimmer mx-auto h-10 w-[min(78%,420px)] rounded-full" />
-                <div className="tg-shimmer mx-auto h-4 w-[min(62%,320px)] rounded-full" />
-              </div>
-              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="tg-shimmer h-24 rounded-[16px]" />
                 <div className="tg-shimmer h-24 rounded-[16px]" />
                 <div className="tg-shimmer h-24 rounded-[16px]" />

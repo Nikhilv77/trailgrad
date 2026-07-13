@@ -1,6 +1,6 @@
 # Trailgrad
 
-Trailgrad is a Next.js interview-readiness product. The current app has a public marketing page, Clerk authentication, authenticated onboarding, private resume upload, and early authenticated workspace routes for Today, Readiness, Projects, Practice, and Profile.
+Trailgrad is a Next.js interview-readiness product. The current app has a public marketing page, Clerk authentication, authenticated onboarding, private resume upload, a durable MVP analysis workflow, and a Today dashboard that renders the saved structured analysis.
 
 The core product loop is:
 
@@ -35,14 +35,12 @@ Signed-out users who enter the app go through Clerk at `/auth`. After authentica
 - `/onboarding` when their Trailgrad profile is not completed
 - `/today` when onboarding is completed
 
-Protected app routes include:
+Current protected app routes include:
 
 - `/today`
-- `/readiness`
-- `/projects`
-- `/practice`
-- `/profile/*`
 - `/onboarding`
+
+The undeveloped product routes `/readiness`, `/projects`, `/practice`, and `/profile/*` are still protected, but currently redirect completed users back to `/today` instead of rendering mock product screens.
 
 Incomplete authenticated users are redirected back to `/onboarding` when they open an app route. Completed authenticated users are redirected from `/onboarding` to `/today`.
 
@@ -61,7 +59,7 @@ Incomplete authenticated users are redirected back to `/onboarding` when they op
 - `lib/storage/private-object-storage.ts` - server-only S3-compatible storage adapter
 - `lib/inngest/client.ts` - Inngest client and typed Trailgrad events
 - `lib/inngest/functions.ts` - durable background job handlers
-- `lib/ai/provider-factory.ts` - server-only AI provider factory used by future workflows
+- `lib/ai/provider-factory.ts` - server-only AI provider factory used by the analysis workflow
 - `lib/ai/providers/gemini-provider.ts` - Gemini structured-output provider
 - `lib/ai/configuration.ts` - AI provider, model, timeout, retry, budget, and data-policy configuration
 - `lib/ai/schemas/` - Zod schemas for AI structured outputs
@@ -78,7 +76,7 @@ Implemented tables:
 - `user_profiles` - onboarding status, current step, timestamps, analysis error, and JSON onboarding draft
 - `career_contexts` - target role, experience level, timeline, preparation availability, intensity, and optional company/title
 - `target_contexts` - active target role/job description context
-- `manual_projects` - onboarding-entered projects
+- `manual_projects` - retained database table from the onboarding data model; no current UI writes manual projects
 - `source_documents` - private uploaded document metadata, storage path, SHA-256 hash, processing status, and version
 - `resume_versions` - versioned resume records, extracted text status, extracted text, and active flag
 - `analysis_jobs` - durable analysis job state, progress stage, retry count, idempotency key, and safe errors
@@ -168,7 +166,7 @@ S3_BUCKET=<private-bucket-name>
 
 Use the R2 S3 client Access Key ID and Secret Access Key. Do not use `NEXT_PUBLIC_` for storage secrets.
 
-AI secrets are server-only. Do not prefix `GEMINI_API_KEY` or future provider secrets with `NEXT_PUBLIC_`.
+AI secrets are server-only. Do not prefix `GEMINI_API_KEY` with `NEXT_PUBLIC_`.
 
 By default, `AI_DATA_POLICY=synthetic_only`. In this mode Trailgrad blocks model calls that attempt to send real candidate resumes, real job descriptions, or personal candidate data. Only synthetic fixtures or explicitly marked development data may be sent. To use real candidate data in a properly configured environment, set `AI_DATA_POLICY=real_user_data_allowed` intentionally; Trailgrad never enables that mode automatically and never relies only on `NODE_ENV` for data protection.
 
@@ -230,7 +228,6 @@ pnpm test
 - Use Prisma and `prisma/migrations/` as the database source of truth.
 - Do not store original resume bytes in Neon.
 - Keep object storage private and use signed URLs only when a user must access their own file.
-- Do not implement fake integrations. GitHub connection is intentionally presented as optional/coming later when not implemented.
 - Resume upload still stops at private storage and text extraction. The first AI call happens later, after onboarding submission, through the Inngest MVP profile analysis job.
-- The AI provider architecture currently implements only Gemini. It is intentionally shaped so paid Gemini or a future OpenAI provider can be added later without rewriting Trailgrad workflows.
+- The AI provider architecture currently implements only Gemini.
 - Gemini free-tier development must use synthetic or anonymized data only.

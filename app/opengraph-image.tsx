@@ -76,7 +76,7 @@ export default function Image() {
             textAlign: "center",
           }}
         >
-          Resume review, project prep, mock practice, and AI feedback in one focused workspace.
+          Resume review, risk diagnosis, interview questions, and a focused action plan.
         </div>
       </div>
     ),

@@ -249,7 +249,7 @@ export function ClerkLoginCard({ redirectUrl }: ClerkLoginCardProps) {
 
         [data-testid="clerk-auth-surface"] .tg-form-field {
           width: 100% !important;
-          margin-bottom: 7px !important;
+          margin-bottom: 19px !important;
         }
 
         [data-testid="clerk-auth-surface"] .tg-form-label {
@@ -306,7 +306,7 @@ export function ClerkLoginCard({ redirectUrl }: ClerkLoginCardProps) {
           width: 100% !important;
           height: 44px !important;
           min-height: 44px !important;
-          margin-top: 0 !important;
+          margin-top: 4px !important;
           padding: 0 18px !important;
 
           border: 1px solid #0f8f7e !important;

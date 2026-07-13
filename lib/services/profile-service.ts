@@ -1,4 +1,3 @@
-import { mockDb } from "@/lib/db/mock-db";
 import {
   completeProfileOnboardingRecord,
   getActiveTargetContextRecord,
@@ -51,10 +50,6 @@ export interface TrailgradOnboardingStatus {
   completed: boolean;
   completedAt: string | null;
   profile: TrailgradProfileRecord;
-}
-
-export async function getDashboard() {
-  return mockDb.dashboard;
 }
 
 export async function getOrCreateProfile(

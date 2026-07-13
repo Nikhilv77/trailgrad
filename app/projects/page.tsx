@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { requireCompletedOnboarding } from "@/lib/auth/server";
+import {
+  DEFAULT_AUTHENTICATED_ROUTE,
+  requireCompletedOnboarding,
+} from "@/lib/auth/server";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -15,5 +18,5 @@ export const metadata: Metadata = {
 export default async function ProjectsPage() {
   await requireCompletedOnboarding({ currentPath: "/projects" });
 
-  return <DashboardShell />;
+  redirect(DEFAULT_AUTHENTICATED_ROUTE);
 }

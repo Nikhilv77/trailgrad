@@ -233,8 +233,8 @@ export default function HomePage() {
             </h1>
 
             <p className="mx-auto mt-5 max-w-[520px] text-[15px] leading-7 text-[#587076] sm:text-[17px]">
-              Resume review, project prep, mock practice, and AI feedback —
-              all in one place.
+              Resume review, risk diagnosis, interview questions, and a focused
+              action plan.
             </p>
           </div>
 

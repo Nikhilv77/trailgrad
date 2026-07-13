@@ -49,7 +49,7 @@ Current core database areas include:
 
 - User profiles and onboarding state.
 - Career and target context.
-- Manual projects.
+- Retained onboarding data model tables.
 - Private source documents and resume versions.
 - Durable analysis jobs.
 - MVP profile analysis results.
@@ -73,7 +73,7 @@ Current core database areas include:
 - Safe error mapping in `lib/ai/errors.ts`.
 - Redaction helpers in `lib/ai/redaction.ts`.
 
-The current implemented provider is Gemini. The architecture is prepared for additional providers later, but workflows should import `getAIProvider()` rather than provider classes directly.
+The current implemented provider is Gemini. Workflows import `getAIProvider()` rather than provider classes directly.
 
 ## Resume Storage and Extraction
 
