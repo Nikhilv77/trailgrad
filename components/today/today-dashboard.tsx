@@ -114,9 +114,17 @@ export function TodayDashboard({ analysis, result }: TodayDashboardProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[#f4fbf9] text-[#111827]">
-      <div className="grid min-h-screen lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="hidden border-r border-[#d7ebe6] bg-white/88 p-4 shadow-[18px_0_70px_rgba(15,118,110,0.08)] backdrop-blur-xl lg:block">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#f4fbf9] text-[#111827]">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_12%,rgba(45,212,191,0.13),transparent_34%),radial-gradient(circle_at_84%_8%,rgba(125,232,218,0.12),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.45),rgba(244,251,249,0.8))]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(rgba(15,118,110,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(15,118,110,0.08)_1px,transparent_1px)] [background-size:64px_64px]"
+      />
+      <div className="relative grid min-h-screen lg:grid-cols-[336px_minmax(0,1fr)] 2xl:grid-cols-[352px_minmax(0,1fr)]">
+        <aside className="sticky top-0 hidden h-screen overflow-y-auto border-r border-[#d7ebe6] bg-white/82 px-5 py-5 shadow-[18px_0_80px_rgba(15,118,110,0.08)] backdrop-blur-2xl lg:block">
           <DashboardSidebar
             activeView={activeView}
             analysis={analysis}
@@ -142,11 +150,25 @@ export function TodayDashboard({ analysis, result }: TodayDashboardProps) {
             {mobileMenuOpen ? (
               <div className="mt-3 rounded-2xl border border-[#d7ebe6] bg-white p-2 shadow-[0_18px_54px_rgba(15,118,110,0.12)]">
                 <DashboardNavigation activeView={activeView} onSelect={selectView} compact />
+                <div className="mt-2 border-t border-[#d7ebe6] p-2">
+                  <div className="rounded-xl bg-[#f6fbfa] px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#6b7d78]">
+                      Last analyzed
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-[#111827]">
+                      {formatDate(analysis.updatedAt)}
+                    </p>
+                  </div>
+                  <DashboardSignOutButton className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[#d7ebe6] bg-white text-sm font-semibold text-[#4b5563] transition-colors hover:border-[#b9ddd5] hover:text-[#0f766e]">
+                    <LogOut className="size-4" />
+                    Sign out
+                  </DashboardSignOutButton>
+                </div>
               </div>
             ) : null}
           </header>
 
-          <div className="mx-auto flex min-h-screen w-full max-w-[1520px] flex-col px-4 py-5 sm:px-6 lg:px-8 xl:px-10">
+          <div className="flex min-h-screen w-full flex-col px-4 py-5 sm:px-6 lg:px-7 xl:px-8 2xl:px-10">
             <DashboardHeader
               activeDescription={active.description}
               activeLabel={active.label}
@@ -191,19 +213,47 @@ function DashboardSidebar({
   readinessScore: number;
 }) {
   return (
-    <div className="flex h-full min-h-[calc(100vh-32px)] flex-col rounded-[28px] border border-[#d7ebe6] bg-[#fbfffd] p-4">
-      <div className="flex items-center justify-between gap-3">
+    <div className="flex min-h-full flex-col">
+      <div className="flex items-center justify-between gap-3 px-1">
         <SiteBrand compact iconFrame={false} />
       </div>
 
-      <div className="mt-6 rounded-[22px] bg-[#0f766e] p-4 text-white shadow-[0_20px_48px_rgba(15,118,110,0.22)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/62">
-          Readiness
-        </p>
-        <div className="mt-3 flex items-end justify-between gap-4">
-          <p className="text-5xl font-semibold tracking-[-0.06em]">{readinessScore}%</p>
-          <p className="pb-1 text-right text-xs font-medium leading-5 text-white/72">
-            {highRisks} high risk{highRisks === 1 ? "" : "s"}
+      <div className="relative mt-7 overflow-hidden rounded-[24px] bg-[#0f766e] p-5 text-white shadow-[0_24px_54px_rgba(15,118,110,0.24)]">
+        <div
+          aria-hidden="true"
+          className="absolute -right-10 -top-10 size-32 rounded-full bg-white/10"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -bottom-14 left-8 size-36 rounded-full bg-[#7de8d8]/12"
+        />
+        <div className="relative">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/62">
+                Readiness
+              </p>
+              <p className="mt-3 text-5xl font-semibold tracking-[-0.06em]">
+                {readinessScore}%
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white/10 px-3 py-2 text-right">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/54">
+                Risks
+              </p>
+              <p className="mt-1 text-sm font-semibold text-white">
+                {highRisks} high
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/16">
+            <div
+              className="h-full rounded-full bg-white"
+              style={{ width: `${readinessScore}%` }}
+            />
+          </div>
+          <p className="mt-3 text-xs font-medium leading-5 text-white/68">
+            Baseline from resume evidence and interview readiness signals.
           </p>
         </div>
       </div>
@@ -211,7 +261,7 @@ function DashboardSidebar({
       <DashboardNavigation activeView={activeView} onSelect={onSelect} />
 
       <div className="mt-auto space-y-3 pt-5">
-        <div className="rounded-[18px] border border-[#d7ebe6] bg-white p-3">
+        <div className="rounded-[18px] border border-[#d7ebe6] bg-white/76 p-3 shadow-[0_12px_34px_rgba(15,118,110,0.06)]">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6b7d78]">
             Last analyzed
           </p>
@@ -219,7 +269,7 @@ function DashboardSidebar({
             {formatDate(analysis.updatedAt)}
           </p>
         </div>
-        <DashboardSignOutButton className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#d7ebe6] bg-white text-sm font-semibold text-[#4b5563] transition-colors hover:border-[#b9ddd5] hover:bg-[#f6fbfa] hover:text-[#0f766e]">
+        <DashboardSignOutButton className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#d7ebe6] bg-white/78 text-sm font-semibold text-[#4b5563] shadow-[0_12px_34px_rgba(15,118,110,0.05)] transition-colors hover:border-[#b9ddd5] hover:bg-white hover:text-[#0f766e]">
           <LogOut className="size-4" />
           Sign out
         </DashboardSignOutButton>
@@ -238,7 +288,12 @@ function DashboardNavigation({
   onSelect: (view: ViewId) => void;
 }) {
   return (
-    <nav className={compact ? "grid gap-1" : "mt-5 grid gap-1.5"}>
+    <nav className={compact ? "grid gap-1.5" : "mt-7 grid gap-1.5"}>
+      {!compact ? (
+        <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7a928c]">
+          Workspace
+        </p>
+      ) : null}
       {views.map((view) => {
         const Icon = view.icon;
         const active = view.id === activeView;
@@ -248,13 +303,18 @@ function DashboardNavigation({
             key={view.id}
             type="button"
             onClick={() => onSelect(view.id)}
-            className={`group flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-all ${
+            className={`group relative flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition-all duration-150 ${
               active
-                ? "bg-[#effbf8] text-[#0f766e] shadow-[inset_0_0_0_1px_rgba(21,155,137,0.16)]"
-                : "text-[#5f6f6b] hover:bg-white hover:text-[#0f766e]"
+                ? "border-[#c4ebe3] bg-white text-[#0f766e] shadow-[0_14px_36px_rgba(15,118,110,0.10)]"
+                : "border-transparent text-[#63756f] hover:border-[#d7ebe6] hover:bg-white/78 hover:text-[#0f766e]"
             }`}
           >
-            <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${active ? "bg-white" : "bg-[#f6fbfa] group-hover:bg-[#effbf8]"}`}>
+            {active ? (
+              <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-[#159b89]" />
+            ) : null}
+            <span className={`grid size-10 shrink-0 place-items-center rounded-[14px] transition-colors ${
+              active ? "bg-[#effbf8]" : "bg-[#f6fbfa] group-hover:bg-[#effbf8]"
+            }`}>
               <Icon className="size-4" />
             </span>
             <span className="min-w-0">
@@ -282,8 +342,8 @@ function DashboardHeader({
   analysisUpdatedAt: string;
 }) {
   return (
-    <header className="rounded-[28px] border border-[#d7ebe6] bg-white p-5 shadow-[0_18px_54px_rgba(15,118,110,0.08)] sm:p-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <header className="rounded-[30px] border border-[#d7ebe6] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,118,110,0.08)] backdrop-blur-xl sm:p-6 lg:p-7">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f8f7e]">
             Today workspace
@@ -295,7 +355,7 @@ function DashboardHeader({
             {activeDescription}
           </p>
         </div>
-        <div className="rounded-2xl bg-[#f6fbfa] px-4 py-3">
+        <div className="w-full rounded-2xl border border-[#e0efeb] bg-[#f6fbfa] px-4 py-3 sm:w-auto sm:min-w-[188px]">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6b7d78]">
             Updated
           </p>
@@ -320,13 +380,13 @@ function OverviewView({
   totalPlanMinutes: number;
 }) {
   return (
-    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_392px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
       <div className="space-y-5">
         <Panel title="Profile summary" icon={Gauge}>
           <p className="max-w-4xl text-sm font-medium leading-7 text-[#4b5563]">
             {result.profileSummary}
           </p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard label="Readiness" value={`${readinessScore}%`} tone="teal" />
             <MetricCard label="High risks" value={String(highRisks)} tone={highRisks > 0 ? "red" : "teal"} />
             <MetricCard label="Today task" value={`${result.todayPriority.estimatedMinutes}m`} tone="teal" />
@@ -341,7 +401,7 @@ function OverviewView({
           </div>
         </Panel>
       </div>
-      <Panel title="Readiness" icon={Gauge}>
+      <Panel title="Readiness" icon={Gauge} sticky>
         <ReadinessDonut score={readinessScore} />
         <div className="mt-6 space-y-4">
           {readinessLabels.map((item) => (
@@ -359,8 +419,8 @@ function OverviewView({
 
 function RisksView({ result }: { result: MVPAnalysis }) {
   return (
-    <div className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
-      <Panel title="Risk mix" icon={AlertTriangle}>
+    <div className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
+      <Panel title="Risk mix" icon={AlertTriangle} sticky>
         <RiskDistribution risks={result.rejectionRisks} />
       </Panel>
       <Panel title="Rejection risks" icon={AlertTriangle}>
@@ -376,9 +436,9 @@ function RisksView({ result }: { result: MVPAnalysis }) {
 
 function TodayPriorityView({ result }: { result: MVPAnalysis }) {
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_392px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
       <Panel title="Highest-impact task" icon={Target}>
-        <div className="rounded-[24px] bg-[#f6fbfa] p-5">
+        <div className="rounded-[24px] border border-[#e0efeb] bg-[#f6fbfa] p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h2 className="text-2xl font-semibold tracking-[-0.035em] text-[#111827]">
@@ -417,7 +477,7 @@ function TodayPriorityView({ result }: { result: MVPAnalysis }) {
 function PlanView({ result }: { result: MVPAnalysis }) {
   return (
     <Panel title="Seven-day plan" icon={CalendarDays}>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
         {result.sevenDayPlan.map((task) => (
           <PlanDayCard
             key={task.day}
@@ -453,7 +513,7 @@ function ResumeView({
   result: MVPAnalysis;
 }) {
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px]">
       <Panel title="Resume suggestions" icon={ClipboardList}>
         <SimpleList items={result.resumeSuggestions} />
       </Panel>
@@ -472,14 +532,18 @@ function ResumeView({
 function Panel({
   children,
   icon: Icon,
+  sticky = false,
   title,
 }: {
   children: ReactNode;
   icon: LucideIcon;
+  sticky?: boolean;
   title: string;
 }) {
   return (
-    <section className="min-w-0 rounded-[26px] border border-[#d7ebe6] bg-white p-5 shadow-[0_18px_54px_rgba(15,118,110,0.08)] sm:p-6">
+    <section className={`min-w-0 rounded-[28px] border border-[#d7ebe6] bg-white/90 p-5 shadow-[0_18px_54px_rgba(15,118,110,0.08)] backdrop-blur-xl sm:p-6 ${
+      sticky ? "xl:sticky xl:top-5" : ""
+    }`}>
       <div className="flex items-center gap-2">
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#effbf8] text-[#0f8f7e]">
           <Icon className="size-4" />
@@ -498,7 +562,7 @@ function ReadinessDonut({ score }: { score: number }) {
   const dash = (score / 100) * circumference;
 
   return (
-    <div className="rounded-[22px] bg-[#f6fbfa] p-4">
+    <div className="rounded-[24px] border border-[#e0efeb] bg-[#f6fbfa] p-4">
       <div className="relative mx-auto grid size-40 place-items-center">
         <svg viewBox="0 0 100 100" className="size-40 rotate-[-90deg]" aria-hidden="true">
           <circle cx="50" cy="50" r="42" fill="none" stroke="#dcefeb" strokeWidth="9" />
@@ -543,7 +607,7 @@ function MetricCard({
         : "text-[#374151] bg-[#f6fbfa]";
 
   return (
-    <div className={`rounded-2xl px-4 py-3 ${toneClass}`}>
+    <div className={`rounded-2xl border border-white/60 px-4 py-3 shadow-[0_10px_28px_rgba(15,118,110,0.05)] ${toneClass}`}>
       <p className="text-xs font-semibold uppercase tracking-[0.14em] opacity-75">
         {label}
       </p>
@@ -582,7 +646,7 @@ function ReadinessBar({
 
 function SignalCard({ index, text }: { index: number; text: string }) {
   return (
-    <article className="flex min-h-full gap-3 rounded-2xl border border-[#dcefeb] p-4">
+    <article className="flex min-h-full gap-3 rounded-2xl border border-[#dcefeb] bg-white/72 p-4 shadow-[0_10px_28px_rgba(15,118,110,0.04)]">
       <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#effbf8] text-sm font-bold text-[#0f8f7e]">
         {index}
       </span>
@@ -624,7 +688,7 @@ function RiskCard({ risk }: { risk: MVPAnalysis["rejectionRisks"][number] }) {
   const severity = severityMeta(risk.severity);
 
   return (
-    <article className="flex min-h-full flex-col rounded-2xl border border-[#dcefeb] p-4">
+    <article className="flex min-h-full flex-col rounded-2xl border border-[#dcefeb] bg-white/74 p-4 shadow-[0_10px_28px_rgba(15,118,110,0.04)]">
       <span className={`w-max rounded-full px-2.5 py-1 text-xs font-semibold ${severity.className}`}>
         {risk.severity}
       </span>
@@ -655,7 +719,7 @@ function PlanDayCard({
   const percent = Math.max(12, (minutes / maxMinutes) * 100);
 
   return (
-    <article className="rounded-2xl border border-[#dcefeb] p-4">
+    <article className="rounded-2xl border border-[#dcefeb] bg-white/74 p-4 shadow-[0_10px_28px_rgba(15,118,110,0.04)]">
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0f8f7e]">
         Day {day}
       </p>
@@ -673,7 +737,7 @@ function QuestionCard({ question }: { question: MVPAnalysis["importantQuestions"
   const difficulty = difficultyMeta(question.difficulty);
 
   return (
-    <article className="rounded-2xl border border-[#dcefeb] p-4">
+    <article className="rounded-2xl border border-[#dcefeb] bg-white/74 p-4 shadow-[0_10px_28px_rgba(15,118,110,0.04)]">
       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${difficulty.className}`}>
         {question.difficulty}
       </span>
@@ -712,7 +776,7 @@ function SimpleList({ items }: { items: string[] }) {
 
 function SourceReference({ source }: { source: SourceReference }) {
   return (
-    <div className="mt-3 rounded-xl bg-[#f6fbfa] px-3 py-2 text-xs leading-5 text-[#4b5563]">
+    <div className="mt-3 rounded-xl border border-[#e0efeb] bg-[#f6fbfa] px-3 py-2 text-xs leading-5 text-[#4b5563]">
       <p className="font-semibold text-[#0f8f7e]">
         {source.sourceType.replaceAll("_", " ")} · {source.locator}
       </p>
@@ -723,7 +787,7 @@ function SourceReference({ source }: { source: SourceReference }) {
 
 function MetadataItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-[#f6fbfa] px-3 py-2">
+    <div className="rounded-xl border border-[#e0efeb] bg-[#f6fbfa] px-3 py-2">
       <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6b7d78]">
         {label}
       </dt>
