@@ -32,6 +32,7 @@ Tech stack:
 - lucide-react for icons.
 - framer-motion for UI animation.
 - react-spinners for lightweight loading indicators.
+- Vercel Web Analytics for production page-view analytics.
 
 ## Authentication
 

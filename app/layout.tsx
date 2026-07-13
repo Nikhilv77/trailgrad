@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { ClerkRootProvider } from "@/components/auth/clerk-root-provider";
 import { PageTransition } from "@/components/layout/page-transition";
 import { absoluteUrl, getSiteUrl, siteConfig } from "@/lib/seo";
@@ -101,6 +102,7 @@ export default function RootLayout({
         <ClerkRootProvider>
           <PageTransition>{children}</PageTransition>
         </ClerkRootProvider>
+        <Analytics />
       </body>
     </html>
   );
