@@ -1,6 +1,6 @@
 # Trailgrad
 
-Trailgrad is a Next.js interview-readiness product. The current app has a public marketing page, Clerk authentication, authenticated onboarding, private resume upload, a durable MVP analysis workflow, and a Today dashboard that renders the saved structured analysis.
+Trailgrad is a Next.js interview-readiness product. The current app has a public marketing page, Clerk authentication, authenticated onboarding, private resume upload, resume-likeness validation, a durable MVP analysis workflow, a reanalysis flow, and a Today dashboard that renders the saved structured analysis.
 
 The core product loop is:
 
@@ -38,6 +38,7 @@ Signed-out users who enter the app go through Clerk at `/auth`. After authentica
 Current protected app routes include:
 
 - `/today`
+- `/today/reanalyze`
 - `/onboarding`
 
 The undeveloped product routes `/readiness`, `/projects`, `/practice`, and `/profile/*` are still protected, but currently redirect completed users back to `/today` instead of rendering mock product screens.
@@ -53,9 +54,12 @@ Incomplete authenticated users are redirected back to `/onboarding` when they op
 - `components/onboarding/onboarding-flow.tsx` - existing onboarding UI with persistent state and resume upload
 - `app/api/profile/onboarding/route.ts` - onboarding autosave and submission
 - `app/api/profile/onboarding/resume/route.ts` - authenticated resume upload endpoint
+- `app/api/profile/reanalysis/route.ts` - completed-profile reanalysis endpoint and job-status polling endpoint
+- `app/today/reanalyze/page.tsx` - reanalysis form for updating target role/JD/prep settings
 - `lib/services/profile-service.ts` - profile/onboarding service facade
 - `lib/db/profile-repository.ts` - Prisma-backed profile and onboarding repository
 - `lib/resume/upload-service.ts` - resume validation, storage, extraction, dedupe, and versioning
+- `lib/resume/resume-likeness.ts` and `lib/resume/resume-classifier.ts` - deterministic resume-shape checks used during upload
 - `lib/storage/private-object-storage.ts` - server-only S3-compatible storage adapter
 - `lib/inngest/client.ts` - Inngest client and typed Trailgrad events
 - `lib/inngest/functions.ts` - durable background job handlers
@@ -105,6 +109,7 @@ The server validates:
 - sanitized filename
 - duplicate content by SHA-256
 - readable extracted text
+- likely resume structure, so unrelated PDFs or product documents are rejected before analysis
 
 Files are stored privately in S3-compatible object storage using this path shape:
 
@@ -123,6 +128,67 @@ The upload service:
 7. Updates onboarding resume metadata.
 
 No permanent public URLs are exposed.
+
+On final onboarding submission, the server ignores client-submitted resume metadata and hydrates `resumeName`, `resumeSize`, `resumeContentType`, and `resumeUploadedAt` from the active server-side source document. The browser can display upload state, but the database source of truth is the authenticated user's active uploaded resume.
+
+## Onboarding and Analysis
+
+Onboarding currently collects:
+
+- target role and experience level
+- preparation timeline and availability
+- resume upload
+- optional pasted job description
+- final review before analysis
+
+The server validates final onboarding input with Zod. Important guardrails:
+
+- `targetRole` must be one of Trailgrad's supported role IDs.
+- `targetJobMode=paste` requires a non-empty `jobDescription`.
+- text fields have length limits to avoid bloated profile rows.
+- final analysis uses the active extracted resume owned by the authenticated user.
+
+When onboarding is submitted, Trailgrad:
+
+1. Saves the hardened onboarding payload and marks the profile `analyzing`.
+2. Creates an idempotent `INITIAL_PROFILE` `AnalysisJob`.
+3. Sends the typed Inngest event `trailgrad/profile.analysis.requested`.
+4. The Inngest worker loads the active extracted resume and target context.
+5. The AI provider factory returns the Gemini provider.
+6. Gemini returns compact structured JSON validated by Zod.
+7. Trailgrad stores the result in `profile_analyses`.
+8. The analysis job and onboarding status are marked completed.
+
+The current MVP analysis result includes:
+
+- profile summary
+- strongest signals
+- rejection risks
+- resume suggestions
+- important questions
+- today's priority
+- seven-day plan
+- readiness dimensions
+- target-alignment classification
+
+Target alignment is used to detect when the selected role, resume direction, and pasted JD may be pointing at different goals. It is surfaced inside the Today dashboard, but it does not yet block analysis.
+
+## Reanalysis
+
+Completed users can update their analysis from `/today/reanalyze`.
+
+The reanalysis flow:
+
+1. Keeps the current active resume.
+2. Lets the user update target role, optional company/title, optional JD, preparation time, and intensity.
+3. Saves the updated target context.
+4. Creates an idempotent `JOB_ANALYSIS` `AnalysisJob`.
+5. Queues the same Inngest analysis event.
+6. Shows a dashboard-shaped skeleton while the new job is running.
+7. Polls `/api/profile/reanalysis?jobId=...`.
+8. Hard-refreshes `/today` when the job reaches a terminal state, so the latest completed dashboard data is shown.
+
+Reanalysis failures do not mark completed onboarding as failed. Initial onboarding failures still surface as onboarding failures.
 
 ## Environment
 
@@ -171,6 +237,8 @@ AI secrets are server-only. Do not prefix `GEMINI_API_KEY` with `NEXT_PUBLIC_`.
 By default, `AI_DATA_POLICY=synthetic_only`. In this mode Trailgrad blocks model calls that attempt to send real candidate resumes, real job descriptions, or personal candidate data. Only synthetic fixtures or explicitly marked development data may be sent. To use real candidate data in a properly configured environment, set `AI_DATA_POLICY=real_user_data_allowed` intentionally; Trailgrad never enables that mode automatically and never relies only on `NODE_ENV` for data protection.
 
 The AI foundation implements Gemini structured JSON output and safe metadata logging. The MVP onboarding analysis workflow queues an Inngest `INITIAL_PROFILE` job after onboarding submission, analyzes the extracted resume plus target context, stores one compact `profile_analyses` result, and completes onboarding when the job succeeds. To process it locally, run the Next.js app and an Inngest dev worker pointed at `/api/inngest`. With `AI_DATA_POLICY=synthetic_only`, real resumes and job descriptions are blocked; use synthetic fixtures or intentionally set `AI_DATA_POLICY=real_user_data_allowed` in a properly configured environment.
+
+For local Inngest development, keep `INNGEST_DEV=1` in `.env.local` and run the Inngest dev server alongside `pnpm dev`.
 
 ## Development
 
@@ -231,3 +299,6 @@ pnpm test
 - Resume upload still stops at private storage and text extraction. The first AI call happens later, after onboarding submission, through the Inngest MVP profile analysis job.
 - The AI provider architecture currently implements only Gemini.
 - Gemini free-tier development must use synthetic or anonymized data only.
+- Do not trust browser-supplied resume metadata on final submission. The server hydrates final resume metadata from the active source document.
+- Do not allow arbitrary target role strings unless the product intentionally adds a custom-role flow.
+- Reanalysis uses `JOB_ANALYSIS` jobs and should not reset a completed user back into failed onboarding.

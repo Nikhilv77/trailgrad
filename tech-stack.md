@@ -55,6 +55,19 @@ Current core database areas include:
 - MVP profile analysis results.
 - Safe AI run metadata.
 
+Current implemented product features include:
+
+- Marketing landing page.
+- Clerk auth and auth-aware redirects.
+- Authenticated onboarding.
+- Private resume upload, extraction, dedupe, versioning, and resume-likeness validation.
+- Durable initial profile analysis jobs through Inngest.
+- Gemini structured-output MVP profile analysis.
+- Target-alignment classification in analysis results.
+- Today dashboard for the latest completed analysis.
+- Completed-profile reanalysis for updated target/JD/prep settings.
+- Dashboard skeleton loading while reanalysis runs.
+
 ## Background Jobs
 
 - Inngest for durable background workflows.
@@ -84,6 +97,7 @@ The current implemented provider is Gemini. Workflows import `getAIProvider()` r
 - `mammoth` extracts text from DOCX resumes.
 - Original resume files are stored privately outside Neon.
 - Extracted text is stored in resume version records for server-side analysis.
+- Final onboarding uses server-side active resume metadata rather than trusting browser-submitted resume metadata.
 
 ## Validation and Schemas
 
