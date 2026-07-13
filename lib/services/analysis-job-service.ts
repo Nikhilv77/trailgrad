@@ -124,13 +124,17 @@ export async function runPersistedAnalysisJob(jobId: string): Promise<AnalysisRu
 }
 
 export function buildAnalysisJobIdempotencyKey(input: {
+  inputFingerprint?: string | null;
   profileId: string;
   sourceDocumentId: string | null;
   type: AnalysisJobType;
 }) {
   const sourceDocumentKey = input.sourceDocumentId ?? "profile";
+  const inputFingerprintKey = input.inputFingerprint
+    ? `:${input.inputFingerprint}`
+    : "";
 
-  return `${input.type}:${input.profileId}:${sourceDocumentKey}`;
+  return `${input.type}:${input.profileId}:${sourceDocumentKey}${inputFingerprintKey}`;
 }
 
 export function toSafeAnalysisJobError(error: unknown) {

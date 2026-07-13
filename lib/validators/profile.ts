@@ -2,6 +2,19 @@ import { z } from "zod";
 
 import { onboardingStatuses, onboardingStepIds } from "@/lib/onboarding/types";
 
+export const onboardingTargetRoles = [
+  "ai-engineer",
+  "ml-engineer",
+  "software-engineer",
+  "frontend-engineer",
+  "backend-engineer",
+  "full-stack-engineer",
+  "data-scientist",
+  "data-analyst",
+  "data-engineer",
+  "product",
+] as const;
+
 export const UserProfileSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -15,11 +28,13 @@ export const UserProfileSchema = z.object({
 });
 
 const OnboardingSubmissionBaseSchema = z.object({
-  targetRole: z.string().min(1, "Choose a target role."),
-  experienceLevel: z.string().min(1, "Choose your current experience level."),
-  targetCompany: z.string().optional(),
-  targetJobTitle: z.string().optional(),
-  interviewDate: z.string().optional(),
+  targetRole: z.enum(onboardingTargetRoles, {
+    message: "Choose a supported target role.",
+  }),
+  experienceLevel: z.string().trim().min(1, "Choose your current experience level.").max(80),
+  targetCompany: z.string().trim().max(120).optional(),
+  targetJobTitle: z.string().trim().max(120).optional(),
+  interviewDate: z.string().trim().max(20).optional(),
   noDateYet: z.boolean().optional(),
   preparationTimePerDay: z.enum(["15", "30", "60", "flexible"], {
     message: "Choose your daily preparation time.",
@@ -27,20 +42,20 @@ const OnboardingSubmissionBaseSchema = z.object({
   preparationIntensity: z.enum(["light", "standard", "intensive"], {
     message: "Choose a preparation intensity.",
   }),
-  resumeName: z.string().optional(),
-  resumeContentType: z.string().optional(),
+  resumeName: z.string().trim().max(255).optional(),
+  resumeContentType: z.string().trim().max(120).optional(),
   resumeSize: z.number().optional(),
-  resumeUploadedAt: z.string().optional(),
+  resumeUploadedAt: z.string().trim().max(80).optional(),
   targetJobMode: z.enum(["paste", "skip"], {
     message: "Choose whether to add a target job.",
   }),
-  jobDescription: z.string().optional(),
+  jobDescription: z.string().trim().max(12_000).optional(),
   projectsMode: z.enum(["manual", "github_later", "skip"], {
     message: "Choose how you want to handle projects.",
   }),
-  projectName: z.string().optional(),
-  projectDescription: z.string().optional(),
-  projectTechStack: z.string().optional(),
+  projectName: z.string().trim().max(160).optional(),
+  projectDescription: z.string().trim().max(2_000).optional(),
+  projectTechStack: z.string().trim().max(600).optional(),
 });
 
 export const OnboardingSubmissionSchema = OnboardingSubmissionBaseSchema.superRefine((value, context) => {
@@ -57,6 +72,14 @@ export const OnboardingSubmissionSchema = OnboardingSubmissionBaseSchema.superRe
       code: "custom",
       message: "Choose a date or select that you do not have one yet.",
       path: ["interviewDate"],
+    });
+  }
+
+  if (value.targetJobMode === "paste" && !value.jobDescription?.trim()) {
+    context.addIssue({
+      code: "custom",
+      message: "Paste a job description or choose to skip the target job.",
+      path: ["jobDescription"],
     });
   }
 

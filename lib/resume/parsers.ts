@@ -18,6 +18,7 @@ PDFParse.setWorker(
 
 export interface ParsedResume {
   text: string;
+  pageCount?: number;
 }
 
 export interface ResumeParser {
@@ -40,7 +41,7 @@ export class PdfResumeParser implements ResumeParser {
         throw new ResumeUploadError("IMAGE_ONLY_PDF");
       }
 
-      return { text };
+      return { text, pageCount: result.total };
     } catch (error) {
       if (error instanceof ResumeUploadError) {
         throw error;

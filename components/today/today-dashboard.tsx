@@ -16,7 +16,8 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import Link from "next/link";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { SiteBrand } from "@/components/marketing/site-brand";
 import { SIGN_OUT_REDIRECT_URL } from "@/lib/auth/routes";
@@ -24,9 +25,10 @@ import type { MVPAnalysis } from "@/lib/ai/schemas/mvp-analysis";
 
 type SourceReference = MVPAnalysis["rejectionRisks"][number]["sourceReference"];
 type ReadinessLevel = "LOW" | "MEDIUM" | "HIGH";
+type TargetAlignment = MVPAnalysis["targetAlignment"];
 type Difficulty = MVPAnalysis["importantQuestions"][number]["difficulty"];
 type Severity = MVPAnalysis["rejectionRisks"][number]["severity"];
-type ViewId = "overview" | "risks" | "today" | "plan" | "questions" | "resume";
+type ViewId = "overview" | "alignment" | "risks" | "today" | "plan" | "questions" | "resume";
 
 interface TodayDashboardProps {
   analysis: {
@@ -35,7 +37,9 @@ interface TodayDashboardProps {
     provider: string;
     updatedAt: string;
   };
+  reanalysisJobId?: string;
   result: MVPAnalysis;
+  updating?: boolean;
 }
 
 const hasClerkPublishableKey = Boolean(
@@ -53,6 +57,12 @@ const views: Array<{
     label: "Overview",
     description: "Summary, readiness, and strongest proof.",
     icon: Gauge,
+  },
+  {
+    id: "alignment",
+    label: "Alignment",
+    description: "Intent, resume evidence, and target job fit.",
+    icon: Target,
   },
   {
     id: "risks",
@@ -96,12 +106,18 @@ const readinessLabels: Array<{
   { key: "interviewPerformanceStatus", label: "Interview performance" },
 ];
 
-export function TodayDashboard({ analysis, result }: TodayDashboardProps) {
+export function TodayDashboard({
+  analysis,
+  reanalysisJobId,
+  result,
+  updating = false,
+}: TodayDashboardProps) {
   const [activeView, setActiveView] = useState<ViewId>("overview");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const readinessScore = getReadinessScore(result.readiness);
   const highRisks = result.rejectionRisks.filter((risk) => risk.severity === "HIGH").length;
+  const targetAlignment = getTargetAlignment(result);
   const totalPlanMinutes = result.sevenDayPlan.reduce(
     (total, task) => total + task.estimatedMinutes,
     0,
@@ -112,6 +128,55 @@ export function TodayDashboard({ analysis, result }: TodayDashboardProps) {
     setActiveView(view);
     setMobileMenuOpen(false);
   }
+
+  useEffect(() => {
+    if (!updating || !reanalysisJobId) return;
+
+    let cancelled = false;
+    const jobId = reanalysisJobId;
+
+    async function pollReanalysis() {
+      try {
+        const response = await fetch(
+          `/api/profile/reanalysis?jobId=${encodeURIComponent(jobId)}`,
+          { cache: "no-store" },
+        );
+
+        if (!response.ok) return;
+
+        const payload = (await response.json()) as {
+          job?: {
+            status?: string;
+          };
+          latestAnalysisUpdatedAt?: string | null;
+        };
+        const status = payload.job?.status;
+
+        if (
+          !cancelled &&
+          (status === "COMPLETED" ||
+            status === "FAILED" ||
+            status === "CANCELLED")
+        ) {
+          const completedAt = encodeURIComponent(
+            payload.latestAnalysisUpdatedAt ?? new Date().toISOString(),
+          );
+
+          window.location.replace(`/today?refreshed=${completedAt}`);
+        }
+      } catch {
+        // The dashboard still shows the latest completed snapshot if polling misses once.
+      }
+    }
+
+    void pollReanalysis();
+    const interval = window.setInterval(pollReanalysis, 2500);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [reanalysisJobId, updating]);
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#f4fbf9] text-[#111827]">
@@ -159,6 +224,13 @@ export function TodayDashboard({ analysis, result }: TodayDashboardProps) {
                       {formatDate(analysis.updatedAt)}
                     </p>
                   </div>
+                  <Link
+                    href="/today/reanalyze"
+                    className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#0f9f8d] text-sm font-semibold text-white shadow-[0_12px_28px_rgba(15,159,141,0.2)] transition-colors hover:bg-[#0d8d7d]"
+                  >
+                    <Sparkles className="size-4" />
+                    Update analysis
+                  </Link>
                   <DashboardSignOutButton className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[#d7ebe6] bg-white text-sm font-semibold text-[#4b5563] transition-colors hover:border-[#b9ddd5] hover:text-[#0f766e]">
                     <LogOut className="size-4" />
                     Sign out
@@ -173,29 +245,155 @@ export function TodayDashboard({ analysis, result }: TodayDashboardProps) {
               activeDescription={active.description}
               activeLabel={active.label}
               analysisUpdatedAt={analysis.updatedAt}
+              updating={updating}
             />
 
             <div className="mt-5 min-w-0 flex-1">
-              {activeView === "overview" ? (
-                <OverviewView
-                  highRisks={highRisks}
-                  readinessScore={readinessScore}
-                  result={result}
-                  totalPlanMinutes={totalPlanMinutes}
-                />
-              ) : null}
-              {activeView === "risks" ? <RisksView result={result} /> : null}
-              {activeView === "today" ? <TodayPriorityView result={result} /> : null}
-              {activeView === "plan" ? <PlanView result={result} /> : null}
-              {activeView === "questions" ? <QuestionsView result={result} /> : null}
-              {activeView === "resume" ? (
-                <ResumeView analysis={analysis} result={result} />
-              ) : null}
+              {updating ? (
+                <DashboardAnalysisSkeleton />
+              ) : (
+                <>
+                  {activeView === "overview" ? (
+                    <OverviewView
+                      highRisks={highRisks}
+                      readinessScore={readinessScore}
+                      result={result}
+                      targetAlignment={targetAlignment}
+                      totalPlanMinutes={totalPlanMinutes}
+                    />
+                  ) : null}
+                  {activeView === "alignment" ? (
+                    <AlignmentView targetAlignment={targetAlignment} />
+                  ) : null}
+                  {activeView === "risks" ? <RisksView result={result} /> : null}
+                  {activeView === "today" ? (
+                    <TodayPriorityView result={result} />
+                  ) : null}
+                  {activeView === "plan" ? <PlanView result={result} /> : null}
+                  {activeView === "questions" ? (
+                    <QuestionsView result={result} />
+                  ) : null}
+                  {activeView === "resume" ? (
+                    <ResumeView analysis={analysis} result={result} />
+                  ) : null}
+                </>
+              )}
             </div>
           </div>
         </section>
       </div>
+      <DashboardSkeletonStyles />
     </main>
+  );
+}
+
+function DashboardAnalysisSkeleton() {
+  return (
+    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_392px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="space-y-5">
+        <section className="rounded-[28px] border border-[#d7ebe6] bg-white/88 p-5 shadow-[0_18px_54px_rgba(15,118,110,0.08)] backdrop-blur-xl sm:p-6">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="tg-dashboard-text-shine text-xs font-semibold uppercase tracking-[0.18em]">
+                Rebuilding profile analysis
+              </p>
+              <div className="tg-dashboard-shimmer mt-4 h-8 w-72 max-w-full rounded-xl" />
+              <div className="tg-dashboard-shimmer mt-3 h-4 w-full max-w-3xl rounded-full" />
+              <div className="tg-dashboard-shimmer mt-2 h-4 w-4/5 max-w-2xl rounded-full" />
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:w-72">
+              <div className="tg-dashboard-shimmer h-20 rounded-[18px]" />
+              <div className="tg-dashboard-shimmer h-20 rounded-[18px]" />
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-4">
+            <div className="tg-dashboard-shimmer h-20 rounded-[18px]" />
+            <div className="tg-dashboard-shimmer h-20 rounded-[18px]" />
+            <div className="tg-dashboard-shimmer h-20 rounded-[18px]" />
+            <div className="tg-dashboard-shimmer h-20 rounded-[18px]" />
+          </div>
+        </section>
+
+        <section className="rounded-[28px] border border-[#d7ebe6] bg-white/88 p-5 shadow-[0_18px_54px_rgba(15,118,110,0.08)] backdrop-blur-xl sm:p-6">
+          <div className="flex items-center gap-3">
+            <div className="tg-dashboard-shimmer size-10 rounded-2xl" />
+            <div className="tg-dashboard-shimmer h-4 w-44 rounded-full" />
+          </div>
+          <div className="mt-6 grid gap-3 lg:grid-cols-3">
+            <div className="tg-dashboard-shimmer h-32 rounded-[22px]" />
+            <div className="tg-dashboard-shimmer h-32 rounded-[22px]" />
+            <div className="tg-dashboard-shimmer h-32 rounded-[22px]" />
+          </div>
+        </section>
+      </div>
+
+      <aside className="space-y-5">
+        <section className="rounded-[28px] border border-[#d7ebe6] bg-white/88 p-5 shadow-[0_18px_54px_rgba(15,118,110,0.08)] backdrop-blur-xl sm:p-6">
+          <div className="flex items-center gap-3">
+            <div className="tg-dashboard-shimmer size-10 rounded-2xl" />
+            <div className="tg-dashboard-shimmer h-4 w-36 rounded-full" />
+          </div>
+          <div className="tg-dashboard-shimmer mx-auto mt-6 size-44 rounded-full" />
+          <div className="mt-6 space-y-3">
+            <div className="tg-dashboard-shimmer h-4 rounded-full" />
+            <div className="tg-dashboard-shimmer h-4 rounded-full" />
+            <div className="tg-dashboard-shimmer h-4 rounded-full" />
+            <div className="tg-dashboard-shimmer h-4 rounded-full" />
+          </div>
+        </section>
+      </aside>
+    </div>
+  );
+}
+
+function DashboardSkeletonStyles() {
+  return (
+    <style jsx global>{`
+      @keyframes tg-dashboard-shimmer {
+        0% {
+          background-position: 120% 0;
+        }
+        100% {
+          background-position: -120% 0;
+        }
+      }
+
+      @keyframes tg-dashboard-text-shine {
+        0% {
+          background-position: 120% 0;
+        }
+        100% {
+          background-position: -120% 0;
+        }
+      }
+
+      .tg-dashboard-shimmer {
+        background-image: linear-gradient(
+          90deg,
+          rgba(231, 242, 239, 0.78) 0%,
+          rgba(255, 255, 255, 0.98) 48%,
+          rgba(211, 239, 234, 0.8) 100%
+        );
+        background-size: 220% 100%;
+        animation: tg-dashboard-shimmer 1.1s ease-in-out infinite;
+      }
+
+      .tg-dashboard-text-shine {
+        background-image: linear-gradient(
+          90deg,
+          #0f3d3a 0%,
+          #0f9f8d 42%,
+          #65d7ca 50%,
+          #0f9f8d 58%,
+          #0f3d3a 100%
+        );
+        background-size: 220% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: tg-dashboard-text-shine 1.8s ease-in-out infinite;
+      }
+    `}</style>
   );
 }
 
@@ -261,6 +459,13 @@ function DashboardSidebar({
       <DashboardNavigation activeView={activeView} onSelect={onSelect} />
 
       <div className="mt-auto space-y-3 pt-5">
+        <Link
+          href="/today/reanalyze"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0f9f8d] text-sm font-semibold text-white shadow-[0_14px_32px_rgba(15,159,141,0.2)] transition-colors hover:bg-[#0d8d7d]"
+        >
+          <Sparkles className="size-4" />
+          Update analysis
+        </Link>
         <div className="rounded-[18px] border border-[#d7ebe6] bg-white/76 p-3 shadow-[0_12px_34px_rgba(15,118,110,0.06)]">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6b7d78]">
             Last analyzed
@@ -336,13 +541,21 @@ function DashboardHeader({
   activeDescription,
   activeLabel,
   analysisUpdatedAt,
+  updating,
 }: {
   activeDescription: string;
   activeLabel: string;
   analysisUpdatedAt: string;
+  updating: boolean;
 }) {
   return (
     <header className="rounded-[30px] border border-[#d7ebe6] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,118,110,0.08)] backdrop-blur-xl sm:p-6 lg:p-7">
+      {updating ? (
+        <div className="mb-5 rounded-2xl border border-[#c4ebe3] bg-[#effbf8] px-4 py-3 text-sm font-semibold leading-6 text-[#0f766e]">
+          Trailgrad is updating your analysis. Your latest completed snapshot
+          stays visible and this page will refresh when the new run finishes.
+        </div>
+      ) : null}
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f8f7e]">
@@ -372,16 +585,23 @@ function OverviewView({
   highRisks,
   readinessScore,
   result,
+  targetAlignment,
   totalPlanMinutes,
 }: {
   highRisks: number;
   readinessScore: number;
   result: MVPAnalysis;
+  targetAlignment: TargetAlignment;
   totalPlanMinutes: number;
 }) {
+  const hasAlignmentWarning = targetAlignment.mismatchLevel !== "LOW";
+
   return (
     <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_392px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
       <div className="space-y-5">
+        {hasAlignmentWarning ? (
+          <AlignmentNotice targetAlignment={targetAlignment} />
+        ) : null}
         <Panel title="Profile summary" icon={Gauge}>
           <p className="max-w-4xl text-sm font-medium leading-7 text-[#4b5563]">
             {result.profileSummary}
@@ -414,6 +634,103 @@ function OverviewView({
         </div>
       </Panel>
     </div>
+  );
+}
+
+function AlignmentView({ targetAlignment }: { targetAlignment: TargetAlignment }) {
+  const mismatch = mismatchMeta(targetAlignment.mismatchLevel);
+
+  return (
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_392px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
+      <Panel title="Target alignment" icon={Target}>
+        <div className="rounded-[24px] border border-[#e0efeb] bg-[#f6fbfa] p-5">
+          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${mismatch.className}`}>
+            {targetAlignment.mismatchLevel} mismatch
+          </span>
+          <h2 className="mt-4 text-2xl font-semibold tracking-[-0.035em] text-[#111827]">
+            {targetAlignment.shouldAskUserToConfirmTarget
+              ? "Confirm what Trailgrad should optimize for."
+              : "Trailgrad found your target direction."}
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-[#4b5563]">
+            {targetAlignment.explanation}
+          </p>
+        </div>
+
+        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          <AlignmentCard
+            label="Selected intent"
+            value={targetAlignment.selectedRoleLabel}
+          />
+          <AlignmentCard
+            label="Resume evidence"
+            value={targetAlignment.detectedResumeDirection}
+          />
+          <AlignmentCard
+            label="Target job"
+            value={targetAlignment.detectedJobDirection ?? "No job description added"}
+          />
+        </div>
+      </Panel>
+
+      <Panel title="Recommendation" icon={CheckCircle2}>
+        <div className="rounded-[22px] border border-[#e0efeb] bg-[#f6fbfa] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6b7d78]">
+            Analyze against
+          </p>
+          <p className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[#111827]">
+            {targetAlignment.recommendedTarget === "job_description"
+              ? "The pasted job description"
+              : "The selected role"}
+          </p>
+          <p className="mt-3 text-sm leading-7 text-[#4b5563]">
+            {targetAlignment.shouldAskUserToConfirmTarget
+              ? "This is the kind of mismatch Trailgrad should ask you to confirm before future analysis runs."
+              : "Trailgrad can continue using this target without an extra confirmation step."}
+          </p>
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+function AlignmentNotice({ targetAlignment }: { targetAlignment: TargetAlignment }) {
+  const mismatch = mismatchMeta(targetAlignment.mismatchLevel);
+
+  return (
+    <section className="rounded-[26px] border border-[#f1ddc3] bg-[#fffaf2] p-5 shadow-[0_18px_54px_rgba(150,99,41,0.08)]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${mismatch.className}`}>
+            Target alignment
+          </span>
+          <h2 className="mt-3 text-xl font-semibold tracking-[-0.03em] text-[#111827]">
+            Your target signals do not fully match yet.
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-[#5f5142]">
+            {targetAlignment.explanation}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-white/72 px-4 py-3 text-sm font-semibold text-[#374151]">
+          {targetAlignment.recommendedTarget === "job_description"
+            ? "Use pasted job"
+            : "Use selected role"}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AlignmentCard({ label, value }: { label: string; value: string }) {
+  return (
+    <article className="rounded-2xl border border-[#dcefeb] bg-white/74 p-4 shadow-[0_10px_28px_rgba(15,118,110,0.04)]">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6b7d78]">
+        {label}
+      </p>
+      <p className="mt-2 text-sm font-semibold leading-6 text-[#111827]">
+        {value}
+      </p>
+    </article>
   );
 }
 
@@ -852,6 +1169,31 @@ function difficultyMeta(difficulty: Difficulty) {
   if (difficulty === "HARD") return { className: "bg-[#fff1ed] text-[#b4533b]" };
   if (difficulty === "MEDIUM") return { className: "bg-[#fff7e8] text-[#966329]" };
   return { className: "bg-[#effbf8] text-[#0f8f7e]" };
+}
+
+function mismatchMeta(level: TargetAlignment["mismatchLevel"]) {
+  if (level === "HIGH") return { className: "bg-[#fff1ed] text-[#b4533b]" };
+  if (level === "MEDIUM") return { className: "bg-[#fff7e8] text-[#966329]" };
+  return { className: "bg-[#effbf8] text-[#0f8f7e]" };
+}
+
+function getTargetAlignment(result: MVPAnalysis): TargetAlignment {
+  const maybeAlignment = (result as Partial<MVPAnalysis>).targetAlignment;
+
+  if (maybeAlignment) {
+    return maybeAlignment;
+  }
+
+  return {
+    selectedRoleLabel: "Selected target role",
+    detectedResumeDirection: "Resume direction was not classified in this earlier analysis.",
+    detectedJobDirection: null,
+    mismatchLevel: "LOW",
+    shouldAskUserToConfirmTarget: false,
+    recommendedTarget: "selected_role",
+    explanation:
+      "This analysis was created before Trailgrad added target-alignment detection. Run a fresh analysis after changing your resume or target to see alignment details.",
+  };
 }
 
 function formatDate(value: string) {

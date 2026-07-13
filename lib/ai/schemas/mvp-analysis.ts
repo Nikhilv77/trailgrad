@@ -7,9 +7,19 @@ const mvpSourceReferenceSchema = z.object({
 });
 
 const readinessLevelSchema = z.enum(["LOW", "MEDIUM", "HIGH"]);
+const targetAlignmentMismatchLevelSchema = z.enum(["LOW", "MEDIUM", "HIGH"]);
 
 export const mvpAnalysisSchema = z.object({
   profileSummary: z.string().min(1).max(700),
+  targetAlignment: z.object({
+    selectedRoleLabel: z.string().min(1).max(120),
+    detectedResumeDirection: z.string().min(1).max(160),
+    detectedJobDirection: z.string().min(1).max(160).nullable(),
+    mismatchLevel: targetAlignmentMismatchLevelSchema,
+    shouldAskUserToConfirmTarget: z.boolean(),
+    recommendedTarget: z.enum(["selected_role", "job_description"]),
+    explanation: z.string().min(1).max(420),
+  }),
   strongestSignals: z.array(z.string().min(1).max(220)).length(3),
   rejectionRisks: z
     .array(

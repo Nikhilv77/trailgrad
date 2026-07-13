@@ -4,12 +4,14 @@ import {
   failAnalysisJob,
 } from "@/lib/services/analysis-job-service";
 import { findAnalysisJobByIdempotencyKeyRecord } from "@/lib/db/analysis-job-repository";
+import { buildAnalysisInputFingerprint } from "@/lib/onboarding/analysis-input-fingerprint";
 import {
   getOnboardingState,
   listResumeVersions,
   markOnboardingFailed,
   type OnboardingState,
 } from "@/lib/services/profile-service";
+import { OnboardingSubmissionSchema } from "@/lib/validators/profile";
 
 export async function getReconciledOnboardingState(
   profileId: string,
@@ -20,7 +22,7 @@ export async function getReconciledOnboardingState(
     return state;
   }
 
-  const job = await findLatestInitialProfileJob(profileId);
+  const job = await findLatestInitialProfileJob(profileId, state.onboarding);
 
   if (!job) {
     return state;
@@ -55,7 +57,10 @@ export async function getReconciledOnboardingState(
   return state;
 }
 
-async function findLatestInitialProfileJob(profileId: string) {
+async function findLatestInitialProfileJob(
+  profileId: string,
+  onboarding: OnboardingState["onboarding"],
+) {
   const resumeVersion = (await listResumeVersions(profileId)).find(
     (version) => version.active && version.extractedTextStatus === "EXTRACTED",
   );
@@ -65,12 +70,19 @@ async function findLatestInitialProfileJob(profileId: string) {
   }
 
   const idempotencyKey = buildAnalysisJobIdempotencyKey({
+    inputFingerprint: getAnalysisInputFingerprint(onboarding),
     profileId,
     sourceDocumentId: resumeVersion.sourceDocumentId,
     type: "INITIAL_PROFILE",
   });
 
   return findAnalysisJobByIdempotencyKeyRecord(idempotencyKey);
+}
+
+function getAnalysisInputFingerprint(onboarding: OnboardingState["onboarding"]) {
+  const parsed = OnboardingSubmissionSchema.safeParse(onboarding);
+
+  return parsed.success ? buildAnalysisInputFingerprint(parsed.data) : null;
 }
 
 function isStaleRunningJob(updatedAt: string) {

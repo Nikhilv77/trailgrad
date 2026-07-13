@@ -171,9 +171,13 @@ export async function runMVPProfileAnalysisJob(
     }
 
     await failAnalysisJob(claimedJob.id, safeError).catch(() => undefined);
-    await markOnboardingFailed(claimedJob.profileId, safeError.message).catch(
-      () => undefined,
-    );
+
+    if (claimedJob.type === "INITIAL_PROFILE") {
+      await markOnboardingFailed(claimedJob.profileId, safeError.message).catch(
+        () => undefined,
+      );
+    }
+
     throw safeError;
   }
 }

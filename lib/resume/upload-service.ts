@@ -5,12 +5,15 @@ import {
   findResumeSourceDocumentByHashRecord,
   getOrCreateProfileRecord,
   markResumeSourceDocumentStatusRecord,
+  recordFailedResumeVersionRecord,
   reserveResumeSourceDocumentRecord,
   updateOnboardingResumeMetadataRecord,
 } from "@/lib/db/profile-repository";
 import type { OnboardingState } from "@/lib/onboarding/types";
 import { sanitizeFilename } from "@/lib/resume/filename";
+import { normalizeResumeText } from "@/lib/resume/normalize";
 import { getResumeParser } from "@/lib/resume/parsers";
+import { classifyResumeText } from "@/lib/resume/resume-classifier";
 import {
   ResumeUploadError,
   type ResumeUploadErrorCode,
@@ -21,6 +24,7 @@ const PDF_CONTENT_TYPE = "application/pdf";
 const DOCX_CONTENT_TYPE =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const defaultMaxResumeSizeBytes = 5 * 1024 * 1024;
+const defaultMaxResumePageCount = 5;
 
 export interface ResumeUploadResult {
   fileName: string;
@@ -38,6 +42,14 @@ export function getMaxResumeSizeBytes() {
   return Number.isFinite(parsed) && parsed > 0
     ? parsed
     : defaultMaxResumeSizeBytes;
+}
+
+export function getMaxResumePageCount() {
+  const parsed = Number(process.env.RESUME_MAX_PAGE_COUNT);
+
+  return Number.isFinite(parsed) && parsed > 0
+    ? parsed
+    : defaultMaxResumePageCount;
 }
 
 export async function uploadAuthenticatedResume(input: {
@@ -63,6 +75,30 @@ export async function uploadAuthenticatedResume(input: {
   );
 
   if (existing?.processingStatus === "EXTRACTED") {
+    try {
+      await parseAndValidateResume({
+        bytes: input.bytes,
+        contentType,
+        fileName: sanitizedFilename,
+      });
+    } catch (error) {
+      const errorCode = getSafeErrorCode(error);
+
+      await markResumeSourceDocumentStatusRecord(
+        profile.clerkUserId,
+        existing.id,
+        "FAILED",
+        errorCode,
+      );
+      await recordFailedResumeVersionRecord({
+        clerkUserId: profile.clerkUserId,
+        sourceDocumentId: existing.id,
+        errorCode,
+      }).catch(() => undefined);
+
+      throw error;
+    }
+
     const resumeVersion = await activateResumeVersionRecord({
       clerkUserId: profile.clerkUserId,
       sourceDocumentId: existing.id,
@@ -137,11 +173,12 @@ export async function uploadAuthenticatedResume(input: {
       reservation.id,
       "EXTRACTING",
     );
-    const parsed = await getResumeParser(contentType, sanitizedFilename).parse({
+    const extractedText = await parseAndValidateResume({
       bytes: input.bytes,
       contentType,
       fileName: sanitizedFilename,
     });
+
     await markResumeSourceDocumentStatusRecord(
       profile.clerkUserId,
       reservation.id,
@@ -150,7 +187,7 @@ export async function uploadAuthenticatedResume(input: {
     const resumeVersion = await activateResumeVersionRecord({
       clerkUserId: profile.clerkUserId,
       sourceDocumentId: reservation.id,
-      extractedText: parsed.text,
+      extractedText,
       extractedTextStatus: "EXTRACTED",
     });
     const updatedProfile = await updateOnboardingResumeMetadataRecord(
@@ -179,11 +216,9 @@ export async function uploadAuthenticatedResume(input: {
       "FAILED",
       errorCode,
     );
-    await activateResumeVersionRecord({
+    await recordFailedResumeVersionRecord({
       clerkUserId: profile.clerkUserId,
       sourceDocumentId: reservation.id,
-      extractedText: null,
-      extractedTextStatus: "FAILED",
       errorCode,
     }).catch(() => undefined);
 
@@ -224,19 +259,50 @@ function validateResumeFile(input: {
 }
 
 function normalizeContentType(contentType: string, fileName: string) {
+  const lowerName = fileName.toLowerCase();
+  const genericContentTypes = new Set([
+    "",
+    "application/octet-stream",
+    "binary/octet-stream",
+  ]);
+
   if (contentType === PDF_CONTENT_TYPE || contentType === DOCX_CONTENT_TYPE) {
     return contentType;
   }
 
-  if (!contentType && fileName.toLowerCase().endsWith(".pdf")) {
+  if (genericContentTypes.has(contentType) && lowerName.endsWith(".pdf")) {
     return PDF_CONTENT_TYPE;
   }
 
-  if (!contentType && fileName.toLowerCase().endsWith(".docx")) {
+  if (genericContentTypes.has(contentType) && lowerName.endsWith(".docx")) {
     return DOCX_CONTENT_TYPE;
   }
 
   return contentType;
+}
+
+async function parseAndValidateResume(input: {
+  bytes: Buffer;
+  contentType: string;
+  fileName: string;
+}) {
+  const parsed = await getResumeParser(input.contentType, input.fileName).parse(input);
+
+  if (parsed.pageCount && parsed.pageCount > getMaxResumePageCount()) {
+    throw new ResumeUploadError("RESUME_TOO_LONG");
+  }
+
+  const extractedText = normalizeResumeText(parsed.text);
+  const resumeClassification = classifyResumeText({
+    text: extractedText,
+    pageCount: parsed.pageCount,
+  });
+
+  if (resumeClassification.verdict !== "resume") {
+    throw new ResumeUploadError("RESUME_NOT_DETECTED");
+  }
+
+  return extractedText;
 }
 
 function getSafeErrorCode(error: unknown): ResumeUploadErrorCode {

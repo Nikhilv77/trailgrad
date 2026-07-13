@@ -69,6 +69,16 @@ const sourceReference = {
 
 const validAnalysis: MVPAnalysis = {
   profileSummary: "Synthetic candidate has junior full-stack project evidence.",
+  targetAlignment: {
+    selectedRoleLabel: "AI Engineer",
+    detectedResumeDirection: "Junior full-stack project candidate",
+    detectedJobDirection: null,
+    mismatchLevel: "LOW",
+    shouldAskUserToConfirmTarget: false,
+    recommendedTarget: "selected_role",
+    explanation:
+      "The selected role and resume evidence are close enough for an initial AI engineering readiness review.",
+  },
   strongestSignals: [
     "Clear project ownership claim",
     "Relevant TypeScript skill",
@@ -211,7 +221,7 @@ beforeEach(() => {
     targetContextId: null,
     status: "PENDING",
     result: null,
-    promptVersion: "mvp-profile-analysis-v2-compact",
+    promptVersion: "mvp-profile-analysis-v3-alignment",
     provider: "pending",
     model: "pending",
     safeErrorCode: null,
@@ -341,6 +351,10 @@ describe("MVP profile analysis workflow", () => {
     expect(validAnalysis.rejectionRisks).toHaveLength(3);
     expect(validAnalysis.importantQuestions).toHaveLength(5);
     expect(validAnalysis.sevenDayPlan).toHaveLength(7);
+    expect(validAnalysis.targetAlignment).toMatchObject({
+      mismatchLevel: "LOW",
+      recommendedTarget: "selected_role",
+    });
   });
 
   it("fails safely for invalid structured result", async () => {
@@ -382,7 +396,7 @@ describe("MVP profile analysis workflow", () => {
       targetContextId: null,
       status: "COMPLETED",
       result: validAnalysis,
-      promptVersion: "mvp-profile-analysis-v2-compact",
+      promptVersion: "mvp-profile-analysis-v3-alignment",
       provider: "gemini",
       model: "gemini-test",
       safeErrorCode: null,
@@ -418,5 +432,35 @@ describe("MVP profile analysis workflow", () => {
     expect(profileAnalysisRepo.failProfileAnalysisRecord).toHaveBeenCalled();
     expect(analysisJobService.failAnalysisJob).toHaveBeenCalled();
     expect(profileService.markOnboardingFailed).toHaveBeenCalled();
+  });
+
+  it("does not mark completed onboarding failed when a reanalysis job fails", async () => {
+    const reanalysisJob = {
+      ...job,
+      id: "job_reanalysis_1",
+      type: "JOB_ANALYSIS" as const,
+    };
+    analysisJobRepo.findAnalysisJobByIdRecord.mockResolvedValue(reanalysisJob);
+    analysisJobService.claimAnalysisJobForRun.mockResolvedValue({
+      ...reanalysisJob,
+      status: "RUNNING",
+    });
+    providerFactory.getAIProvider.mockReturnValue({
+      generateStructured: vi.fn(async () => {
+        throw Object.assign(new Error("provider unavailable detail"), {
+          code: "PROVIDER_UNAVAILABLE",
+        });
+      }),
+    });
+    const { runMVPProfileAnalysisJob } = await import(
+      "@/lib/services/mvp-profile-analysis-service"
+    );
+
+    await expect(runMVPProfileAnalysisJob("job_reanalysis_1")).rejects.toMatchObject({
+      code: "PROFILE_ANALYSIS_FAILED",
+    });
+    expect(profileAnalysisRepo.failProfileAnalysisRecord).toHaveBeenCalled();
+    expect(analysisJobService.failAnalysisJob).toHaveBeenCalled();
+    expect(profileService.markOnboardingFailed).not.toHaveBeenCalled();
   });
 });

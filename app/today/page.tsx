@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 
 import { TodayDashboard } from "@/components/today/today-dashboard";
-import { requireCompletedOnboarding } from "@/lib/auth/server";
+import {
+  getSingleSearchParam,
+  requireCompletedOnboarding,
+} from "@/lib/auth/server";
 import { findLatestCompletedProfileAnalysisRecord } from "@/lib/db/profile-analysis-repository";
 
 export const metadata: Metadata = {
@@ -13,7 +16,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function TodayPage() {
+export const dynamic = "force-dynamic";
+
+interface TodayPageProps {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function TodayPage({ searchParams }: TodayPageProps) {
+  const params = searchParams ? await searchParams : {};
+  const updating = getSingleSearchParam(params.updating) === "1";
+  const reanalysisJobId = getSingleSearchParam(params.jobId);
   const user = await requireCompletedOnboarding({ currentPath: "/today" });
   const analysis = await findLatestCompletedProfileAnalysisRecord(user.userId);
 
@@ -44,6 +56,8 @@ export default async function TodayPage() {
         updatedAt: analysis.updatedAt,
       }}
       result={analysis.result}
+      reanalysisJobId={reanalysisJobId}
+      updating={updating}
     />
   );
 }

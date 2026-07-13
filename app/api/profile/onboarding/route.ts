@@ -5,7 +5,10 @@ import {
   createProfileAnalysisRequestedEvent,
   inngest,
 } from "@/lib/inngest/client";
+import { buildAnalysisInputFingerprint } from "@/lib/onboarding/analysis-input-fingerprint";
+import type { OnboardingSubmission } from "@/lib/onboarding/types";
 import {
+  listSourceDocuments,
   listResumeVersions,
   markOnboardingAnalyzing,
   markOnboardingFailed,
@@ -20,6 +23,7 @@ import {
   OnboardingStepUpdateSchema,
   OnboardingSubmissionSchema,
 } from "@/lib/validators/profile";
+import type { SourceDocumentRecord } from "@/lib/db/types";
 
 class OnboardingSubmissionError extends Error {
   constructor(
@@ -118,8 +122,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const input = OnboardingSubmissionSchema.parse(await request.json());
-    const profile = await markOnboardingAnalyzing(userId, input);
     const resumeVersion = (await listResumeVersions(userId)).find(
       (version) => version.active && version.extractedTextStatus === "EXTRACTED",
     );
@@ -131,7 +133,24 @@ export async function POST(request: Request) {
       );
     }
 
+    const sourceDocument = (await listSourceDocuments(userId)).find(
+      (document) => document.id === resumeVersion.sourceDocumentId,
+    );
+
+    if (!sourceDocument) {
+      throw new OnboardingSubmissionError(
+        "RESUME_NOT_READY",
+        "Resume text is not ready for analysis. Upload your resume again or wait for extraction to finish.",
+      );
+    }
+
+    const input = OnboardingSubmissionSchema.parse(
+      hydrateOnboardingResumeMetadata(await request.json(), sourceDocument),
+    );
+    const profile = await markOnboardingAnalyzing(userId, input);
+
     const idempotencyKey = buildAnalysisJobIdempotencyKey({
+      inputFingerprint: buildAnalysisInputFingerprint(input),
       profileId: userId,
       sourceDocumentId: resumeVersion.sourceDocumentId,
       type: "INITIAL_PROFILE",
@@ -185,6 +204,22 @@ export async function POST(request: Request) {
       { status: safeError.code === "RESUME_NOT_READY" ? 409 : 500 },
     );
   }
+}
+
+function hydrateOnboardingResumeMetadata(
+  value: unknown,
+  sourceDocument: SourceDocumentRecord,
+): OnboardingSubmission {
+  const input =
+    value && typeof value === "object" && !Array.isArray(value) ? value : {};
+
+  return {
+    ...input,
+    resumeName: sourceDocument.originalFilename,
+    resumeContentType: sourceDocument.mimeType,
+    resumeSize: sourceDocument.fileSize,
+    resumeUploadedAt: sourceDocument.createdAt,
+  } as OnboardingSubmission;
 }
 
 async function sendProfileAnalysisEvent(input: {

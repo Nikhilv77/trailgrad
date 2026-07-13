@@ -18,6 +18,7 @@ import {
   Code2,
   Database,
   FileCheck2,
+  FileWarning,
   FileUp,
   GraduationCap,
   Layers3,
@@ -52,6 +53,17 @@ interface OnboardingStep {
   title: string;
   description: string;
   optional?: boolean;
+}
+
+interface ResumeUploadIssue {
+  code?: string;
+  message: string;
+  title: string;
+}
+
+interface ResumeInspectionStep {
+  title: string;
+  description: string;
 }
 
 const steps: OnboardingStep[] = [
@@ -121,6 +133,29 @@ const targetJobOptions: Option[] = [
   { id: "skip", title: "Skip for now", description: "Use your target role only", icon: ArrowRight },
 ];
 
+const resumeInspectionSteps: ResumeInspectionStep[] = [
+  {
+    title: "Reading your file",
+    description: "Checking format, size, and whether the PDF has selectable text.",
+  },
+  {
+    title: "Extracting resume text",
+    description: "Pulling out the content Trailgrad can safely analyze.",
+  },
+  {
+    title: "Checking resume structure",
+    description: "Looking for sections, roles, dates, skills, and candidate signals.",
+  },
+  {
+    title: "Filtering non-resume docs",
+    description: "Screening out product docs, notes, proposals, and long reports.",
+  },
+  {
+    title: "Preparing your profile input",
+    description: "Saving the validated resume for the next analysis step.",
+  },
+];
+
 interface OnboardingFlowProps {
   initialState?: OnboardingState;
 }
@@ -178,6 +213,9 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
   const [savingStep, setSavingStep] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
   const [resumeProcessingStatus, setResumeProcessingStatus] = useState("");
+  const [resumeInspectionStep, setResumeInspectionStep] = useState(0);
+  const [resumeUploadIssue, setResumeUploadIssue] =
+    useState<ResumeUploadIssue | null>(null);
   const [showAllRoles, setShowAllRoles] = useState(() =>
     Boolean(
       initialState?.onboarding?.targetRole &&
@@ -222,6 +260,20 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
       });
     });
   }, [currentStep, reduceMotion]);
+
+  useEffect(() => {
+    if (!uploadingResume) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setResumeInspectionStep((step) =>
+        Math.min(step + 1, resumeInspectionSteps.length - 1),
+      );
+    }, 850);
+
+    return () => window.clearInterval(timer);
+  }, [uploadingResume]);
 
   function selectOption(value: string) {
     if (activeStep.id === "target-role") setTargetRole(value);
@@ -408,7 +460,9 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
     }
 
     setErrorMessage("");
+    setResumeUploadIssue(null);
     setUploadingResume(true);
+    setResumeInspectionStep(0);
     setResumeProcessingStatus("Uploading resume");
 
     try {
@@ -423,6 +477,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
       const payload = (await response.json().catch(() => null)) as
         | {
             error?: string;
+            code?: string;
             fileName?: string;
             contentType?: string;
             fileSize?: number;
@@ -432,9 +487,13 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
         | null;
 
       if (!response.ok) {
-        throw new Error(payload?.error ?? "Unable to upload resume.");
+        setResumeInspectionStep(resumeInspectionSteps.length - 1);
+        setResumeUploadIssue(getResumeUploadIssue(payload?.code, payload?.error));
+        setResumeProcessingStatus("");
+        return;
       }
 
+      setResumeInspectionStep(resumeInspectionSteps.length - 1);
       const saved = payload?.state?.onboarding;
       setResumeName(saved?.resumeName ?? payload?.fileName ?? file.name);
       setResumeContentType(saved?.resumeContentType ?? payload?.contentType ?? file.type);
@@ -446,9 +505,13 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
           : "Resume uploaded",
       );
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Unable to upload resume.",
+      setResumeUploadIssue(
+        getResumeUploadIssue(
+          undefined,
+          error instanceof Error ? error.message : "Unable to upload resume.",
+        ),
       );
+      setResumeProcessingStatus("");
     } finally {
       setUploadingResume(false);
     }
@@ -612,6 +675,8 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
                     resumeName={resumeName}
                     resumeSize={resumeSize}
                     processingStatus={resumeProcessingStatus}
+                    inspectionStep={resumeInspectionStep}
+                    uploadIssue={resumeUploadIssue}
                     uploading={uploadingResume}
                     onUpload={uploadResume}
                   />
@@ -701,6 +766,31 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
           100% {
             background-position: -120% 0;
           }
+        }
+
+        @keyframes tg-inspection-shine {
+          0% {
+            background-position: 120% 0;
+          }
+          100% {
+            background-position: -120% 0;
+          }
+        }
+
+        .tg-inspection-shine {
+          background-image: linear-gradient(
+            90deg,
+            #0f3d3a 0%,
+            #0f9f8d 42%,
+            #65d7ca 50%,
+            #0f9f8d 58%,
+            #0f3d3a 100%
+          );
+          background-size: 220% 100%;
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          animation: tg-inspection-shine 1.8s ease-in-out infinite;
         }
 
         .tg-shimmer {
@@ -1229,15 +1319,24 @@ function ResumeQuestion({
   resumeName,
   resumeSize,
   processingStatus,
+  inspectionStep,
+  uploadIssue,
   uploading,
   onUpload,
 }: {
   resumeName: string;
   resumeSize: number;
   processingStatus: string;
+  inspectionStep: number;
+  uploadIssue: ResumeUploadIssue | null;
   uploading: boolean;
   onUpload: (file: File | undefined) => void;
 }) {
+  const activeInspectionStep =
+    resumeInspectionSteps[
+      Math.min(inspectionStep, resumeInspectionSteps.length - 1)
+    ] ?? resumeInspectionSteps[0];
+
   return (
     <div className="mx-auto mt-9 max-w-[720px] pb-10">
       <div className="grid gap-5 sm:grid-cols-[minmax(0,320px)_minmax(0,1fr)] sm:items-center">
@@ -1278,26 +1377,132 @@ function ResumeQuestion({
           </span>
         </label>
 
-        <div className="min-w-0 rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
-          <p className="text-sm font-semibold text-[#111827]">Trailgrad will inspect</p>
-          <ul className="mt-3 space-y-2 text-sm font-medium text-[#5f6f6b]">
-            {[
-              "skills",
-              "experience",
-              "projects",
-              "weak claims",
-              "missing proof",
-              "possible interview risks",
-            ].map((item) => (
-              <li key={item} className="flex items-center gap-2">
-                <Check className="size-4 text-[#159b89]" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
+        {uploading ? (
+          <ResumeInspectionPanel
+            activeStep={activeInspectionStep}
+            activeStepIndex={inspectionStep}
+          />
+        ) : uploadIssue ? (
+          <div className="min-w-0 rounded-[20px] border border-[#f1cdbf] bg-[#fff9f6] p-4 shadow-[0_14px_34px_rgba(154,80,60,0.08)]">
+            <span className="grid size-11 place-items-center rounded-[14px] bg-white text-[#b4533b] shadow-[0_10px_22px_rgba(154,80,60,0.08)]">
+              <FileWarning className="size-5" />
+            </span>
+            <p className="mt-4 text-sm font-semibold text-[#111827]">
+              {uploadIssue.title}
+            </p>
+            <p className="mt-2 text-sm font-medium leading-6 text-[#7b625b]">
+              {uploadIssue.message}
+            </p>
+            <ul className="mt-4 space-y-2 text-sm font-medium text-[#7b625b]">
+              {[
+                "Use your actual resume, not notes or a portfolio doc.",
+                "Include experience, projects, skills, or education.",
+                "Upload a text-based PDF or DOCX.",
+              ].map((item) => (
+                <li key={item} className="flex gap-2">
+                  <Check className="mt-0.5 size-4 shrink-0 text-[#c46a4b]" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <div className="min-w-0 rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
+            <p className="text-sm font-semibold text-[#111827]">Trailgrad will inspect</p>
+            <ul className="mt-3 space-y-2 text-sm font-medium text-[#5f6f6b]">
+              {[
+                "skills",
+                "experience",
+                "projects",
+                "weak claims",
+                "missing proof",
+                "possible interview risks",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <Check className="size-4 text-[#159b89]" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function ResumeInspectionPanel({
+  activeStep,
+  activeStepIndex,
+}: {
+  activeStep: ResumeInspectionStep;
+  activeStepIndex: number;
+}) {
+  return (
+    <div className="relative min-w-0 overflow-hidden rounded-[20px] border border-[#d7eee9] bg-[#fbfffe] p-5 shadow-[0_16px_38px_rgba(15,118,110,0.06)]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#13a08d]/45 to-transparent" />
+      <div className="pointer-events-none absolute -right-12 -top-16 size-36 rounded-full bg-[#e3faf6] opacity-70 blur-3xl" />
+      <div className="relative">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#6fb8af]">
+          Private inspection
+        </p>
+
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={activeStep.title}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="tg-inspection-shine mt-4 text-xl font-semibold leading-7 text-[#0f3d3a]"
+          >
+            {activeStep.title}
+            <span className="ml-1 inline-flex w-5">
+              <AnimatedDots />
+            </span>
+          </motion.p>
+        </AnimatePresence>
+
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={activeStep.description}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="mt-3 text-sm font-medium leading-6 text-[#61716d]"
+          >
+            {activeStep.description}
+          </motion.p>
+        </AnimatePresence>
+
+        <p className="mt-5 text-xs font-semibold text-[#83aaa4]">
+          Step {Math.min(activeStepIndex + 1, resumeInspectionSteps.length)} of{" "}
+          {resumeInspectionSteps.length}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function AnimatedDots() {
+  return (
+    <>
+      {[0, 1, 2].map((dot) => (
+        <motion.span
+          key={dot}
+          animate={{ opacity: [0.25, 1, 0.25], y: [0, -1, 0] }}
+          transition={{
+            duration: 1.1,
+            ease: "easeInOut",
+            repeat: Infinity,
+            delay: dot * 0.14,
+          }}
+        >
+          .
+        </motion.span>
+      ))}
+    </>
   );
 }
 
@@ -1448,6 +1653,59 @@ function ReviewStep({
 
 function getOptionTitle(options: Option[], value: string) {
   return options.find((option) => option.id === value)?.title;
+}
+
+function getResumeUploadIssue(code: string | undefined, fallback?: string): ResumeUploadIssue {
+  if (code === "RESUME_NOT_DETECTED") {
+    return {
+      code,
+      title: "This does not look like a resume yet.",
+      message:
+        "Trailgrad could read the file, but it did not find enough resume structure to analyze it confidently.",
+    };
+  }
+
+  if (code === "IMAGE_ONLY_PDF") {
+    return {
+      code,
+      title: "This PDF looks scanned.",
+      message:
+        "Trailgrad needs selectable text. Export your resume as a text-based PDF or upload a DOCX version.",
+    };
+  }
+
+  if (code === "RESUME_TOO_LONG") {
+    return {
+      code,
+      title: "This looks more like a document than a resume.",
+      message:
+        "Trailgrad expects a concise resume, usually 1-3 pages. Upload your resume instead of a portfolio, product spec, or case study.",
+    };
+  }
+
+  if (code === "UNSUPPORTED_FILE_TYPE" || code === "INVALID_EXTENSION") {
+    return {
+      code,
+      title: "Upload a PDF or DOCX resume.",
+      message:
+        "Trailgrad can analyze resume files in PDF or DOCX format right now.",
+    };
+  }
+
+  if (code === "OVERSIZED_FILE") {
+    return {
+      code,
+      title: "This resume is too large.",
+      message:
+        "Use a smaller PDF or DOCX resume so Trailgrad can extract it safely.",
+    };
+  }
+
+  return {
+    code,
+    title: "We could not process that resume.",
+    message: fallback ?? "Try uploading a clean PDF or DOCX copy of your resume.",
+  };
 }
 
 function getStepIndex(stepId: OnboardingStepId | undefined) {

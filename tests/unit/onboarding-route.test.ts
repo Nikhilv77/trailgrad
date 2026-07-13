@@ -9,8 +9,34 @@ const onboardingPayload: OnboardingSubmission = {
   preparationTimePerDay: "30",
   preparationIntensity: "standard",
   resumeName: "resume.pdf",
+  resumeContentType: "application/pdf",
+  resumeSize: 1000,
+  resumeUploadedAt: "2026-01-01T00:00:00.000Z",
   targetJobMode: "skip",
   projectsMode: "skip",
+};
+
+const serverSourceDocument = {
+  id: "source_1",
+  profileId: "user_onboarding_route",
+  sourceType: "resume",
+  originalFilename: "server-resume.pdf",
+  mimeType: "application/pdf",
+  storagePath: "private/resumes/server-resume.pdf",
+  fileSize: 42_000,
+  sha256ContentHash: "hash_1",
+  processingStatus: "EXTRACTED",
+  errorCode: null,
+  version: 1,
+  createdAt: "2026-01-01T00:03:00.000Z",
+};
+
+const serverHydratedOnboarding: OnboardingSubmission = {
+  ...onboardingPayload,
+  resumeName: serverSourceDocument.originalFilename,
+  resumeContentType: serverSourceDocument.mimeType,
+  resumeSize: serverSourceDocument.fileSize,
+  resumeUploadedAt: serverSourceDocument.createdAt,
 };
 
 afterEach(() => {
@@ -65,6 +91,7 @@ describe("onboarding profile route", () => {
           createdAt: "2026-01-01T00:00:00.000Z",
         },
       ]),
+      listSourceDocuments: vi.fn(async () => [serverSourceDocument]),
       markOnboardingAnalyzing: vi.fn(),
       markOnboardingFailed: vi.fn(),
       updateOnboardingStep: vi.fn(),
@@ -123,13 +150,14 @@ describe("onboarding profile route", () => {
           createdAt: "2026-01-01T00:00:00.000Z",
         },
       ]),
+      listSourceDocuments: vi.fn(async () => [serverSourceDocument]),
       markOnboardingAnalyzing: vi.fn(async () => ({
         onboardingStatus: "analyzing",
         currentOnboardingStep: "review",
         onboardingStartedAt: "2026-01-01T00:00:00.000Z",
         onboardingCompletedAt: null,
         analysisError: null,
-        onboarding: onboardingPayload,
+        onboarding: serverHydratedOnboarding,
       })),
       markOnboardingFailed: vi.fn(async () => undefined),
       updateOnboardingStep: vi.fn(),
@@ -141,7 +169,13 @@ describe("onboarding profile route", () => {
     const response = await POST(
       new Request("http://localhost/api/profile/onboarding", {
         method: "POST",
-        body: JSON.stringify(onboardingPayload),
+        body: JSON.stringify({
+          ...onboardingPayload,
+          resumeName: "fake-client-name.pdf",
+          resumeContentType: "text/plain",
+          resumeSize: 1,
+          resumeUploadedAt: "1999-01-01T00:00:00.000Z",
+        }),
       }),
     );
 
@@ -153,9 +187,17 @@ describe("onboarding profile route", () => {
     });
     expect(services.markOnboardingAnalyzing).toHaveBeenCalledWith(
       "user_onboarding_route",
-      onboardingPayload,
+      serverHydratedOnboarding,
     );
     expect(analysisJobs.requestAnalysisJob).toHaveBeenCalledOnce();
+    expect(analysisJobs.buildAnalysisJobIdempotencyKey).toHaveBeenCalledWith(
+      expect.objectContaining({
+        inputFingerprint: expect.any(String),
+        profileId: "user_onboarding_route",
+        sourceDocumentId: "source_1",
+        type: "INITIAL_PROFILE",
+      }),
+    );
     expect(inngest.send).toHaveBeenCalledOnce();
   });
 
@@ -207,13 +249,14 @@ describe("onboarding profile route", () => {
           createdAt: "2026-01-01T00:00:00.000Z",
         },
       ]),
+      listSourceDocuments: vi.fn(async () => [serverSourceDocument]),
       markOnboardingAnalyzing: vi.fn(async () => ({
         onboardingStatus: "analyzing",
         currentOnboardingStep: "review",
         onboardingStartedAt: "2026-01-01T00:00:00.000Z",
         onboardingCompletedAt: null,
         analysisError: null,
-        onboarding: onboardingPayload,
+        onboarding: serverHydratedOnboarding,
       })),
       markOnboardingFailed: vi.fn(async () => undefined),
       updateOnboardingStep: vi.fn(),
@@ -279,13 +322,14 @@ describe("onboarding profile route", () => {
           createdAt: "2026-01-01T00:00:00.000Z",
         },
       ]),
+      listSourceDocuments: vi.fn(async () => [serverSourceDocument]),
       markOnboardingAnalyzing: vi.fn(async () => ({
         onboardingStatus: "analyzing",
         currentOnboardingStep: "review",
         onboardingStartedAt: "2026-01-01T00:00:00.000Z",
         onboardingCompletedAt: null,
         analysisError: null,
-        onboarding: onboardingPayload,
+        onboarding: serverHydratedOnboarding,
       })),
       markOnboardingFailed: vi.fn(async () => undefined),
       updateOnboardingStep: vi.fn(),

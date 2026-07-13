@@ -102,6 +102,29 @@ describe("analysis job service", () => {
     });
   });
 
+  it("separates analysis jobs when the analysis input fingerprint changes", async () => {
+    const { buildAnalysisJobIdempotencyKey } = await import(
+      "@/lib/services/analysis-job-service"
+    );
+
+    const first = buildAnalysisJobIdempotencyKey({
+      inputFingerprint: "target_a",
+      profileId: "user_1",
+      sourceDocumentId: "source_1",
+      type: "INITIAL_PROFILE",
+    });
+    const second = buildAnalysisJobIdempotencyKey({
+      inputFingerprint: "target_b",
+      profileId: "user_1",
+      sourceDocumentId: "source_1",
+      type: "INITIAL_PROFILE",
+    });
+
+    expect(first).toBe("INITIAL_PROFILE:user_1:source_1:target_a");
+    expect(second).toBe("INITIAL_PROFILE:user_1:source_1:target_b");
+    expect(first).not.toBe(second);
+  });
+
   it("keeps duplicate events on the same analysis job", async () => {
     const { requestAnalysisJob } = await import("@/lib/services/analysis-job-service");
     repo.createAnalysisJobRecord

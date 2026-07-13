@@ -23,6 +23,7 @@ import type {
   OnboardingStepId,
   OnboardingSubmission,
 } from "@/lib/onboarding/types";
+import { buildAnalysisInputFingerprint } from "@/lib/onboarding/analysis-input-fingerprint";
 import type { TrailgradProfileRecord } from "@/lib/services/profile-service";
 
 export interface ResumeSourceReservation {
@@ -533,6 +534,59 @@ export async function activateResumeVersionRecord(input: {
   return toResumeVersionRecord(resumeVersion);
 }
 
+export async function recordFailedResumeVersionRecord(input: {
+  clerkUserId: string;
+  sourceDocumentId: string;
+  errorCode: string;
+}) {
+  await ensureProfilesTable();
+
+  const resumeVersion = await prisma.$transaction(async (tx) => {
+    const sourceDocument = await tx.sourceDocument.findFirstOrThrow({
+      where: {
+        id: input.sourceDocumentId,
+        profileId: input.clerkUserId,
+        sourceType: "resume",
+      },
+    });
+
+    const existing = await tx.resumeVersion.findFirst({
+      where: {
+        profileId: input.clerkUserId,
+        sourceDocumentId: input.sourceDocumentId,
+      },
+    });
+
+    if (existing) {
+      return tx.resumeVersion.update({
+        where: {
+          id: existing.id,
+        },
+        data: {
+          extractedTextStatus: "FAILED",
+          errorCode: input.errorCode,
+          active: false,
+        },
+      });
+    }
+
+    return tx.resumeVersion.create({
+      data: {
+        id: randomUUID(),
+        profileId: input.clerkUserId,
+        sourceDocumentId: input.sourceDocumentId,
+        version: sourceDocument.version,
+        extractedText: null,
+        extractedTextStatus: "FAILED",
+        errorCode: input.errorCode,
+        active: false,
+      },
+    });
+  });
+
+  return toResumeVersionRecord(resumeVersion);
+}
+
 export async function updateOnboardingResumeMetadataRecord(
   clerkUserId: string,
   resume: {
@@ -624,6 +678,7 @@ export async function upsertTargetContextRecord(
   onboarding: OnboardingSubmission,
 ) {
   await ensureProfilesTable();
+  const targetContextId = getActiveTargetContextId(clerkUserId, onboarding);
 
   const targetContext = await prisma.$transaction(async (tx) => {
     await tx.targetContext.updateMany({
@@ -639,10 +694,10 @@ export async function upsertTargetContextRecord(
 
     return tx.targetContext.upsert({
       where: {
-        id: getActiveTargetContextId(clerkUserId),
+        id: targetContextId,
       },
       create: {
-        id: getActiveTargetContextId(clerkUserId),
+        id: targetContextId,
         profileId: clerkUserId,
         role: onboarding.targetRole,
         company: emptyToNull(onboarding.targetCompany),
@@ -776,8 +831,11 @@ export async function listResumeVersionRecords(clerkUserId: string) {
   return resumeVersions.map(toResumeVersionRecord);
 }
 
-function getActiveTargetContextId(clerkUserId: string) {
-  return `active-target:${clerkUserId}`;
+function getActiveTargetContextId(
+  clerkUserId: string,
+  onboarding: OnboardingSubmission,
+) {
+  return `target:${clerkUserId}:${buildAnalysisInputFingerprint(onboarding)}`;
 }
 
 function emptyToNull(value: string | undefined) {
