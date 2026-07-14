@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 
-import type { OnboardingSubmission } from "@/lib/onboarding/types";
+import type { ApplicationSubmission } from "@/lib/applications/types";
 
 type AnalysisInputFingerprintSource = Pick<
-  OnboardingSubmission,
+  ApplicationSubmission,
   | "experienceLevel"
-  | "interviewDate"
+  | "applicationDate"
   | "jobDescription"
   | "noDateYet"
   | "preparationIntensity"
@@ -14,6 +14,7 @@ type AnalysisInputFingerprintSource = Pick<
   | "targetJobMode"
   | "targetJobTitle"
   | "targetRole"
+  | "trailFocus"
 >;
 
 export function buildAnalysisInputFingerprint(
@@ -21,9 +22,9 @@ export function buildAnalysisInputFingerprint(
 ) {
   const payload = {
     experienceLevel: normalizeValue(onboarding.experienceLevel),
-    interviewDate: onboarding.noDateYet
+    applicationDate: onboarding.noDateYet
       ? null
-      : normalizeValue(onboarding.interviewDate),
+      : normalizeValue(onboarding.applicationDate),
     noDateYet: Boolean(onboarding.noDateYet),
     preparationIntensity: normalizeValue(onboarding.preparationIntensity),
     preparationTimePerDay: normalizeValue(onboarding.preparationTimePerDay),
@@ -31,6 +32,7 @@ export function buildAnalysisInputFingerprint(
     targetJobMode: onboarding.targetJobMode,
     targetJobTitle: normalizeValue(onboarding.targetJobTitle),
     targetRole: normalizeValue(onboarding.targetRole),
+    trailFocus: onboarding.trailFocus,
     jobDescription:
       onboarding.targetJobMode === "paste"
         ? normalizeLongText(onboarding.jobDescription)

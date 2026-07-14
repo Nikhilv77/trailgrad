@@ -1,16 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { ApplicationSubmission } from "@/lib/applications/types";
 import type { OnboardingSubmission } from "@/lib/onboarding/types";
 
 const onboardingPayload: OnboardingSubmission = {
   targetRole: "ai-engineer",
   experienceLevel: "junior",
+  resumeName: "resume.pdf",
+};
+
+const applicationPayload: ApplicationSubmission = {
+  trailFocus: "job",
+  targetRole: "ai-engineer",
+  experienceLevel: "junior",
   noDateYet: true,
   preparationTimePerDay: "30",
   preparationIntensity: "standard",
-  resumeName: "resume.pdf",
   targetJobMode: "skip",
-  projectsMode: "skip",
 };
 
 class RedirectError extends Error {
@@ -35,11 +41,7 @@ async function loadAuthModules(userId: string | null) {
         | "completed"
         | "failed";
       currentOnboardingStep:
-        | "target-role"
-        | "timeline"
         | "resume"
-        | "target-job"
-        | "projects"
         | "review";
       onboardingStartedAt: string | null;
       onboardingCompletedAt: string | null;
@@ -67,7 +69,7 @@ async function loadAuthModules(userId: string | null) {
       const profile = {
         clerkUserId,
         onboardingStatus: "not_started" as const,
-        currentOnboardingStep: "target-role" as const,
+        currentOnboardingStep: "resume" as const,
         onboardingStartedAt: null,
         onboardingCompletedAt: null,
         analysisError: null,
@@ -98,13 +100,7 @@ async function loadAuthModules(userId: string | null) {
     updateOnboardingStepRecord: vi.fn(
       async (
         clerkUserId: string,
-        currentStep:
-          | "target-role"
-          | "timeline"
-          | "resume"
-          | "target-job"
-          | "projects"
-          | "review",
+        currentStep: "resume" | "review",
         onboarding: Partial<OnboardingSubmission>,
       ) => {
         const now = new Date().toISOString();
@@ -193,7 +189,7 @@ async function loadAuthModules(userId: string | null) {
       },
     ),
     saveOnboardingDataModelRecord: vi.fn(
-      async (clerkUserId: string, onboarding: OnboardingSubmission) => {
+      async (clerkUserId: string, onboarding: ApplicationSubmission) => {
         careerContexts.set(clerkUserId, {
           profileId: clerkUserId,
           primaryTargetRole: onboarding.targetRole,
@@ -203,15 +199,6 @@ async function loadAuthModules(userId: string | null) {
           role: onboarding.targetRole,
           isActive: true,
         });
-
-        if ("projectName" in onboarding && onboarding.projectName) {
-          manualProjects.set(clerkUserId, [
-            {
-              profileId: clerkUserId,
-              name: onboarding.projectName,
-            },
-          ]);
-        }
       },
     ),
     getCareerContextRecord: vi.fn(async (clerkUserId: string) =>
@@ -277,7 +264,7 @@ describe("authenticated route decisions", () => {
     await expect(profileService.getOrCreateProfile(userId)).resolves.toMatchObject({
       clerkUserId: userId,
       onboardingStatus: "not_started",
-      currentOnboardingStep: "target-role",
+      currentOnboardingStep: "resume",
       onboardingCompletedAt: null,
     });
   });
@@ -299,17 +286,15 @@ describe("authenticated route decisions", () => {
     const { profileService } = await loadAuthModules(userId);
 
     await expect(
-      profileService.updateOnboardingStep(userId, "timeline", {
-        targetRole: "ai-engineer",
-        experienceLevel: "junior",
+      profileService.updateOnboardingStep(userId, "review", {
+        resumeName: "resume.pdf",
       }),
     ).resolves.toMatchObject({
       onboardingStatus: "in_progress",
-      currentOnboardingStep: "timeline",
+      currentOnboardingStep: "review",
       onboardingStartedAt: expect.any(String),
       onboarding: {
-        targetRole: "ai-engineer",
-        experienceLevel: "junior",
+        resumeName: "resume.pdf",
       },
     });
   });
@@ -317,17 +302,15 @@ describe("authenticated route decisions", () => {
   it("restores a saved onboarding step", async () => {
     const userId = "user_restore_step";
     const { profileService } = await loadAuthModules(userId);
-    await profileService.updateOnboardingStep(userId, "timeline", {
-      targetRole: "ai-engineer",
-      experienceLevel: "junior",
+    await profileService.updateOnboardingStep(userId, "review", {
+      resumeName: "resume.pdf",
     });
 
     await expect(profileService.getOnboardingState(userId)).resolves.toMatchObject({
       status: "in_progress",
-      currentStep: "timeline",
+      currentStep: "review",
       onboarding: {
-        targetRole: "ai-engineer",
-        experienceLevel: "junior",
+        resumeName: "resume.pdf",
       },
     });
   });
@@ -377,11 +360,7 @@ describe("authenticated route decisions", () => {
   it("stores minimum onboarding data model by profile ID", async () => {
     const userId = "user_data_model";
     const { profileService } = await loadAuthModules(userId);
-    await profileService.saveOnboardingDataModel(userId, {
-      ...onboardingPayload,
-      projectsMode: "manual",
-      projectName: "Risk Analyzer",
-    });
+    await profileService.saveOnboardingDataModel(userId, applicationPayload);
 
     await expect(profileService.getCareerContext(userId)).resolves.toMatchObject({
       profileId: userId,
@@ -392,26 +371,20 @@ describe("authenticated route decisions", () => {
       role: "ai-engineer",
       isActive: true,
     });
-    await expect(profileService.listManualProjects(userId)).resolves.toEqual([
-      {
-        profileId: userId,
-        name: "Risk Analyzer",
-      },
-    ]);
+    await expect(profileService.listManualProjects(userId)).resolves.toEqual([]);
   });
 
   it("isolates onboarding state by Clerk user ID", async () => {
     const { profileService } = await loadAuthModules("user_isolation_a");
-    await profileService.updateOnboardingStep("user_isolation_a", "timeline", {
-      targetRole: "ai-engineer",
-      experienceLevel: "junior",
+    await profileService.updateOnboardingStep("user_isolation_a", "review", {
+      resumeName: "resume.pdf",
     });
 
     await expect(
       profileService.getOnboardingState("user_isolation_b"),
     ).resolves.toMatchObject({
       status: "not_started",
-      currentStep: "target-role",
+      currentStep: "resume",
       onboarding: null,
     });
   });
@@ -460,6 +433,34 @@ describe("authenticated route decisions", () => {
       profile: {
         clerkUserId: userId,
       },
+    });
+  });
+
+  it("returns a loader handoff path for a signed-in incomplete user", async () => {
+    const { authServer } = await loadAuthModules("user_auth_ready_incomplete");
+
+    await expect(
+      authServer.getAuthenticatedUserAppEntryPath({
+        requestedRedirectUrl: "/today",
+      }),
+    ).resolves.toEqual({
+      authenticated: true,
+      redirectPath: "/onboarding?redirect_url=%2Ftoday",
+    });
+  });
+
+  it("returns a loader handoff path for a signed-in completed user", async () => {
+    const userId = "user_auth_ready_completed";
+    const { authServer, profileService } = await loadAuthModules(userId);
+    await profileService.completeTrailgradOnboarding(userId, onboardingPayload);
+
+    await expect(
+      authServer.getAuthenticatedUserAppEntryPath({
+        requestedRedirectUrl: "/today",
+      }),
+    ).resolves.toEqual({
+      authenticated: true,
+      redirectPath: "/today",
     });
   });
 
@@ -522,6 +523,12 @@ describe("authenticated route decisions", () => {
         "http://localhost:3000",
       ),
     ).toBe("/practice?round=1");
+    expect(
+      authServer.getSafeAppRedirectPath(
+        "http://localhost:3000/trails/new",
+        "http://localhost:3000",
+      ),
+    ).toBe("/trails/new");
     expect(
       authServer.getSafeAppRedirectPath(
         "https://example.com/practice",

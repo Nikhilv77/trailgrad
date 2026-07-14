@@ -28,6 +28,7 @@ function toAnalysisJobRecord(row: AnalysisJob): AnalysisJobRecord {
     id: row.id,
     profileId: row.profileId,
     sourceDocumentId: row.sourceDocumentId,
+    targetContextId: row.targetContextId,
     type: row.type,
     status: row.status,
     currentStage: row.currentStage,
@@ -85,9 +86,28 @@ export async function findSourceDocumentOwnerRecord(
   });
 }
 
+export async function findTargetContextOwnerRecord(
+  profileId: string,
+  targetContextId: string,
+) {
+  await ensureProfilesTable();
+
+  return prisma.targetContext.findFirst({
+    where: {
+      id: targetContextId,
+      profileId,
+    },
+    select: {
+      id: true,
+      profileId: true,
+    },
+  });
+}
+
 export async function createAnalysisJobRecord(input: {
   profileId: string;
   sourceDocumentId?: string | null;
+  targetContextId?: string | null;
   type: AnalysisJobType;
   idempotencyKey: string;
 }): Promise<AnalysisJobReservation> {
@@ -108,6 +128,20 @@ export async function createAnalysisJobRecord(input: {
     }
   }
 
+  if (input.targetContextId) {
+    const targetContext = await findTargetContextOwnerRecord(
+      input.profileId,
+      input.targetContextId,
+    );
+
+    if (!targetContext) {
+      throw new AnalysisJobError(
+        "ANALYSIS_JOB_TARGET_NOT_OWNED",
+        "The target context does not belong to this Trailgrad profile.",
+      );
+    }
+  }
+
   const existing = await findAnalysisJobByIdempotencyKeyRecord(input.idempotencyKey);
 
   if (existing) {
@@ -123,6 +157,7 @@ export async function createAnalysisJobRecord(input: {
         id: randomUUID(),
         profileId: input.profileId,
         sourceDocumentId: input.sourceDocumentId ?? null,
+        targetContextId: input.targetContextId ?? null,
         type: input.type,
         status: "QUEUED",
         currentStage: "resume_analysis",

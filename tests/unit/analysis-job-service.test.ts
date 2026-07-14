@@ -18,6 +18,7 @@ const baseJob: AnalysisJobRecord = {
   id: "job_1",
   profileId: "user_1",
   sourceDocumentId: "source_1",
+  targetContextId: null,
   type: "INITIAL_PROFILE",
   status: "QUEUED",
   currentStage: "resume_analysis",
@@ -97,6 +98,7 @@ describe("analysis job service", () => {
     expect(repo.createAnalysisJobRecord).toHaveBeenCalledWith({
       profileId: "user_1",
       sourceDocumentId: "source_1",
+      targetContextId: null,
       type: "INITIAL_PROFILE",
       idempotencyKey: "INITIAL_PROFILE:user_1:source_1",
     });

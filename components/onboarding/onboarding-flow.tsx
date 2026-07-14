@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,10 +11,8 @@ import {
   ArrowRight,
   BrainCircuit,
   BriefcaseBusiness,
-  CalendarClock,
   ChartColumn,
   Check,
-  Clock3,
   Code2,
   Database,
   FileCheck2,
@@ -31,7 +29,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { lobsterTwo } from "@/lib/fonts";
 import type {
@@ -39,6 +36,21 @@ import type {
   OnboardingStepId,
   OnboardingSubmission,
 } from "@/lib/onboarding/types";
+
+interface OnboardingFlowProps {
+  initialState?: OnboardingState;
+}
+
+interface ResumeUploadIssue {
+  code?: string;
+  message: string;
+  title: string;
+}
+
+interface ResumeInspectionStep {
+  title: string;
+  description: string;
+}
 
 interface Option {
   id: string;
@@ -55,43 +67,28 @@ interface OnboardingStep {
   optional?: boolean;
 }
 
-interface ResumeUploadIssue {
-  code?: string;
-  message: string;
-  title: string;
-}
-
-interface ResumeInspectionStep {
-  title: string;
-  description: string;
+interface StepOptionsProps {
+  options: Option[];
+  selected: string;
+  onSelect: (value: string) => void;
+  footer?: ReactNode;
 }
 
 const steps: OnboardingStep[] = [
   {
     id: "target-role",
     title: "Where are you headed?",
-    description: "Pick the role and level Trailgrad should judge you against.",
-  },
-  {
-    id: "timeline",
-    title: "When do you want to be ready?",
-    description: "Set the prep pace so recommendations fit your actual week.",
+    description: "Choose the default role and level Trailgrad should use for trails.",
   },
   {
     id: "resume",
-    title: "Add your resume.",
-    description: "This becomes the evidence Trailgrad checks for risks and gaps.",
-  },
-  {
-    id: "target-job",
-    title: "Add a target job.",
-    description: "Optional, but it makes the analysis sharper for one opening.",
-    optional: true,
+    title: "Start with your resume.",
+    description: "Trailgrad needs one private resume before you create trails.",
   },
   {
     id: "review",
-    title: "Review your setup.",
-    description: "Confirm the inputs before Trailgrad builds your first profile.",
+    title: "Your Trailgrad trail is ready.",
+    description: "Your basics are saved. When you are ready, create your first trail and Trailgrad will focus on that exact opportunity.",
   },
 ];
 
@@ -115,24 +112,6 @@ const experienceOptions: Option[] = [
   { id: "senior", title: "Senior", description: "Architecture and leadership", icon: BrainCircuit },
 ];
 
-const preparationTimeOptions: Option[] = [
-  { id: "15", title: "15 minutes", description: "Tiny daily improvement", icon: Clock3 },
-  { id: "30", title: "30 minutes", description: "Solid daily progress", icon: Clock3, badge: "Steady" },
-  { id: "60", title: "60 minutes", description: "Deeper project and practice work", icon: CalendarClock },
-  { id: "flexible", title: "Flexible", description: "Varies each day", icon: Rocket },
-];
-
-const intensityOptions: Option[] = [
-  { id: "light", title: "Light", description: "Low pressure, keep momentum", icon: Clock3 },
-  { id: "standard", title: "Standard", description: "Focused but sustainable", icon: CalendarClock, badge: "Balanced" },
-  { id: "intensive", title: "Intensive", description: "Fastest path, more effort", icon: Rocket },
-];
-
-const targetJobOptions: Option[] = [
-  { id: "paste", title: "Paste a job description", description: "Tailor risks to one role", icon: BriefcaseBusiness },
-  { id: "skip", title: "Skip for now", description: "Use your target role only", icon: ArrowRight },
-];
-
 const resumeInspectionSteps: ResumeInspectionStep[] = [
   {
     title: "Reading your file",
@@ -151,14 +130,10 @@ const resumeInspectionSteps: ResumeInspectionStep[] = [
     description: "Screening out product docs, notes, proposals, and long reports.",
   },
   {
-    title: "Preparing your profile input",
-    description: "Saving the validated resume for the next analysis step.",
+    title: "Preparing your trail",
+    description: "Saving the validated resume for future trails.",
   },
 ];
-
-interface OnboardingFlowProps {
-  initialState?: OnboardingState;
-}
 
 export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
   const router = useRouter();
@@ -167,55 +142,12 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
     getStepIndex(initialState?.currentStep),
   );
   const [direction, setDirection] = useState(1);
-  const [targetRole, setTargetRole] = useState(initialState?.onboarding?.targetRole ?? "");
+  const [targetRole, setTargetRole] = useState(
+    initialState?.onboarding?.targetRole ?? "",
+  );
   const [experienceLevel, setExperienceLevel] = useState(
     initialState?.onboarding?.experienceLevel ?? "",
   );
-  const [targetCompany, setTargetCompany] = useState(
-    initialState?.onboarding?.targetCompany ?? "",
-  );
-  const [targetJobTitle, setTargetJobTitle] = useState(
-    initialState?.onboarding?.targetJobTitle ?? "",
-  );
-  const [interviewDate, setInterviewDate] = useState(
-    initialState?.onboarding?.interviewDate ?? "",
-  );
-  const [noDateYet, setNoDateYet] = useState(
-    Boolean(initialState?.onboarding?.noDateYet),
-  );
-  const [timelineDisplay, setTimelineDisplay] = useState(() =>
-    getTimelineDisplay(
-      initialState?.onboarding?.interviewDate ?? "",
-      Boolean(initialState?.onboarding?.noDateYet),
-    ),
-  );
-  const [preparationTimePerDay, setPreparationTimePerDay] = useState<
-    OnboardingSubmission["preparationTimePerDay"] | ""
-  >(initialState?.onboarding?.preparationTimePerDay ?? "");
-  const [preparationIntensity, setPreparationIntensity] = useState<
-    OnboardingSubmission["preparationIntensity"] | ""
-  >(initialState?.onboarding?.preparationIntensity ?? "");
-  const [resumeName, setResumeName] = useState(initialState?.onboarding?.resumeName ?? "");
-  const [resumeContentType, setResumeContentType] = useState(
-    initialState?.onboarding?.resumeContentType ?? "",
-  );
-  const [resumeSize, setResumeSize] = useState(initialState?.onboarding?.resumeSize ?? 0);
-  const [resumeUploadedAt, setResumeUploadedAt] = useState(
-    initialState?.onboarding?.resumeUploadedAt ?? "",
-  );
-  const [targetJobMode, setTargetJobMode] = useState<
-    OnboardingSubmission["targetJobMode"] | ""
-  >(initialState?.onboarding?.targetJobMode ?? "");
-  const [jobDescription, setJobDescription] = useState(
-    initialState?.onboarding?.jobDescription ?? "",
-  );
-  const [generating, setGenerating] = useState(false);
-  const [savingStep, setSavingStep] = useState(false);
-  const [uploadingResume, setUploadingResume] = useState(false);
-  const [resumeProcessingStatus, setResumeProcessingStatus] = useState("");
-  const [resumeInspectionStep, setResumeInspectionStep] = useState(0);
-  const [resumeUploadIssue, setResumeUploadIssue] =
-    useState<ResumeUploadIssue | null>(null);
   const [showAllRoles, setShowAllRoles] = useState(() =>
     Boolean(
       initialState?.onboarding?.targetRole &&
@@ -224,33 +156,37 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
           .some((option) => option.id === initialState.onboarding?.targetRole),
     ),
   );
+  const [resumeName, setResumeName] = useState(
+    initialState?.onboarding?.resumeName ?? "",
+  );
+  const [resumeContentType, setResumeContentType] = useState(
+    initialState?.onboarding?.resumeContentType ?? "",
+  );
+  const [resumeSize, setResumeSize] = useState(
+    initialState?.onboarding?.resumeSize ?? 0,
+  );
+  const [resumeUploadedAt, setResumeUploadedAt] = useState(
+    initialState?.onboarding?.resumeUploadedAt ?? "",
+  );
+  const [savingStep, setSavingStep] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [resumeProcessingStatus, setResumeProcessingStatus] = useState("");
+  const [resumeInspectionStep, setResumeInspectionStep] = useState(0);
+  const [resumeUploadIssue, setResumeUploadIssue] =
+    useState<ResumeUploadIssue | null>(null);
   const [errorMessage, setErrorMessage] = useState(
     initialState?.analysisError ?? "",
   );
 
   const activeStep = steps[currentStep];
+  const progress = ((currentStep + 1) / steps.length) * 100;
+  const visibleRoleOptions = showAllRoles ? roleOptions : roleOptions.slice(0, 4);
+  const hiddenRoleCount = roleOptions.length - visibleRoleOptions.length;
   const transition: Transition = reduceMotion
     ? { duration: 0 }
     : { duration: 0.52, ease: [0.16, 1, 0.3, 1] };
   const slideDistance = reduceMotion ? 0 : 18;
-  const progress = ((currentStep + 1) / steps.length) * 100;
-  const visibleRoleOptions = showAllRoles ? roleOptions : roleOptions.slice(0, 4);
-  const hiddenRoleCount = roleOptions.length - visibleRoleOptions.length;
-
-  const selectedLabels = useMemo(
-    () => ({
-      role: getOptionTitle(roleOptions, targetRole) || "Target role",
-      experience:
-        getOptionTitle(experienceOptions, experienceLevel) || "Experience level",
-      preparation:
-        getOptionTitle(preparationTimeOptions, preparationTimePerDay) ||
-        "Preparation time",
-      intensity:
-        getOptionTitle(intensityOptions, preparationIntensity) ||
-        "Preparation intensity",
-    }),
-    [experienceLevel, preparationIntensity, preparationTimePerDay, targetRole],
-  );
 
   useEffect(() => {
     window.requestAnimationFrame(() => {
@@ -262,9 +198,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
   }, [currentStep, reduceMotion]);
 
   useEffect(() => {
-    if (!uploadingResume) {
-      return;
-    }
+    if (!uploadingResume) return;
 
     const timer = window.setInterval(() => {
       setResumeInspectionStep((step) =>
@@ -274,13 +208,6 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
 
     return () => window.clearInterval(timer);
   }, [uploadingResume]);
-
-  function selectOption(value: string) {
-    if (activeStep.id === "target-role") setTargetRole(value);
-    if (activeStep.id === "target-job") {
-      setTargetJobMode(value as OnboardingSubmission["targetJobMode"]);
-    }
-  }
 
   async function goForward() {
     if (activeStep.id === "review") {
@@ -297,7 +224,6 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
 
     setErrorMessage("");
     setSavingStep(true);
-
     const nextStep = Math.min(currentStep + 1, steps.length - 1);
 
     try {
@@ -324,15 +250,13 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
       return;
     }
 
-    await moveToStep(Math.max(currentStep - 1, 0), -1);
-  }
-
-  async function moveToStep(nextStep: number, nextDirection = nextStep > currentStep ? 1 : -1) {
     setErrorMessage("");
     setSavingStep(true);
 
+    const previousStep = Math.max(currentStep - 1, 0);
+
     try {
-      await saveStep(steps[nextStep].id);
+      await saveStep(steps[previousStep].id);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -344,60 +268,18 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
       setSavingStep(false);
     }
 
-    setDirection(nextDirection);
-    setCurrentStep(nextStep);
-  }
-
-  function saveDraft() {
-    try {
-      window.sessionStorage.setItem(
-        "trailgrad:onboarding",
-        JSON.stringify(getPartialOnboardingDraft()),
-      );
-    } catch {
-      // Storage is a convenience for the auth handoff, not a blocker.
-    }
+    setDirection(-1);
+    setCurrentStep(previousStep);
   }
 
   function getOnboardingDraft(): OnboardingSubmission {
     return {
       targetRole,
       experienceLevel,
-      ...(targetCompany.trim() ? { targetCompany: targetCompany.trim() } : {}),
-      ...(targetJobTitle.trim() ? { targetJobTitle: targetJobTitle.trim() } : {}),
-      ...(interviewDate && !noDateYet ? { interviewDate } : {}),
-      noDateYet,
-      preparationTimePerDay:
-        preparationTimePerDay || ("30" as OnboardingSubmission["preparationTimePerDay"]),
-      preparationIntensity:
-        preparationIntensity || ("standard" as OnboardingSubmission["preparationIntensity"]),
       resumeName,
       ...(resumeContentType ? { resumeContentType } : {}),
       ...(resumeSize ? { resumeSize } : {}),
       ...(resumeUploadedAt ? { resumeUploadedAt } : {}),
-      targetJobMode: targetJobMode || "skip",
-      ...(jobDescription.trim() ? { jobDescription: jobDescription.trim() } : {}),
-      projectsMode: "skip",
-    };
-  }
-
-  function getPartialOnboardingDraft(): Partial<OnboardingSubmission> {
-    return {
-      ...(targetRole ? { targetRole } : {}),
-      ...(experienceLevel ? { experienceLevel } : {}),
-      targetCompany: targetCompany.trim(),
-      targetJobTitle: targetJobTitle.trim(),
-      interviewDate: noDateYet ? "" : interviewDate,
-      noDateYet,
-      ...(preparationTimePerDay ? { preparationTimePerDay } : {}),
-      ...(preparationIntensity ? { preparationIntensity } : {}),
-      ...(resumeName ? { resumeName } : {}),
-      ...(resumeContentType ? { resumeContentType } : {}),
-      ...(resumeSize ? { resumeSize } : {}),
-      ...(resumeUploadedAt ? { resumeUploadedAt } : {}),
-      ...(targetJobMode ? { targetJobMode } : {}),
-      jobDescription: jobDescription.trim(),
-      projectsMode: "skip",
     };
   }
 
@@ -406,34 +288,18 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
       return "Choose a target role and experience level.";
     }
 
-    if (stepId === "timeline") {
-      if (!noDateYet && !interviewDate) {
-        return "Choose a date or select that you do not have one yet.";
-      }
-
-      if (!preparationTimePerDay || !preparationIntensity) {
-        return "Choose your daily preparation time and intensity.";
-      }
-    }
-
     if (stepId === "resume" && !resumeName) {
       return "Upload a PDF or DOCX resume before continuing.";
     }
 
     if (stepId === "review") {
-      return (
-        validateStep("target-role") ||
-        validateStep("timeline") ||
-        validateStep("resume")
-      );
+      return validateStep("target-role") || validateStep("resume");
     }
 
     return "";
   }
 
   async function saveStep(nextStep: OnboardingStepId) {
-    saveDraft();
-
     const response = await fetch("/api/profile/onboarding", {
       method: "PATCH",
       headers: {
@@ -441,7 +307,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
       },
       body: JSON.stringify({
         currentStep: nextStep,
-        onboarding: getPartialOnboardingDraft(),
+        onboarding: getOnboardingDraft(),
       }),
     });
 
@@ -455,9 +321,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
   }
 
   async function uploadResume(file: File | undefined) {
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     setErrorMessage("");
     setResumeUploadIssue(null);
@@ -526,8 +390,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
     }
 
     setErrorMessage("");
-    saveDraft();
-    setGenerating(true);
+    setCompleting(true);
 
     try {
       const response = await fetch("/api/profile/onboarding", {
@@ -543,7 +406,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
           | { error?: string }
           | null;
 
-        throw new Error(payload?.error ?? "Unable to build your Trailgrad profile.");
+        throw new Error(payload?.error ?? "Unable to enter your Trailgrad workspace.");
       }
 
       try {
@@ -558,11 +421,11 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
         reduceMotion ? 0 : 450,
       );
     } catch (error) {
-      setGenerating(false);
+      setCompleting(false);
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Unable to build your Trailgrad profile.",
+          : "Unable to enter your Trailgrad workspace.",
       );
     }
   }
@@ -573,17 +436,14 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
     }
   }
 
-  const canContinue = !generating && !savingStep && !uploadingResume;
-  const primaryLabel =
-    generating
-      ? "Starting analysis"
-      : savingStep
-        ? "Saving"
+  const canContinue = !completing && !savingStep && !uploadingResume;
+  const primaryLabel = completing
+    ? "Creating workspace"
+    : savingStep
+      ? "Saving"
       : activeStep.id === "review"
-        ? "Build my Trailgrad Profile"
-        : activeStep.optional
-          ? "Continue"
-          : "Continue";
+        ? "Create your workspace"
+        : "Continue";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#f4fbf9] text-[#111827]">
@@ -617,7 +477,7 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
               </div>
 
               <StepViewport
-                busy={savingStep || generating}
+                busy={savingStep || completing}
                 direction={direction}
                 slideDistance={slideDistance}
                 stepKey={activeStep.id}
@@ -625,52 +485,20 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
               >
                 <StepHeading step={activeStep} reduceMotion={reduceMotion} />
 
-                {activeStep.id === "target-role" && (
+                {activeStep.id === "target-role" ? (
                   <TargetRoleStep
                     experienceLevel={experienceLevel}
                     hiddenRoleCount={hiddenRoleCount}
                     onExperienceChange={setExperienceLevel}
-                    onRoleChange={selectOption}
+                    onRoleChange={setTargetRole}
                     onShowAllRoles={() => setShowAllRoles(true)}
                     role={targetRole}
-                    targetCompany={targetCompany}
-                    targetJobTitle={targetJobTitle}
-                    visibleRoleOptions={visibleRoleOptions}
                     showAllRoles={showAllRoles}
-                    onTargetCompanyChange={setTargetCompany}
-                    onTargetJobTitleChange={setTargetJobTitle}
+                    visibleRoleOptions={visibleRoleOptions}
                   />
-                )}
+                ) : null}
 
-                {activeStep.id === "timeline" && (
-                  <TimelineStep
-                    interviewDate={interviewDate}
-                    noDateYet={noDateYet}
-                    onInterviewDateChange={setInterviewDate}
-	                    onNoDateYetChange={(checked) => {
-	                      setNoDateYet(checked);
-	                      if (checked) {
-	                        setInterviewDate("");
-	                        setTimelineDisplay("No date yet");
-	                      }
-	                    }}
-	                    onTimelineDisplayChange={setTimelineDisplay}
-                    onPreparationIntensityChange={(value) =>
-                      setPreparationIntensity(
-                        value as OnboardingSubmission["preparationIntensity"],
-                      )
-                    }
-                    onPreparationTimeChange={(value) =>
-                      setPreparationTimePerDay(
-                        value as OnboardingSubmission["preparationTimePerDay"],
-                      )
-                    }
-                    preparationIntensity={preparationIntensity}
-                    preparationTimePerDay={preparationTimePerDay}
-                  />
-                )}
-
-                {activeStep.id === "resume" && (
+                {activeStep.id === "resume" ? (
                   <ResumeQuestion
                     resumeName={resumeName}
                     resumeSize={resumeSize}
@@ -680,32 +508,23 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
                     uploading={uploadingResume}
                     onUpload={uploadResume}
                   />
-                )}
+                ) : null}
 
-                {activeStep.id === "target-job" && (
-                  <TargetJobStep
-                    jobDescription={jobDescription}
-                    mode={targetJobMode}
-                    onDescriptionChange={setJobDescription}
-                    onModeChange={selectOption}
-                  />
-                )}
-
-                {activeStep.id === "review" && (
+                {activeStep.id === "review" ? (
                   <ReviewStep
-                    experience={selectedLabels.experience}
-                    preparation={`${selectedLabels.preparation}, ${selectedLabels.intensity.toLowerCase()}`}
+                    experience={getOptionTitle(experienceOptions, experienceLevel)}
                     resumeName={resumeName}
-                    role={selectedLabels.role}
-                    targetJobStatus={
-                      targetJobMode === "paste" && jobDescription.trim()
-                        ? "Job description added"
-                        : "Skipped for now"
-                    }
-	                    timeline={timelineDisplay || (noDateYet ? "No date yet" : interviewDate)}
-	                    onEdit={(stepId) => void moveToStep(getStepIndex(stepId), -1)}
-	                  />
-                )}
+                    role={getOptionTitle(roleOptions, targetRole)}
+                    onEditProfile={() => {
+                      setDirection(-1);
+                      setCurrentStep(0);
+                    }}
+                    onEditResume={() => {
+                      setDirection(-1);
+                      setCurrentStep(1);
+                    }}
+                  />
+                ) : null}
               </StepViewport>
 
               <motion.div layout className="relative mt-6">
@@ -725,12 +544,21 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
                     disabled={!canContinue}
                     className="h-auto min-h-11 w-full min-w-0 whitespace-normal rounded-lg bg-[#0f9f8d] px-4 py-3 text-center font-semibold leading-5 text-white shadow-[0_14px_32px_rgba(15,159,141,0.24)] transition-all duration-500 hover:bg-[#0d8d7d] hover:shadow-[0_18px_38px_rgba(15,159,141,0.28)] focus-visible:!border-transparent focus-visible:!ring-0 disabled:opacity-80 sm:h-11 sm:w-auto sm:min-w-[176px] sm:whitespace-nowrap sm:px-6 sm:py-0"
                   >
-                    {generating || savingStep ? (
-                      <><LoaderCircle className="size-4 animate-spin" /> {primaryLabel}</>
+                    {completing || savingStep ? (
+                      <>
+                        <LoaderCircle className="size-4 animate-spin" />
+                        {primaryLabel}
+                      </>
                     ) : activeStep.id === "review" ? (
-                      <>{primaryLabel} <Sparkles className="size-4" /></>
+                      <>
+                        {primaryLabel}
+                        <Sparkles className="size-4" />
+                      </>
                     ) : (
-                      <>{primaryLabel} <ArrowRight className="size-4" /></>
+                      <>
+                        {primaryLabel}
+                        <ArrowRight className="size-4" />
+                      </>
                     )}
                   </Button>
                 </div>
@@ -740,140 +568,57 @@ export function OnboardingFlow({ initialState }: OnboardingFlowProps) {
         </div>
       </section>
 
-      <style jsx global>{`
-        @keyframes tg-onboarding-heading-word {
-          from {
-            opacity: 0;
-            transform: translate3d(0, 12px, 0);
-          }
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
-        }
-
-        .tg-onboarding-heading-word {
-          opacity: 0;
-          animation: tg-onboarding-heading-word 520ms
-            cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          will-change: opacity, transform;
-        }
-
-        @keyframes tg-shimmer {
-          0% {
-            background-position: 120% 0;
-          }
-          100% {
-            background-position: -120% 0;
-          }
-        }
-
-        @keyframes tg-inspection-shine {
-          0% {
-            background-position: 120% 0;
-          }
-          100% {
-            background-position: -120% 0;
-          }
-        }
-
-        .tg-inspection-shine {
-          background-image: linear-gradient(
-            90deg,
-            #0f3d3a 0%,
-            #0f9f8d 42%,
-            #65d7ca 50%,
-            #0f9f8d 58%,
-            #0f3d3a 100%
-          );
-          background-size: 220% 100%;
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
-          animation: tg-inspection-shine 1.8s ease-in-out infinite;
-        }
-
-        .tg-shimmer {
-          background-image: linear-gradient(
-            90deg,
-            rgba(231, 242, 239, 0.75) 0%,
-            rgba(255, 255, 255, 0.96) 48%,
-            rgba(211, 239, 234, 0.78) 100%
-          );
-          background-size: 220% 100%;
-          animation: tg-shimmer 1.1s ease-in-out infinite;
-        }
-
-        .tg-onboarding-teal-clouds {
-          background:
-            radial-gradient(
-              ellipse 24% 17% at 6% 72%,
-              rgba(15, 118, 110, 0.3),
-              rgba(20, 184, 166, 0.18) 46%,
-              transparent 76%
-            ),
-            radial-gradient(
-              ellipse 30% 19% at 20% 82%,
-              rgba(45, 212, 191, 0.28),
-              rgba(153, 246, 228, 0.16) 48%,
-              transparent 78%
-            ),
-            radial-gradient(
-              ellipse 28% 18% at 36% 76%,
-              rgba(125, 232, 218, 0.2),
-              rgba(204, 251, 241, 0.12) 50%,
-              transparent 78%
-            ),
-            radial-gradient(
-              ellipse 32% 21% at 75% 16%,
-              rgba(94, 234, 212, 0.28),
-              rgba(20, 184, 166, 0.13) 48%,
-              transparent 78%
-            ),
-            radial-gradient(
-              ellipse 25% 17% at 91% 28%,
-              rgba(153, 246, 228, 0.2),
-              transparent 76%
-            ),
-            radial-gradient(
-              ellipse 22% 15% at 57% 28%,
-              rgba(167, 243, 208, 0.18),
-              transparent 74%
-            ),
-            radial-gradient(
-              ellipse 44% 24% at 54% 98%,
-              rgba(204, 251, 241, 0.22),
-              transparent 72%
-            ),
-            linear-gradient(135deg, #f9fffd 0%, #e6fbf6 54%, #f7fcfa 100%);
-          filter: blur(34px) saturate(1.03);
-          opacity: 0.86;
-          transform: translate3d(0, 0, 0);
-        }
-
-        .tg-onboarding-cloud-haze {
-          background:
-            radial-gradient(
-              ellipse 58% 30% at 26% 92%,
-              rgba(20, 184, 166, 0.13),
-              transparent 72%
-            ),
-            radial-gradient(
-              ellipse 58% 34% at 87% 38%,
-              rgba(125, 232, 218, 0.12),
-              transparent 74%
-            ),
-            linear-gradient(
-              15deg,
-              rgba(15, 118, 110, 0.1) 0%,
-              rgba(20, 184, 166, 0.08) 26%,
-              transparent 62%
-            );
-          filter: blur(64px);
-          opacity: 0.7;
-        }
-      `}</style>
+      <OnboardingStyles />
     </main>
+  );
+}
+
+function OnboardingBrand() {
+  return (
+    <Link
+      href="/"
+      className="flex shrink-0 items-center transition-opacity duration-300 hover:opacity-80"
+      aria-label="Trailgrad home"
+    >
+      <Image
+        src="/images/brand/trailgrad-logo.png"
+        alt=""
+        width={172}
+        height={194}
+        className="h-[34px] w-auto"
+        priority
+      />
+      <span
+        className={`${lobsterTwo.className} text-[27px] font-semibold leading-none text-[#082f35]`}
+      >
+        Trailgrad
+      </span>
+    </Link>
+  );
+}
+
+function ProgressDots({
+  currentStep,
+  totalSteps,
+}: {
+  currentStep: number;
+  totalSteps: number;
+}) {
+  return (
+    <div className="flex items-center gap-1.5" aria-label="Onboarding progress">
+      {Array.from({ length: totalSteps }).map((_, index) => {
+        const active = index <= currentStep;
+
+        return (
+          <span
+            key={index}
+            className={`h-1.5 rounded-full transition-all duration-500 ${
+              active ? "w-7 bg-[#159b89]" : "w-1.5 bg-[#d8e9e5]"
+            }`}
+          />
+        );
+      })}
+    </div>
   );
 }
 
@@ -958,53 +703,18 @@ function StepViewport({
   );
 }
 
-function OnboardingBrand() {
-  return (
-    <Link
-      href="/"
-      className="flex shrink-0 items-center transition-opacity duration-300 hover:opacity-80"
-      aria-label="Trailgrad home"
-    >
-      <Image
-        src="/images/brand/trailgrad-logo.png"
-        alt=""
-        width={172}
-        height={194}
-        className="h-[34px] w-auto"
-        priority
-      />
-      <span className={`${lobsterTwo.className} text-[27px] font-semibold leading-none text-[#111827]`}>
-        Trailgrad
-      </span>
-    </Link>
-  );
-}
-
-function ProgressDots({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
-  return (
-    <div className="flex items-center gap-1.5" aria-label="Onboarding progress">
-      {Array.from({ length: totalSteps }).map((_, index) => {
-        const active = index <= currentStep;
-
-        return (
-          <span
-            key={index}
-            className={`h-1.5 rounded-full transition-all duration-500 ${
-              active ? "w-7 bg-[#159b89]" : "w-1.5 bg-[#d8e9e5]"
-            }`}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function StepHeading({ step, reduceMotion }: { step: OnboardingStep; reduceMotion: boolean }) {
+function StepHeading({
+  reduceMotion,
+  step,
+}: {
+  reduceMotion: boolean;
+  step: OnboardingStep;
+}) {
   const compact = step.optional;
   const words = step.title.split(" ");
 
   return (
-    <div className="mx-auto max-w-[650px] text-center">
+    <header className="mx-auto max-w-[650px] text-center">
       <h1
         aria-label={step.title}
         className={`mx-auto max-w-[620px] font-semibold leading-[1.02] tracking-[-0.045em] text-[#111827] ${
@@ -1014,28 +724,21 @@ function StepHeading({ step, reduceMotion }: { step: OnboardingStep; reduceMotio
         {reduceMotion
           ? step.title
           : words.map((word, index) => (
-              <span
-                key={`${step.id}-${word}-${index}`}
-                aria-hidden="true"
-                className={`tg-onboarding-heading-word inline-block ${index < words.length - 1 ? "mr-[0.22em]" : ""}`}
-                style={{ animationDelay: `${120 + index * 70}ms` }}
-              >
-                {word}
-              </span>
-            ))}
+            <span
+              key={`${step.id}-${word}-${index}`}
+              aria-hidden="true"
+              className={`tg-onboarding-heading-word inline-block ${index < words.length - 1 ? "mr-[0.22em]" : ""}`}
+              style={{ animationDelay: `${120 + index * 70}ms` }}
+            >
+              {word}
+            </span>
+          ))}
       </h1>
       <p className="mx-auto mt-3 max-w-[500px] text-sm font-medium leading-6 text-[#5f6f6b]">
         {step.description}
       </p>
-    </div>
+    </header>
   );
-}
-
-interface StepOptionsProps {
-  options: Option[];
-  selected: string;
-  onSelect: (value: string) => void;
-  footer?: ReactNode;
 }
 
 function StepOptions({ options, selected, onSelect, footer }: StepOptionsProps) {
@@ -1053,26 +756,47 @@ function StepOptions({ options, selected, onSelect, footer }: StepOptionsProps) 
               type="button"
               aria-pressed={active}
               onClick={() => onSelect(option.id)}
-              className={`group relative flex min-h-[96px] items-center gap-4 overflow-hidden rounded-[16px] border p-4 text-left outline-none transition-[border-color,background-color,box-shadow] duration-200 ease-out ${
+              className={`group relative flex min-h-[96px] cursor-pointer items-center gap-4 overflow-hidden rounded-[16px] border p-4 text-left outline-none transition-[border-color,background-color,box-shadow] duration-200 ease-out ${
                 active
                   ? "border-[#20b8a4] bg-[#f0fdfa] shadow-[0_16px_34px_rgba(15,118,110,0.11)]"
                   : "border-[#e5e7eb] bg-white hover:border-[#b7ddd7] hover:bg-[#fbfffe] hover:shadow-[0_14px_34px_rgba(15,118,110,0.08)]"
               }`}
             >
-              <span aria-hidden="true" className={`absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent transition-opacity duration-200 ${active ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
-              <span className={`grid size-11 shrink-0 place-items-center rounded-[14px] transition-all duration-200 ease-out ${active ? "bg-[#0f9f8d] text-white shadow-[0_12px_24px_rgba(15,159,141,0.22)]" : "bg-[#f3f4f6] text-[#4b5563] group-hover:bg-[#ecfdf9] group-hover:text-[#0f766e]"}`}>
+              <span
+                aria-hidden="true"
+                className={`absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent transition-opacity duration-200 ${
+                  active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                }`}
+              />
+              <span
+                className={`grid size-11 shrink-0 place-items-center rounded-[14px] transition-all duration-200 ease-out ${
+                  active
+                    ? "bg-[#0f9f8d] text-white shadow-[0_12px_24px_rgba(15,159,141,0.22)]"
+                    : "bg-[#f3f4f6] text-[#4b5563] group-hover:bg-[#ecfdf9] group-hover:text-[#0f766e]"
+                }`}
+              >
                 <Icon className="size-5" />
               </span>
               <span className="min-w-0">
                 <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[#111827]">
                   {option.title}
-                  {option.badge && <span className="rounded-full bg-[#fff2dc] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-[#966329]">{option.badge}</span>}
+                  {option.badge ? (
+                    <span className="rounded-full bg-[#fff2dc] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-[#966329]">
+                      {option.badge}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="mt-1 block text-sm font-medium leading-5 text-[#6b7280]">
                   {option.description}
                 </span>
               </span>
-              <span className={`ml-auto grid size-5 shrink-0 place-items-center rounded-full border transition-all duration-150 ease-out ${active ? "border-[#2b9f8f] bg-[#2b9f8f] text-white" : "border-[#cadbd7] text-transparent group-hover:border-[#9ccfc6]"}`}>
+              <span
+                className={`ml-auto grid size-5 shrink-0 place-items-center rounded-full border transition-all duration-150 ease-out ${
+                  active
+                    ? "border-[#2b9f8f] bg-[#2b9f8f] text-white"
+                    : "border-[#cadbd7] text-transparent group-hover:border-[#9ccfc6]"
+                }`}
+              >
                 <Check className="size-3" />
               </span>
             </button>
@@ -1090,12 +814,8 @@ function TargetRoleStep({
   onExperienceChange,
   onRoleChange,
   onShowAllRoles,
-  onTargetCompanyChange,
-  onTargetJobTitleChange,
   role,
   showAllRoles,
-  targetCompany,
-  targetJobTitle,
   visibleRoleOptions,
 }: {
   experienceLevel: string;
@@ -1103,12 +823,8 @@ function TargetRoleStep({
   onExperienceChange: (value: string) => void;
   onRoleChange: (value: string) => void;
   onShowAllRoles: () => void;
-  onTargetCompanyChange: (value: string) => void;
-  onTargetJobTitleChange: (value: string) => void;
   role: string;
   showAllRoles: boolean;
-  targetCompany: string;
-  targetJobTitle: string;
   visibleRoleOptions: Option[];
 }) {
   return (
@@ -1122,7 +838,7 @@ function TargetRoleStep({
             <button
               type="button"
               onClick={onShowAllRoles}
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-[#d7e9e4] bg-white px-4 text-sm font-semibold text-[#111827] shadow-[0_10px_26px_rgba(15,118,110,0.06)] outline-none transition-[border-color,background-color,box-shadow] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#9bd8cf] hover:bg-[#f8fffd] hover:shadow-[0_12px_30px_rgba(15,118,110,0.09)]"
+              className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-[#d7e9e4] bg-white px-4 text-sm font-semibold text-[#111827] shadow-[0_10px_26px_rgba(15,118,110,0.06)] outline-none transition-[border-color,background-color,box-shadow] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-[#9bd8cf] hover:bg-[#f8fffd] hover:shadow-[0_12px_30px_rgba(15,118,110,0.09)]"
             >
               View more roles
               <span className="rounded-full bg-[#edf8f5] px-2 py-0.5 text-[11px] text-[#159b89]">
@@ -1137,200 +853,34 @@ function TargetRoleStep({
       <div className="mx-auto mt-7 max-w-[720px]">
         <SectionPrompt
           title="Experience level"
-          description="This calibrates the strictness of the analysis."
-        />
-        <StepOptions options={experienceOptions} selected={experienceLevel} onSelect={onExperienceChange} />
-      </div>
-
-      <div className="mx-auto mt-6 grid max-w-[720px] gap-3 sm:grid-cols-2">
-        <LabeledInput
-          label="Target company"
-          optional
-          placeholder="Example: Stripe"
-          value={targetCompany}
-          onChange={onTargetCompanyChange}
-        />
-        <LabeledInput
-          label="Target job title"
-          optional
-          placeholder="Example: AI Engineer Intern"
-          value={targetJobTitle}
-          onChange={onTargetJobTitleChange}
-        />
-      </div>
-    </div>
-  );
-}
-
-function TimelineStep({
-  interviewDate,
-  noDateYet,
-  onInterviewDateChange,
-  onNoDateYetChange,
-  onTimelineDisplayChange,
-  onPreparationIntensityChange,
-  onPreparationTimeChange,
-  preparationIntensity,
-  preparationTimePerDay,
-}: {
-  interviewDate: string;
-  noDateYet: boolean;
-  onInterviewDateChange: (value: string) => void;
-  onNoDateYetChange: (value: boolean) => void;
-  onTimelineDisplayChange: (value: string) => void;
-  onPreparationIntensityChange: (value: string) => void;
-  onPreparationTimeChange: (value: string) => void;
-  preparationIntensity: string;
-  preparationTimePerDay: string;
-}) {
-  return (
-    <div className="mx-auto mt-9 max-w-[720px] pb-8">
-      <DateCapture
-        date={interviewDate}
-        noDateYet={noDateYet}
-        onDateChange={onInterviewDateChange}
-        onNoDateYetChange={onNoDateYetChange}
-        onTimelineDisplayChange={onTimelineDisplayChange}
-      />
-
-      <div className="mt-7">
-        <SectionPrompt
-          title="Preparation time per day"
-          description="Trailgrad will size tasks around this."
+          description="This calibrates how Trailgrad judges your current evidence."
         />
         <StepOptions
-          options={preparationTimeOptions}
-          selected={preparationTimePerDay}
-          onSelect={onPreparationTimeChange}
+          options={experienceOptions}
+          selected={experienceLevel}
+          onSelect={onExperienceChange}
         />
-      </div>
-
-      <div className="mt-7">
-        <SectionPrompt
-          title="Preparation intensity"
-          description="Choose the pace you can actually sustain."
-        />
-        <StepOptions
-          options={intensityOptions}
-          selected={preparationIntensity}
-          onSelect={onPreparationIntensityChange}
-        />
-      </div>
-    </div>
-  );
-}
-
-function DateCapture({
-  date,
-  noDateYet,
-  onDateChange,
-  onNoDateYetChange,
-  onTimelineDisplayChange,
-}: {
-  date: string;
-  noDateYet: boolean;
-  onDateChange: (value: string) => void;
-  onNoDateYetChange: (value: boolean) => void;
-  onTimelineDisplayChange: (value: string) => void;
-}) {
-  const dateOptions = [
-    {
-      id: "two-weeks",
-      title: "7-15 days",
-      description: "Interview soon",
-      value: addDaysIso(14),
-    },
-    {
-      id: "one-month",
-      title: "1 month",
-      description: "Steady prep window",
-      value: addDaysIso(30),
-    },
-    {
-      id: "three-months",
-      title: "3 months",
-      description: "Build deeper proof",
-      value: addDaysIso(90),
-    },
-    {
-      id: "no-date",
-      title: "No date yet",
-      description: "Keep planning flexible",
-      value: "",
-    },
-  ];
-
-  return (
-    <div>
-      <SectionPrompt
-        title="Timeline"
-        description="Choose the closest prep window. You can change it later."
-      />
-
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        {dateOptions.map((option) => {
-          const active =
-            option.id === "no-date"
-              ? noDateYet
-              : date === option.value && !noDateYet;
-
-          return (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => {
-                if (option.id === "no-date") {
-                  onNoDateYetChange(true);
-                  onDateChange("");
-                  onTimelineDisplayChange(option.title);
-                  return;
-                }
-
-                onNoDateYetChange(false);
-                onDateChange(option.value);
-                onTimelineDisplayChange(option.title);
-              }}
-              className={`flex min-h-[78px] items-center justify-between gap-3 rounded-[16px] border p-4 text-left transition-[border-color,background-color,box-shadow] duration-150 ease-out ${
-                active
-                  ? "border-[#20b8a4] bg-[#f0fdfa] shadow-[0_16px_34px_rgba(15,118,110,0.1)]"
-                  : "border-[#e5e7eb] bg-white hover:border-[#b7ddd7] hover:bg-[#fbfffe]"
-              }`}
-            >
-              <span>
-                <span className="block text-sm font-semibold text-[#111827]">
-                  {option.title}
-                </span>
-                <span className="mt-1 block text-sm font-medium text-[#6b7280]">
-                  {option.description}
-                </span>
-              </span>
-              <span className={`grid size-5 shrink-0 place-items-center rounded-full border transition-colors duration-150 ease-out ${active ? "border-[#2b9f8f] bg-[#2b9f8f] text-white" : "border-[#cadbd7] text-transparent"}`}>
-                <Check className="size-3" />
-              </span>
-            </button>
-          );
-        })}
       </div>
     </div>
   );
 }
 
 function ResumeQuestion({
+  inspectionStep,
+  onUpload,
+  processingStatus,
   resumeName,
   resumeSize,
-  processingStatus,
-  inspectionStep,
   uploadIssue,
   uploading,
-  onUpload,
 }: {
+  inspectionStep: number;
+  onUpload: (file: File | undefined) => void;
+  processingStatus: string;
   resumeName: string;
   resumeSize: number;
-  processingStatus: string;
-  inspectionStep: number;
   uploadIssue: ResumeUploadIssue | null;
   uploading: boolean;
-  onUpload: (file: File | undefined) => void;
 }) {
   const activeInspectionStep =
     resumeInspectionSteps[
@@ -1351,6 +901,7 @@ function ResumeQuestion({
             type="file"
             accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
             className="sr-only"
+            disabled={uploading}
             onChange={(event) => onUpload(event.target.files?.[0])}
           />
           <span className="grid size-16 place-items-center rounded-[18px] border border-[#dff2ee] bg-[#effbf8] text-[#0f9f8d] transition-transform duration-700 group-hover:scale-[1.025]">
@@ -1408,7 +959,9 @@ function ResumeQuestion({
           </div>
         ) : (
           <div className="min-w-0 rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
-            <p className="text-sm font-semibold text-[#111827]">Trailgrad will inspect</p>
+            <p className="text-sm font-semibold text-[#111827]">
+              Trailgrad will inspect
+            </p>
             <ul className="mt-3 space-y-2 text-sm font-medium text-[#5f6f6b]">
               {[
                 "skills",
@@ -1506,77 +1059,6 @@ function AnimatedDots() {
   );
 }
 
-function TargetJobStep({
-  jobDescription,
-  mode,
-  onDescriptionChange,
-  onModeChange,
-}: {
-  jobDescription: string;
-  mode: string;
-  onDescriptionChange: (value: string) => void;
-  onModeChange: (value: string) => void;
-}) {
-  return (
-    <div className="mx-auto mt-8 max-w-[720px] pb-4">
-      <StepOptions options={targetJobOptions} selected={mode} onSelect={onModeChange} />
-      <AnimatePresence initial={false}>
-        {mode === "paste" ? (
-          <motion.div
-            key="target-job-description"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <textarea
-              id="job-description"
-              aria-label="Target job description"
-              value={jobDescription}
-              onChange={(event) => onDescriptionChange(event.target.value)}
-              placeholder="Paste the job description or a few key requirements."
-              className="tg-slim-scrollbar mt-4 min-h-[168px] w-full resize-none rounded-[18px] border border-[#d7e8e3] bg-[#fcfdfd] p-4 text-sm leading-6 text-[#111827] shadow-[0_10px_28px_rgba(15,118,110,0.045)] outline-none transition-colors duration-500 placeholder:text-[#9ca3af] focus:border-[#8bcfc5] focus:bg-white"
-            />
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function LabeledInput({
-  label,
-  optional,
-  placeholder,
-  value,
-  onChange,
-}: {
-  label: string;
-  optional?: boolean;
-  placeholder: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const id = label.toLowerCase().replaceAll(" ", "-");
-
-  return (
-    <label htmlFor={id} className="text-sm font-semibold text-[#111827]">
-      {label} {optional ? <OptionalLabel /> : null}
-      <Input
-        id={id}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        className="mt-3 h-13 rounded-[14px] border-[#e5e7eb] bg-[#fcfdfd] text-sm text-[#111827] transition-colors duration-500 placeholder:text-[#9ca3af] focus-visible:border-[#8bcfc5] focus-visible:bg-white focus-visible:!ring-0"
-      />
-    </label>
-  );
-}
-
-function OptionalLabel() {
-  return <span className="text-xs font-medium text-[#6b7280]">(optional)</span>;
-}
-
 function SectionPrompt({
   description,
   title,
@@ -1596,28 +1078,35 @@ function SectionPrompt({
 
 function ReviewStep({
   experience,
-  onEdit,
-  preparation,
+  onEditProfile,
+  onEditResume,
   resumeName,
   role,
-  targetJobStatus,
-  timeline,
 }: {
   experience: string;
-  onEdit: (stepId: OnboardingStepId) => void;
-  preparation: string;
+  onEditProfile: () => void;
+  onEditResume: () => void;
   resumeName: string;
   role: string;
-  targetJobStatus: string;
-  timeline: string;
 }) {
-  const items: Array<{ label: string; value: string; step: OnboardingStepId }> = [
-    { label: "Target role", value: role, step: "target-role" },
-    { label: "Experience level", value: experience, step: "target-role" },
-    { label: "Timeline", value: timeline || "No date yet", step: "timeline" },
-    { label: "Preparation availability", value: preparation, step: "timeline" },
-    { label: "Uploaded resume", value: resumeName, step: "resume" },
-    { label: "Target job", value: targetJobStatus, step: "target-job" },
+  const items: Array<{
+    fullWidth?: boolean;
+    label: string;
+    onEdit: () => void;
+    value: string;
+  }> = [
+    { label: "Target role", value: role || "Not selected", onEdit: onEditProfile },
+    {
+      label: "Experience level",
+      value: experience || "Not selected",
+      onEdit: onEditProfile,
+    },
+    {
+      label: "Uploaded resume",
+      value: resumeName || "No resume uploaded",
+      onEdit: onEditResume,
+      fullWidth: true,
+    },
   ];
 
   return (
@@ -1625,20 +1114,33 @@ function ReviewStep({
       <div className="rounded-[18px] bg-[#fcfdfd] p-4 shadow-[0_8px_24px_rgba(15,118,110,0.035)]">
         <div className="grid gap-3 sm:grid-cols-2">
           {items.map((item) => (
-            <div key={item.label} className="rounded-[14px] bg-white p-4 ring-1 ring-[#e5e7eb]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
+            <div
+              key={item.label}
+              className={`relative rounded-[14px] bg-white p-4 ring-1 ring-[#e5e7eb] ${
+                item.fullWidth ? "w-full sm:col-span-2" : ""
+              }`}
+            >
+              <div
+                className={`flex items-start gap-3 ${
+                  item.fullWidth ? "justify-center pr-12 text-center" : "justify-between"
+                }`}
+              >
+                <div className={item.fullWidth ? "min-w-0 max-w-[360px]" : "min-w-0"}>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6b7280]">
                     {item.label}
                   </p>
-                  <p className="mt-2 text-sm font-semibold text-[#111827]">{item.value}</p>
+                  <p className="mt-2 break-words text-sm font-semibold text-[#111827]">
+                    {item.value}
+                  </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => onEdit(item.step)}
+                  onClick={item.onEdit}
                   aria-label={`Edit ${item.label}`}
                   title={`Edit ${item.label}`}
-                  className="grid size-9 shrink-0 place-items-center rounded-lg border border-[#d7e8e3] bg-white text-[#0f766e] transition-colors duration-500 hover:border-[#9fd8d0] hover:bg-[#f4fbf9]"
+                  className={`grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg border border-[#d7e8e3] bg-white text-[#0f766e] transition-colors duration-500 hover:border-[#9fd8d0] hover:bg-[#f4fbf9] ${
+                    item.fullWidth ? "absolute right-4 top-4" : ""
+                  }`}
                 >
                   <PencilLine className="size-4" />
                 </button>
@@ -1651,60 +1153,42 @@ function ReviewStep({
   );
 }
 
-function getOptionTitle(options: Option[], value: string) {
-  return options.find((option) => option.id === value)?.title;
-}
-
-function getResumeUploadIssue(code: string | undefined, fallback?: string): ResumeUploadIssue {
-  if (code === "RESUME_NOT_DETECTED") {
+function getResumeUploadIssue(
+  code: string | undefined,
+  fallback: string | undefined,
+): ResumeUploadIssue {
+  if (code === "UNSUPPORTED_TYPE") {
     return {
       code,
-      title: "This does not look like a resume yet.",
-      message:
-        "Trailgrad could read the file, but it did not find enough resume structure to analyze it confidently.",
+      title: "Use a PDF or DOCX resume.",
+      message: fallback ?? "Trailgrad currently supports PDF and DOCX resumes.",
     };
   }
 
-  if (code === "IMAGE_ONLY_PDF") {
+  if (code === "RESUME_NOT_LIKELY") {
     return {
       code,
-      title: "This PDF looks scanned.",
+      title: "This does not look like a resume.",
       message:
-        "Trailgrad needs selectable text. Export your resume as a text-based PDF or upload a DOCX version.",
+        fallback ??
+        "Upload a candidate resume with sections such as experience, projects, education, or skills.",
     };
   }
 
-  if (code === "RESUME_TOO_LONG") {
+  if (code === "EXTRACTION_FAILED" || code === "TEXT_EMPTY") {
     return {
       code,
-      title: "This looks more like a document than a resume.",
+      title: "Trailgrad could not read enough text.",
       message:
-        "Trailgrad expects a concise resume, usually 1-3 pages. Upload your resume instead of a portfolio, product spec, or case study.",
-    };
-  }
-
-  if (code === "UNSUPPORTED_FILE_TYPE" || code === "INVALID_EXTENSION") {
-    return {
-      code,
-      title: "Upload a PDF or DOCX resume.",
-      message:
-        "Trailgrad can analyze resume files in PDF or DOCX format right now.",
-    };
-  }
-
-  if (code === "OVERSIZED_FILE") {
-    return {
-      code,
-      title: "This resume is too large.",
-      message:
-        "Use a smaller PDF or DOCX resume so Trailgrad can extract it safely.",
+        fallback ??
+        "Try a text-based PDF or DOCX file instead of a scanned image.",
     };
   }
 
   return {
     code,
-    title: "We could not process that resume.",
-    message: fallback ?? "Try uploading a clean PDF or DOCX copy of your resume.",
+    title: "Resume upload needs another try.",
+    message: fallback ?? "Upload a PDF or DOCX resume and try again.",
   };
 }
 
@@ -1714,35 +1198,170 @@ function getStepIndex(stepId: OnboardingStepId | undefined) {
   return index >= 0 ? index : 0;
 }
 
-function addDaysIso(days: number) {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-
-  return date.toISOString().slice(0, 10);
-}
-
-function getTimelineDisplay(date: string, noDateYet: boolean) {
-  if (noDateYet || !date) {
-    return "No date yet";
-  }
-
-  const timelineOptions = [
-    { date: addDaysIso(14), label: "7-15 days" },
-    { date: addDaysIso(30), label: "1 month" },
-    { date: addDaysIso(90), label: "3 months" },
-  ];
-
-  return timelineOptions.find((option) => option.date === date)?.label ?? date;
+function getOptionTitle(options: Option[], value: string) {
+  return options.find((option) => option.id === value)?.title ?? "";
 }
 
 function formatFileSize(size: number) {
-  if (!size) {
-    return "PDF or DOCX";
-  }
+  if (!size) return "PDF or DOCX";
 
   if (size < 1024 * 1024) {
     return `${Math.max(1, Math.round(size / 1024))} KB`;
   }
 
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function OnboardingStyles() {
+  return (
+    <style jsx global>{`
+      @keyframes tg-onboarding-heading-word {
+        from {
+          opacity: 0;
+          transform: translate3d(0, 12px, 0);
+        }
+        to {
+          opacity: 1;
+          transform: translate3d(0, 0, 0);
+        }
+      }
+
+      .tg-onboarding-heading-word {
+        opacity: 0;
+        animation: tg-onboarding-heading-word 520ms
+          cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        will-change: opacity, transform;
+      }
+
+      @keyframes tg-shimmer {
+        0% {
+          background-position: 120% 0;
+        }
+        100% {
+          background-position: -120% 0;
+        }
+      }
+
+      @keyframes tg-inspection-shine {
+        0% {
+          background-position: 120% 0;
+        }
+        100% {
+          background-position: -120% 0;
+        }
+      }
+
+      .tg-inspection-shine {
+        background-image: linear-gradient(
+          90deg,
+          #0f3d3a 0%,
+          #0f9f8d 42%,
+          #65d7ca 50%,
+          #0f9f8d 58%,
+          #0f3d3a 100%
+        );
+        background-size: 220% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: tg-inspection-shine 1.8s ease-in-out infinite;
+      }
+
+      .tg-shimmer {
+        background-image: linear-gradient(
+          90deg,
+          rgba(231, 242, 239, 0.75) 0%,
+          rgba(255, 255, 255, 0.96) 48%,
+          rgba(211, 239, 234, 0.78) 100%
+        );
+        background-size: 220% 100%;
+        animation: tg-shimmer 1.1s ease-in-out infinite;
+      }
+
+      .tg-onboarding-teal-clouds {
+        background:
+          radial-gradient(
+            ellipse 24% 17% at 6% 72%,
+            rgba(15, 118, 110, 0.3),
+            rgba(20, 184, 166, 0.18) 46%,
+            transparent 76%
+          ),
+          radial-gradient(
+            ellipse 30% 19% at 20% 82%,
+            rgba(45, 212, 191, 0.28),
+            rgba(153, 246, 228, 0.16) 48%,
+            transparent 78%
+          ),
+          radial-gradient(
+            ellipse 28% 18% at 36% 76%,
+            rgba(125, 232, 218, 0.2),
+            rgba(204, 251, 241, 0.12) 50%,
+            transparent 78%
+          ),
+          radial-gradient(
+            ellipse 32% 21% at 75% 16%,
+            rgba(94, 234, 212, 0.28),
+            rgba(20, 184, 166, 0.13) 48%,
+            transparent 78%
+          ),
+          radial-gradient(
+            ellipse 25% 17% at 91% 28%,
+            rgba(153, 246, 228, 0.2),
+            transparent 76%
+          ),
+          radial-gradient(
+            ellipse 22% 15% at 57% 28%,
+            rgba(167, 243, 208, 0.18),
+            transparent 74%
+          ),
+          radial-gradient(
+            ellipse 44% 24% at 54% 98%,
+            rgba(204, 251, 241, 0.22),
+            transparent 72%
+          ),
+          linear-gradient(135deg, #f9fffd 0%, #e6fbf6 54%, #f7fcfa 100%);
+        filter: blur(34px) saturate(1.03);
+        opacity: 0.86;
+        transform: translate3d(0, 0, 0);
+      }
+
+      .tg-onboarding-cloud-haze {
+        background:
+          radial-gradient(
+            ellipse 58% 30% at 26% 92%,
+            rgba(20, 184, 166, 0.13),
+            transparent 72%
+          ),
+          radial-gradient(
+            ellipse 58% 34% at 87% 38%,
+            rgba(125, 232, 218, 0.12),
+            transparent 74%
+          ),
+          linear-gradient(
+            15deg,
+            rgba(15, 118, 110, 0.1) 0%,
+            rgba(20, 184, 166, 0.08) 26%,
+            transparent 62%
+          );
+        filter: blur(64px);
+        opacity: 0.7;
+      }
+
+      .tg-grid {
+        background-image:
+          linear-gradient(rgba(15, 118, 110, 0.18) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(15, 118, 110, 0.18) 1px, transparent 1px);
+        background-size: 54px 54px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .tg-onboarding-heading-word,
+        .tg-inspection-shine {
+          animation: none !important;
+          opacity: 1;
+          transform: none;
+        }
+      }
+    `}</style>
+  );
 }

@@ -10,6 +10,7 @@ import {
   markOnboardingAnalyzingRecord,
   markOnboardingFailedRecord,
   saveOnboardingDataModelRecord,
+  updateProfileDefaultsRecord,
   updateOnboardingStepRecord,
 } from "@/lib/db/profile-repository";
 import type {
@@ -19,12 +20,14 @@ import type {
   SourceDocumentRecord,
   TargetContextRecord,
 } from "@/lib/db/types";
+import type { ApplicationSubmission } from "@/lib/applications/types";
 import type {
   OnboardingState,
   OnboardingStatus,
   OnboardingStepId,
   OnboardingSubmission,
 } from "@/lib/onboarding/types";
+import { OnboardingSubmissionSchema } from "@/lib/validators/profile";
 import type { UserProfile } from "@/types";
 
 export type {
@@ -72,6 +75,16 @@ export async function updateOnboardingStep(
   return updateOnboardingStepRecord(clerkUserId, currentStep, onboarding);
 }
 
+export async function updateProfileDefaults(
+  clerkUserId: string,
+  input: {
+    targetRole: string;
+    experienceLevel: string;
+  },
+): Promise<CareerContextRecord> {
+  return updateProfileDefaultsRecord(clerkUserId, input);
+}
+
 export async function markOnboardingAnalyzing(
   clerkUserId: string,
   onboarding: OnboardingSubmission,
@@ -95,7 +108,7 @@ export async function markOnboardingFailed(
 
 export async function saveOnboardingDataModel(
   clerkUserId: string,
-  onboarding: OnboardingSubmission,
+  onboarding: ApplicationSubmission,
 ): Promise<void> {
   await saveOnboardingDataModelRecord(clerkUserId, onboarding);
 }
@@ -142,7 +155,9 @@ export async function readTrailgradOnboardingStatus(
   const profile = await getOrCreateProfile(clerkUserId);
 
   return {
-    completed: profile.onboardingStatus === "completed",
+    completed:
+      profile.onboardingStatus === "completed" &&
+      OnboardingSubmissionSchema.safeParse(profile.onboarding).success,
     completedAt: profile.onboardingCompletedAt,
     profile,
   };
@@ -163,51 +178,17 @@ export function toUserProfile(
     email?: string | null;
   },
 ): UserProfile {
-  const onboarding = profile.onboarding;
+  void profile;
 
   return {
     id: clerkUserId,
     name: identity?.name || "Trailgrad learner",
     email: identity?.email || "",
-    careerStage: getCareerStage(onboarding?.experienceLevel),
-    targetRole: getTargetRole(onboarding?.targetRole),
-    experienceLevel: onboarding?.experienceLevel ?? "",
-    interviewTimeline: onboarding?.noDateYet
-      ? "No date yet"
-      : onboarding?.interviewDate ?? "",
+    careerStage: "Working Professional",
+    targetRole: "AI Engineer",
+    experienceLevel: "",
+    interviewTimeline: "",
     location: "",
     preferredFeedbackStyle: "Senior Engineer",
   };
-}
-
-function getCareerStage(experience: string | undefined): UserProfile["careerStage"] {
-  if (experience === "student-new-graduate") {
-    return "Student";
-  }
-
-  if (experience === "junior") {
-    return "Fresher";
-  }
-
-  return "Working Professional";
-}
-
-function getTargetRole(role: string | undefined): UserProfile["targetRole"] {
-  if (role === "frontend-engineer") {
-    return "Frontend Engineer";
-  }
-
-  if (role === "backend-engineer") {
-    return "Backend Engineer";
-  }
-
-  if (role === "data-analyst" || role === "data-scientist") {
-    return "Data Analyst";
-  }
-
-  if (role === "product") {
-    return "Product Manager";
-  }
-
-  return "AI Engineer";
 }

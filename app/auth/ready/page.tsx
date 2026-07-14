@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
+import { WorkspaceReadyExperience } from "@/components/auth/workspace-ready-experience";
 import {
+  getAuthenticatedUserAppEntryPath,
   getSafeAppRedirectPath,
   getSingleSearchParam,
-  redirectAuthenticatedUserAppropriately,
 } from "@/lib/auth/server";
 
 export const metadata: Metadata = {
@@ -31,10 +33,13 @@ export default async function AuthReadyPage({ searchParams }: AuthReadyPageProps
     getSingleSearchParam(params.redirect_url),
     requestOrigin,
   );
-
-  await redirectAuthenticatedUserAppropriately({
+  const entryPath = await getAuthenticatedUserAppEntryPath({
     requestedRedirectUrl: redirectUrl,
   });
 
-  return null;
+  if (!entryPath.authenticated) {
+    redirect(entryPath.redirectPath);
+  }
+
+  return <WorkspaceReadyExperience redirectPath={entryPath.redirectPath} />;
 }

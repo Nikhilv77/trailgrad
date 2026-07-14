@@ -40,6 +40,7 @@ export type AnalysisJobMinAggregateOutputType = {
   id: string | null
   profileId: string | null
   sourceDocumentId: string | null
+  targetContextId: string | null
   type: $Enums.AnalysisJobType | null
   status: $Enums.AnalysisJobStatus | null
   currentStage: string | null
@@ -58,6 +59,7 @@ export type AnalysisJobMaxAggregateOutputType = {
   id: string | null
   profileId: string | null
   sourceDocumentId: string | null
+  targetContextId: string | null
   type: $Enums.AnalysisJobType | null
   status: $Enums.AnalysisJobStatus | null
   currentStage: string | null
@@ -76,6 +78,7 @@ export type AnalysisJobCountAggregateOutputType = {
   id: number
   profileId: number
   sourceDocumentId: number
+  targetContextId: number
   type: number
   status: number
   currentStage: number
@@ -106,6 +109,7 @@ export type AnalysisJobMinAggregateInputType = {
   id?: true
   profileId?: true
   sourceDocumentId?: true
+  targetContextId?: true
   type?: true
   status?: true
   currentStage?: true
@@ -124,6 +128,7 @@ export type AnalysisJobMaxAggregateInputType = {
   id?: true
   profileId?: true
   sourceDocumentId?: true
+  targetContextId?: true
   type?: true
   status?: true
   currentStage?: true
@@ -142,6 +147,7 @@ export type AnalysisJobCountAggregateInputType = {
   id?: true
   profileId?: true
   sourceDocumentId?: true
+  targetContextId?: true
   type?: true
   status?: true
   currentStage?: true
@@ -247,6 +253,7 @@ export type AnalysisJobGroupByOutputType = {
   id: string
   profileId: string
   sourceDocumentId: string | null
+  targetContextId: string | null
   type: $Enums.AnalysisJobType
   status: $Enums.AnalysisJobStatus
   currentStage: string
@@ -288,6 +295,7 @@ export type AnalysisJobWhereInput = {
   id?: Prisma.StringFilter<"AnalysisJob"> | string
   profileId?: Prisma.StringFilter<"AnalysisJob"> | string
   sourceDocumentId?: Prisma.StringNullableFilter<"AnalysisJob"> | string | null
+  targetContextId?: Prisma.StringNullableFilter<"AnalysisJob"> | string | null
   type?: Prisma.EnumAnalysisJobTypeFilter<"AnalysisJob"> | $Enums.AnalysisJobType
   status?: Prisma.EnumAnalysisJobStatusFilter<"AnalysisJob"> | $Enums.AnalysisJobStatus
   currentStage?: Prisma.StringFilter<"AnalysisJob"> | string
@@ -302,6 +310,7 @@ export type AnalysisJobWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"AnalysisJob"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
   sourceDocument?: Prisma.XOR<Prisma.SourceDocumentNullableScalarRelationFilter, Prisma.SourceDocumentWhereInput> | null
+  targetContext?: Prisma.XOR<Prisma.TargetContextNullableScalarRelationFilter, Prisma.TargetContextWhereInput> | null
   aiRuns?: Prisma.AiRunListRelationFilter
 }
 
@@ -309,6 +318,7 @@ export type AnalysisJobOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
   sourceDocumentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  targetContextId?: Prisma.SortOrderInput | Prisma.SortOrder
   type?: Prisma.SortOrder
   status?: Prisma.SortOrder
   currentStage?: Prisma.SortOrder
@@ -323,6 +333,7 @@ export type AnalysisJobOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   profile?: Prisma.UserProfileOrderByWithRelationInput
   sourceDocument?: Prisma.SourceDocumentOrderByWithRelationInput
+  targetContext?: Prisma.TargetContextOrderByWithRelationInput
   aiRuns?: Prisma.AiRunOrderByRelationAggregateInput
 }
 
@@ -334,6 +345,7 @@ export type AnalysisJobWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.AnalysisJobWhereInput | Prisma.AnalysisJobWhereInput[]
   profileId?: Prisma.StringFilter<"AnalysisJob"> | string
   sourceDocumentId?: Prisma.StringNullableFilter<"AnalysisJob"> | string | null
+  targetContextId?: Prisma.StringNullableFilter<"AnalysisJob"> | string | null
   type?: Prisma.EnumAnalysisJobTypeFilter<"AnalysisJob"> | $Enums.AnalysisJobType
   status?: Prisma.EnumAnalysisJobStatusFilter<"AnalysisJob"> | $Enums.AnalysisJobStatus
   currentStage?: Prisma.StringFilter<"AnalysisJob"> | string
@@ -347,6 +359,7 @@ export type AnalysisJobWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"AnalysisJob"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
   sourceDocument?: Prisma.XOR<Prisma.SourceDocumentNullableScalarRelationFilter, Prisma.SourceDocumentWhereInput> | null
+  targetContext?: Prisma.XOR<Prisma.TargetContextNullableScalarRelationFilter, Prisma.TargetContextWhereInput> | null
   aiRuns?: Prisma.AiRunListRelationFilter
 }, "id" | "idempotencyKey">
 
@@ -354,6 +367,7 @@ export type AnalysisJobOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
   sourceDocumentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  targetContextId?: Prisma.SortOrderInput | Prisma.SortOrder
   type?: Prisma.SortOrder
   status?: Prisma.SortOrder
   currentStage?: Prisma.SortOrder
@@ -380,6 +394,7 @@ export type AnalysisJobScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"AnalysisJob"> | string
   profileId?: Prisma.StringWithAggregatesFilter<"AnalysisJob"> | string
   sourceDocumentId?: Prisma.StringNullableWithAggregatesFilter<"AnalysisJob"> | string | null
+  targetContextId?: Prisma.StringNullableWithAggregatesFilter<"AnalysisJob"> | string | null
   type?: Prisma.EnumAnalysisJobTypeWithAggregatesFilter<"AnalysisJob"> | $Enums.AnalysisJobType
   status?: Prisma.EnumAnalysisJobStatusWithAggregatesFilter<"AnalysisJob"> | $Enums.AnalysisJobStatus
   currentStage?: Prisma.StringWithAggregatesFilter<"AnalysisJob"> | string
@@ -410,6 +425,7 @@ export type AnalysisJobCreateInput = {
   updatedAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutAnalysisJobsInput
   sourceDocument?: Prisma.SourceDocumentCreateNestedOneWithoutAnalysisJobsInput
+  targetContext?: Prisma.TargetContextCreateNestedOneWithoutAnalysisJobsInput
   aiRuns?: Prisma.AiRunCreateNestedManyWithoutAnalysisJobInput
 }
 
@@ -417,6 +433,7 @@ export type AnalysisJobUncheckedCreateInput = {
   id: string
   profileId: string
   sourceDocumentId?: string | null
+  targetContextId?: string | null
   type: $Enums.AnalysisJobType
   status?: $Enums.AnalysisJobStatus
   currentStage?: string
@@ -448,6 +465,7 @@ export type AnalysisJobUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutAnalysisJobsNestedInput
   sourceDocument?: Prisma.SourceDocumentUpdateOneWithoutAnalysisJobsNestedInput
+  targetContext?: Prisma.TargetContextUpdateOneWithoutAnalysisJobsNestedInput
   aiRuns?: Prisma.AiRunUpdateManyWithoutAnalysisJobNestedInput
 }
 
@@ -455,6 +473,7 @@ export type AnalysisJobUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetContextId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumAnalysisJobTypeFieldUpdateOperationsInput | $Enums.AnalysisJobType
   status?: Prisma.EnumAnalysisJobStatusFieldUpdateOperationsInput | $Enums.AnalysisJobStatus
   currentStage?: Prisma.StringFieldUpdateOperationsInput | string
@@ -474,6 +493,7 @@ export type AnalysisJobCreateManyInput = {
   id: string
   profileId: string
   sourceDocumentId?: string | null
+  targetContextId?: string | null
   type: $Enums.AnalysisJobType
   status?: $Enums.AnalysisJobStatus
   currentStage?: string
@@ -508,6 +528,7 @@ export type AnalysisJobUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetContextId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumAnalysisJobTypeFieldUpdateOperationsInput | $Enums.AnalysisJobType
   status?: Prisma.EnumAnalysisJobStatusFieldUpdateOperationsInput | $Enums.AnalysisJobStatus
   currentStage?: Prisma.StringFieldUpdateOperationsInput | string
@@ -536,6 +557,7 @@ export type AnalysisJobCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
   sourceDocumentId?: Prisma.SortOrder
+  targetContextId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   status?: Prisma.SortOrder
   currentStage?: Prisma.SortOrder
@@ -559,6 +581,7 @@ export type AnalysisJobMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
   sourceDocumentId?: Prisma.SortOrder
+  targetContextId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   status?: Prisma.SortOrder
   currentStage?: Prisma.SortOrder
@@ -577,6 +600,7 @@ export type AnalysisJobMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
   sourceDocumentId?: Prisma.SortOrder
+  targetContextId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   status?: Prisma.SortOrder
   currentStage?: Prisma.SortOrder
@@ -640,6 +664,48 @@ export type AnalysisJobUncheckedUpdateManyWithoutProfileNestedInput = {
   connect?: Prisma.AnalysisJobWhereUniqueInput | Prisma.AnalysisJobWhereUniqueInput[]
   update?: Prisma.AnalysisJobUpdateWithWhereUniqueWithoutProfileInput | Prisma.AnalysisJobUpdateWithWhereUniqueWithoutProfileInput[]
   updateMany?: Prisma.AnalysisJobUpdateManyWithWhereWithoutProfileInput | Prisma.AnalysisJobUpdateManyWithWhereWithoutProfileInput[]
+  deleteMany?: Prisma.AnalysisJobScalarWhereInput | Prisma.AnalysisJobScalarWhereInput[]
+}
+
+export type AnalysisJobCreateNestedManyWithoutTargetContextInput = {
+  create?: Prisma.XOR<Prisma.AnalysisJobCreateWithoutTargetContextInput, Prisma.AnalysisJobUncheckedCreateWithoutTargetContextInput> | Prisma.AnalysisJobCreateWithoutTargetContextInput[] | Prisma.AnalysisJobUncheckedCreateWithoutTargetContextInput[]
+  connectOrCreate?: Prisma.AnalysisJobCreateOrConnectWithoutTargetContextInput | Prisma.AnalysisJobCreateOrConnectWithoutTargetContextInput[]
+  createMany?: Prisma.AnalysisJobCreateManyTargetContextInputEnvelope
+  connect?: Prisma.AnalysisJobWhereUniqueInput | Prisma.AnalysisJobWhereUniqueInput[]
+}
+
+export type AnalysisJobUncheckedCreateNestedManyWithoutTargetContextInput = {
+  create?: Prisma.XOR<Prisma.AnalysisJobCreateWithoutTargetContextInput, Prisma.AnalysisJobUncheckedCreateWithoutTargetContextInput> | Prisma.AnalysisJobCreateWithoutTargetContextInput[] | Prisma.AnalysisJobUncheckedCreateWithoutTargetContextInput[]
+  connectOrCreate?: Prisma.AnalysisJobCreateOrConnectWithoutTargetContextInput | Prisma.AnalysisJobCreateOrConnectWithoutTargetContextInput[]
+  createMany?: Prisma.AnalysisJobCreateManyTargetContextInputEnvelope
+  connect?: Prisma.AnalysisJobWhereUniqueInput | Prisma.AnalysisJobWhereUniqueInput[]
+}
+
+export type AnalysisJobUpdateManyWithoutTargetContextNestedInput = {
+  create?: Prisma.XOR<Prisma.AnalysisJobCreateWithoutTargetContextInput, Prisma.AnalysisJobUncheckedCreateWithoutTargetContextInput> | Prisma.AnalysisJobCreateWithoutTargetContextInput[] | Prisma.AnalysisJobUncheckedCreateWithoutTargetContextInput[]
+  connectOrCreate?: Prisma.AnalysisJobCreateOrConnectWithoutTargetContextInput | Prisma.AnalysisJobCreateOrConnectWithoutTargetContextInput[]
+  upsert?: Prisma.AnalysisJobUpsertWithWhereUniqueWithoutTargetContextInput | Prisma.AnalysisJobUpsertWithWhereUniqueWithoutTargetContextInput[]
+  createMany?: Prisma.AnalysisJobCreateManyTargetContextInputEnvelope
+  set?: Prisma.AnalysisJobWhereUniqueInput | Prisma.AnalysisJobWhereUniqueInput[]
+  disconnect?: Prisma.AnalysisJobWhereUniqueInput | Prisma.AnalysisJobWhereUniqueInput[]
+  delete?: Prisma.AnalysisJobWhereUniqueInput | Prisma.AnalysisJobWhereUniqueInput[]
+  connect?: Prisma.AnalysisJobWhereUniqueInput | Prisma.AnalysisJobWhereUniqueInput[]
+  update?: Prisma.AnalysisJobUpdateWithWhereUniqueWithoutTargetContextInput | Prisma.AnalysisJobUpdateWithWhereUniqueWithoutTargetContextInput[]
+  updateMany?: Prisma.AnalysisJobUpdateManyWithWhereWithoutTargetContextInput | Prisma.AnalysisJobUpdateManyWithWhereWithoutTargetContextInput[]
+  deleteMany?: Prisma.AnalysisJobScalarWhereInput | Prisma.AnalysisJobScalarWhereInput[]
+}
+
+export type AnalysisJobUncheckedUpdateManyWithoutTargetContextNestedInput = {
+  create?: Prisma.XOR<Prisma.AnalysisJobCreateWithoutTargetContextInput, Prisma.AnalysisJobUncheckedCreateWithoutTargetContextInput> | Prisma.AnalysisJobCreateWithoutTargetContextInput[] | Prisma.AnalysisJobUncheckedCreateWithoutTargetContextInput[]
+  connectOrCreate?: Prisma.AnalysisJobCreateOrConnectWithoutTargetContextInput | Prisma.AnalysisJobCreateOrConnectWithoutTargetContextInput[]
+  upsert?: Prisma.AnalysisJobUpsertWithWhereUniqueWithoutTargetContextInput | Prisma.AnalysisJobUpsertWithWhereUniqueWithoutTargetContextInput[]
+  createMany?: Prisma.AnalysisJobCreateManyTargetContextInputEnvelope
+  set?: Prisma.AnalysisJobWhereUniqueInput | Prisma.AnalysisJobWhereUniqueInput[]
+  disconnect?: Prisma.AnalysisJobWhereUniqueInput | Prisma.AnalysisJobWhereUniqueInput[]
+  delete?: Prisma.AnalysisJobWhereUniqueInput | Prisma.AnalysisJobWhereUniqueInput[]
+  connect?: Prisma.AnalysisJobWhereUniqueInput | Prisma.AnalysisJobWhereUniqueInput[]
+  update?: Prisma.AnalysisJobUpdateWithWhereUniqueWithoutTargetContextInput | Prisma.AnalysisJobUpdateWithWhereUniqueWithoutTargetContextInput[]
+  updateMany?: Prisma.AnalysisJobUpdateManyWithWhereWithoutTargetContextInput | Prisma.AnalysisJobUpdateManyWithWhereWithoutTargetContextInput[]
   deleteMany?: Prisma.AnalysisJobScalarWhereInput | Prisma.AnalysisJobScalarWhereInput[]
 }
 
@@ -724,12 +790,14 @@ export type AnalysisJobCreateWithoutProfileInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   sourceDocument?: Prisma.SourceDocumentCreateNestedOneWithoutAnalysisJobsInput
+  targetContext?: Prisma.TargetContextCreateNestedOneWithoutAnalysisJobsInput
   aiRuns?: Prisma.AiRunCreateNestedManyWithoutAnalysisJobInput
 }
 
 export type AnalysisJobUncheckedCreateWithoutProfileInput = {
   id: string
   sourceDocumentId?: string | null
+  targetContextId?: string | null
   type: $Enums.AnalysisJobType
   status?: $Enums.AnalysisJobStatus
   currentStage?: string
@@ -778,6 +846,7 @@ export type AnalysisJobScalarWhereInput = {
   id?: Prisma.StringFilter<"AnalysisJob"> | string
   profileId?: Prisma.StringFilter<"AnalysisJob"> | string
   sourceDocumentId?: Prisma.StringNullableFilter<"AnalysisJob"> | string | null
+  targetContextId?: Prisma.StringNullableFilter<"AnalysisJob"> | string | null
   type?: Prisma.EnumAnalysisJobTypeFilter<"AnalysisJob"> | $Enums.AnalysisJobType
   status?: Prisma.EnumAnalysisJobStatusFilter<"AnalysisJob"> | $Enums.AnalysisJobStatus
   currentStage?: Prisma.StringFilter<"AnalysisJob"> | string
@@ -790,6 +859,70 @@ export type AnalysisJobScalarWhereInput = {
   completedAt?: Prisma.DateTimeNullableFilter<"AnalysisJob"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"AnalysisJob"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AnalysisJob"> | Date | string
+}
+
+export type AnalysisJobCreateWithoutTargetContextInput = {
+  id: string
+  type: $Enums.AnalysisJobType
+  status?: $Enums.AnalysisJobStatus
+  currentStage?: string
+  progressPercent?: number
+  idempotencyKey: string
+  attemptCount?: number
+  safeErrorCode?: string | null
+  safeErrorMessage?: string | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  profile: Prisma.UserProfileCreateNestedOneWithoutAnalysisJobsInput
+  sourceDocument?: Prisma.SourceDocumentCreateNestedOneWithoutAnalysisJobsInput
+  aiRuns?: Prisma.AiRunCreateNestedManyWithoutAnalysisJobInput
+}
+
+export type AnalysisJobUncheckedCreateWithoutTargetContextInput = {
+  id: string
+  profileId: string
+  sourceDocumentId?: string | null
+  type: $Enums.AnalysisJobType
+  status?: $Enums.AnalysisJobStatus
+  currentStage?: string
+  progressPercent?: number
+  idempotencyKey: string
+  attemptCount?: number
+  safeErrorCode?: string | null
+  safeErrorMessage?: string | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  aiRuns?: Prisma.AiRunUncheckedCreateNestedManyWithoutAnalysisJobInput
+}
+
+export type AnalysisJobCreateOrConnectWithoutTargetContextInput = {
+  where: Prisma.AnalysisJobWhereUniqueInput
+  create: Prisma.XOR<Prisma.AnalysisJobCreateWithoutTargetContextInput, Prisma.AnalysisJobUncheckedCreateWithoutTargetContextInput>
+}
+
+export type AnalysisJobCreateManyTargetContextInputEnvelope = {
+  data: Prisma.AnalysisJobCreateManyTargetContextInput | Prisma.AnalysisJobCreateManyTargetContextInput[]
+  skipDuplicates?: boolean
+}
+
+export type AnalysisJobUpsertWithWhereUniqueWithoutTargetContextInput = {
+  where: Prisma.AnalysisJobWhereUniqueInput
+  update: Prisma.XOR<Prisma.AnalysisJobUpdateWithoutTargetContextInput, Prisma.AnalysisJobUncheckedUpdateWithoutTargetContextInput>
+  create: Prisma.XOR<Prisma.AnalysisJobCreateWithoutTargetContextInput, Prisma.AnalysisJobUncheckedCreateWithoutTargetContextInput>
+}
+
+export type AnalysisJobUpdateWithWhereUniqueWithoutTargetContextInput = {
+  where: Prisma.AnalysisJobWhereUniqueInput
+  data: Prisma.XOR<Prisma.AnalysisJobUpdateWithoutTargetContextInput, Prisma.AnalysisJobUncheckedUpdateWithoutTargetContextInput>
+}
+
+export type AnalysisJobUpdateManyWithWhereWithoutTargetContextInput = {
+  where: Prisma.AnalysisJobScalarWhereInput
+  data: Prisma.XOR<Prisma.AnalysisJobUpdateManyMutationInput, Prisma.AnalysisJobUncheckedUpdateManyWithoutTargetContextInput>
 }
 
 export type AnalysisJobCreateWithoutSourceDocumentInput = {
@@ -807,12 +940,14 @@ export type AnalysisJobCreateWithoutSourceDocumentInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutAnalysisJobsInput
+  targetContext?: Prisma.TargetContextCreateNestedOneWithoutAnalysisJobsInput
   aiRuns?: Prisma.AiRunCreateNestedManyWithoutAnalysisJobInput
 }
 
 export type AnalysisJobUncheckedCreateWithoutSourceDocumentInput = {
   id: string
   profileId: string
+  targetContextId?: string | null
   type: $Enums.AnalysisJobType
   status?: $Enums.AnalysisJobStatus
   currentStage?: string
@@ -870,12 +1005,14 @@ export type AnalysisJobCreateWithoutAiRunsInput = {
   updatedAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutAnalysisJobsInput
   sourceDocument?: Prisma.SourceDocumentCreateNestedOneWithoutAnalysisJobsInput
+  targetContext?: Prisma.TargetContextCreateNestedOneWithoutAnalysisJobsInput
 }
 
 export type AnalysisJobUncheckedCreateWithoutAiRunsInput = {
   id: string
   profileId: string
   sourceDocumentId?: string | null
+  targetContextId?: string | null
   type: $Enums.AnalysisJobType
   status?: $Enums.AnalysisJobStatus
   currentStage?: string
@@ -922,12 +1059,14 @@ export type AnalysisJobUpdateWithoutAiRunsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutAnalysisJobsNestedInput
   sourceDocument?: Prisma.SourceDocumentUpdateOneWithoutAnalysisJobsNestedInput
+  targetContext?: Prisma.TargetContextUpdateOneWithoutAnalysisJobsNestedInput
 }
 
 export type AnalysisJobUncheckedUpdateWithoutAiRunsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetContextId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumAnalysisJobTypeFieldUpdateOperationsInput | $Enums.AnalysisJobType
   status?: Prisma.EnumAnalysisJobStatusFieldUpdateOperationsInput | $Enums.AnalysisJobStatus
   currentStage?: Prisma.StringFieldUpdateOperationsInput | string
@@ -945,6 +1084,7 @@ export type AnalysisJobUncheckedUpdateWithoutAiRunsInput = {
 export type AnalysisJobCreateManyProfileInput = {
   id: string
   sourceDocumentId?: string | null
+  targetContextId?: string | null
   type: $Enums.AnalysisJobType
   status?: $Enums.AnalysisJobStatus
   currentStage?: string
@@ -974,12 +1114,14 @@ export type AnalysisJobUpdateWithoutProfileInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sourceDocument?: Prisma.SourceDocumentUpdateOneWithoutAnalysisJobsNestedInput
+  targetContext?: Prisma.TargetContextUpdateOneWithoutAnalysisJobsNestedInput
   aiRuns?: Prisma.AiRunUpdateManyWithoutAnalysisJobNestedInput
 }
 
 export type AnalysisJobUncheckedUpdateWithoutProfileInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sourceDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetContextId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumAnalysisJobTypeFieldUpdateOperationsInput | $Enums.AnalysisJobType
   status?: Prisma.EnumAnalysisJobStatusFieldUpdateOperationsInput | $Enums.AnalysisJobStatus
   currentStage?: Prisma.StringFieldUpdateOperationsInput | string
@@ -998,6 +1140,81 @@ export type AnalysisJobUncheckedUpdateWithoutProfileInput = {
 export type AnalysisJobUncheckedUpdateManyWithoutProfileInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sourceDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetContextId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumAnalysisJobTypeFieldUpdateOperationsInput | $Enums.AnalysisJobType
+  status?: Prisma.EnumAnalysisJobStatusFieldUpdateOperationsInput | $Enums.AnalysisJobStatus
+  currentStage?: Prisma.StringFieldUpdateOperationsInput | string
+  progressPercent?: Prisma.IntFieldUpdateOperationsInput | number
+  idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
+  attemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  safeErrorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  safeErrorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type AnalysisJobCreateManyTargetContextInput = {
+  id: string
+  profileId: string
+  sourceDocumentId?: string | null
+  type: $Enums.AnalysisJobType
+  status?: $Enums.AnalysisJobStatus
+  currentStage?: string
+  progressPercent?: number
+  idempotencyKey: string
+  attemptCount?: number
+  safeErrorCode?: string | null
+  safeErrorMessage?: string | null
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type AnalysisJobUpdateWithoutTargetContextInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumAnalysisJobTypeFieldUpdateOperationsInput | $Enums.AnalysisJobType
+  status?: Prisma.EnumAnalysisJobStatusFieldUpdateOperationsInput | $Enums.AnalysisJobStatus
+  currentStage?: Prisma.StringFieldUpdateOperationsInput | string
+  progressPercent?: Prisma.IntFieldUpdateOperationsInput | number
+  idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
+  attemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  safeErrorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  safeErrorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profile?: Prisma.UserProfileUpdateOneRequiredWithoutAnalysisJobsNestedInput
+  sourceDocument?: Prisma.SourceDocumentUpdateOneWithoutAnalysisJobsNestedInput
+  aiRuns?: Prisma.AiRunUpdateManyWithoutAnalysisJobNestedInput
+}
+
+export type AnalysisJobUncheckedUpdateWithoutTargetContextInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumAnalysisJobTypeFieldUpdateOperationsInput | $Enums.AnalysisJobType
+  status?: Prisma.EnumAnalysisJobStatusFieldUpdateOperationsInput | $Enums.AnalysisJobStatus
+  currentStage?: Prisma.StringFieldUpdateOperationsInput | string
+  progressPercent?: Prisma.IntFieldUpdateOperationsInput | number
+  idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
+  attemptCount?: Prisma.IntFieldUpdateOperationsInput | number
+  safeErrorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  safeErrorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aiRuns?: Prisma.AiRunUncheckedUpdateManyWithoutAnalysisJobNestedInput
+}
+
+export type AnalysisJobUncheckedUpdateManyWithoutTargetContextInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumAnalysisJobTypeFieldUpdateOperationsInput | $Enums.AnalysisJobType
   status?: Prisma.EnumAnalysisJobStatusFieldUpdateOperationsInput | $Enums.AnalysisJobStatus
   currentStage?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1015,6 +1232,7 @@ export type AnalysisJobUncheckedUpdateManyWithoutProfileInput = {
 export type AnalysisJobCreateManySourceDocumentInput = {
   id: string
   profileId: string
+  targetContextId?: string | null
   type: $Enums.AnalysisJobType
   status?: $Enums.AnalysisJobStatus
   currentStage?: string
@@ -1044,12 +1262,14 @@ export type AnalysisJobUpdateWithoutSourceDocumentInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutAnalysisJobsNestedInput
+  targetContext?: Prisma.TargetContextUpdateOneWithoutAnalysisJobsNestedInput
   aiRuns?: Prisma.AiRunUpdateManyWithoutAnalysisJobNestedInput
 }
 
 export type AnalysisJobUncheckedUpdateWithoutSourceDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  targetContextId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumAnalysisJobTypeFieldUpdateOperationsInput | $Enums.AnalysisJobType
   status?: Prisma.EnumAnalysisJobStatusFieldUpdateOperationsInput | $Enums.AnalysisJobStatus
   currentStage?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1068,6 +1288,7 @@ export type AnalysisJobUncheckedUpdateWithoutSourceDocumentInput = {
 export type AnalysisJobUncheckedUpdateManyWithoutSourceDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  targetContextId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumAnalysisJobTypeFieldUpdateOperationsInput | $Enums.AnalysisJobType
   status?: Prisma.EnumAnalysisJobStatusFieldUpdateOperationsInput | $Enums.AnalysisJobStatus
   currentStage?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1117,6 +1338,7 @@ export type AnalysisJobSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   id?: boolean
   profileId?: boolean
   sourceDocumentId?: boolean
+  targetContextId?: boolean
   type?: boolean
   status?: boolean
   currentStage?: boolean
@@ -1131,6 +1353,7 @@ export type AnalysisJobSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   updatedAt?: boolean
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   sourceDocument?: boolean | Prisma.AnalysisJob$sourceDocumentArgs<ExtArgs>
+  targetContext?: boolean | Prisma.AnalysisJob$targetContextArgs<ExtArgs>
   aiRuns?: boolean | Prisma.AnalysisJob$aiRunsArgs<ExtArgs>
   _count?: boolean | Prisma.AnalysisJobCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["analysisJob"]>
@@ -1139,6 +1362,7 @@ export type AnalysisJobSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   id?: boolean
   profileId?: boolean
   sourceDocumentId?: boolean
+  targetContextId?: boolean
   type?: boolean
   status?: boolean
   currentStage?: boolean
@@ -1153,12 +1377,14 @@ export type AnalysisJobSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   updatedAt?: boolean
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   sourceDocument?: boolean | Prisma.AnalysisJob$sourceDocumentArgs<ExtArgs>
+  targetContext?: boolean | Prisma.AnalysisJob$targetContextArgs<ExtArgs>
 }, ExtArgs["result"]["analysisJob"]>
 
 export type AnalysisJobSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   profileId?: boolean
   sourceDocumentId?: boolean
+  targetContextId?: boolean
   type?: boolean
   status?: boolean
   currentStage?: boolean
@@ -1173,12 +1399,14 @@ export type AnalysisJobSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   updatedAt?: boolean
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   sourceDocument?: boolean | Prisma.AnalysisJob$sourceDocumentArgs<ExtArgs>
+  targetContext?: boolean | Prisma.AnalysisJob$targetContextArgs<ExtArgs>
 }, ExtArgs["result"]["analysisJob"]>
 
 export type AnalysisJobSelectScalar = {
   id?: boolean
   profileId?: boolean
   sourceDocumentId?: boolean
+  targetContextId?: boolean
   type?: boolean
   status?: boolean
   currentStage?: boolean
@@ -1193,20 +1421,23 @@ export type AnalysisJobSelectScalar = {
   updatedAt?: boolean
 }
 
-export type AnalysisJobOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "profileId" | "sourceDocumentId" | "type" | "status" | "currentStage" | "progressPercent" | "idempotencyKey" | "attemptCount" | "safeErrorCode" | "safeErrorMessage" | "startedAt" | "completedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["analysisJob"]>
+export type AnalysisJobOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "profileId" | "sourceDocumentId" | "targetContextId" | "type" | "status" | "currentStage" | "progressPercent" | "idempotencyKey" | "attemptCount" | "safeErrorCode" | "safeErrorMessage" | "startedAt" | "completedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["analysisJob"]>
 export type AnalysisJobInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   sourceDocument?: boolean | Prisma.AnalysisJob$sourceDocumentArgs<ExtArgs>
+  targetContext?: boolean | Prisma.AnalysisJob$targetContextArgs<ExtArgs>
   aiRuns?: boolean | Prisma.AnalysisJob$aiRunsArgs<ExtArgs>
   _count?: boolean | Prisma.AnalysisJobCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AnalysisJobIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   sourceDocument?: boolean | Prisma.AnalysisJob$sourceDocumentArgs<ExtArgs>
+  targetContext?: boolean | Prisma.AnalysisJob$targetContextArgs<ExtArgs>
 }
 export type AnalysisJobIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   sourceDocument?: boolean | Prisma.AnalysisJob$sourceDocumentArgs<ExtArgs>
+  targetContext?: boolean | Prisma.AnalysisJob$targetContextArgs<ExtArgs>
 }
 
 export type $AnalysisJobPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1214,12 +1445,14 @@ export type $AnalysisJobPayload<ExtArgs extends runtime.Types.Extensions.Interna
   objects: {
     profile: Prisma.$UserProfilePayload<ExtArgs>
     sourceDocument: Prisma.$SourceDocumentPayload<ExtArgs> | null
+    targetContext: Prisma.$TargetContextPayload<ExtArgs> | null
     aiRuns: Prisma.$AiRunPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     profileId: string
     sourceDocumentId: string | null
+    targetContextId: string | null
     type: $Enums.AnalysisJobType
     status: $Enums.AnalysisJobStatus
     currentStage: string
@@ -1628,6 +1861,7 @@ export interface Prisma__AnalysisJobClient<T, Null = never, ExtArgs extends runt
   readonly [Symbol.toStringTag]: "PrismaPromise"
   profile<T extends Prisma.UserProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__UserProfileClient<runtime.Types.Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   sourceDocument<T extends Prisma.AnalysisJob$sourceDocumentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AnalysisJob$sourceDocumentArgs<ExtArgs>>): Prisma.Prisma__SourceDocumentClient<runtime.Types.Result.GetResult<Prisma.$SourceDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  targetContext<T extends Prisma.AnalysisJob$targetContextArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AnalysisJob$targetContextArgs<ExtArgs>>): Prisma.Prisma__TargetContextClient<runtime.Types.Result.GetResult<Prisma.$TargetContextPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   aiRuns<T extends Prisma.AnalysisJob$aiRunsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AnalysisJob$aiRunsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AiRunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1661,6 +1895,7 @@ export interface AnalysisJobFieldRefs {
   readonly id: Prisma.FieldRef<"AnalysisJob", 'String'>
   readonly profileId: Prisma.FieldRef<"AnalysisJob", 'String'>
   readonly sourceDocumentId: Prisma.FieldRef<"AnalysisJob", 'String'>
+  readonly targetContextId: Prisma.FieldRef<"AnalysisJob", 'String'>
   readonly type: Prisma.FieldRef<"AnalysisJob", 'AnalysisJobType'>
   readonly status: Prisma.FieldRef<"AnalysisJob", 'AnalysisJobStatus'>
   readonly currentStage: Prisma.FieldRef<"AnalysisJob", 'String'>
@@ -2090,6 +2325,25 @@ export type AnalysisJob$sourceDocumentArgs<ExtArgs extends runtime.Types.Extensi
    */
   include?: Prisma.SourceDocumentInclude<ExtArgs> | null
   where?: Prisma.SourceDocumentWhereInput
+}
+
+/**
+ * AnalysisJob.targetContext
+ */
+export type AnalysisJob$targetContextArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TargetContext
+   */
+  select?: Prisma.TargetContextSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TargetContext
+   */
+  omit?: Prisma.TargetContextOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TargetContextInclude<ExtArgs> | null
+  where?: Prisma.TargetContextWhereInput
 }
 
 /**

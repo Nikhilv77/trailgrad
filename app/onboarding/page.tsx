@@ -9,6 +9,7 @@ import {
   requireAuthenticatedUser,
 } from "@/lib/auth/server";
 import { getReconciledOnboardingState } from "@/lib/services/onboarding-analysis-status-service";
+import { OnboardingSubmissionSchema } from "@/lib/validators/profile";
 
 export const metadata: Metadata = {
   title: "Build your workspace",
@@ -39,7 +40,10 @@ export default async function OnboardingPage({
   });
   const onboardingState = await getReconciledOnboardingState(user.userId);
 
-  if (onboardingState.status === "completed") {
+  if (
+    onboardingState.status === "completed" &&
+    OnboardingSubmissionSchema.safeParse(onboardingState.onboarding).success
+  ) {
     redirect(DEFAULT_AUTHENTICATED_ROUTE);
   }
 

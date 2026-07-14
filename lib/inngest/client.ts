@@ -5,6 +5,7 @@ import type { AnalysisJobType } from "@/lib/analysis/types";
 export type ProfileAnalysisRequestedEventData = {
   profileId: string;
   sourceDocumentId?: string | null;
+  targetContextId?: string | null;
   type: AnalysisJobType;
   idempotencyKey: string;
 } & Record<string, unknown>;

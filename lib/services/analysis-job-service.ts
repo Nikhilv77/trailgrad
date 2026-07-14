@@ -17,6 +17,7 @@ import { AnalysisJobError, analysisJobStages } from "@/lib/analysis/types";
 export interface RequestAnalysisJobInput {
   profileId: string;
   sourceDocumentId?: string | null;
+  targetContextId?: string | null;
   type: AnalysisJobType;
   idempotencyKey?: string;
 }
@@ -51,6 +52,7 @@ export async function requestAnalysisJob(
   return createAnalysisJobRecord({
     profileId: input.profileId,
     sourceDocumentId: input.sourceDocumentId ?? null,
+    targetContextId: input.targetContextId ?? null,
     type: input.type,
     idempotencyKey,
   });

@@ -19,7 +19,6 @@ const profileAnalysisRepo = vi.hoisted(() => ({
   reserveProfileAnalysisRecord: vi.fn(),
 }));
 const profileService = vi.hoisted(() => ({
-  markOnboardingCompleted: vi.fn(),
   markOnboardingFailed: vi.fn(),
 }));
 const providerFactory = vi.hoisted(() => ({
@@ -35,18 +34,14 @@ vi.mock("@/lib/ai/provider-factory", () => providerFactory);
 const onboarding: OnboardingSubmission = {
   targetRole: "ai-engineer",
   experienceLevel: "junior",
-  noDateYet: true,
-  preparationTimePerDay: "30",
-  preparationIntensity: "standard",
   resumeName: "resume.pdf",
-  targetJobMode: "skip",
-  projectsMode: "skip",
 };
 
 const job = {
   id: "job_1",
   profileId: "profile_1",
   sourceDocumentId: "source_1",
+  targetContextId: null,
   type: "INITIAL_PROFILE" as const,
   status: "QUEUED" as const,
   currentStage: "resume_analysis" as const,
@@ -221,7 +216,7 @@ beforeEach(() => {
     targetContextId: null,
     status: "PENDING",
     result: null,
-    promptVersion: "mvp-profile-analysis-v3-alignment",
+    promptVersion: "mvp-profile-analysis-v4-trail-focus",
     provider: "pending",
     model: "pending",
     safeErrorCode: null,
@@ -243,7 +238,6 @@ beforeEach(() => {
     updatedAt: "2026-01-01T00:00:01.000Z",
   }));
   profileAnalysisRepo.failProfileAnalysisRecord.mockResolvedValue(undefined);
-  profileService.markOnboardingCompleted.mockResolvedValue(undefined);
   profileService.markOnboardingFailed.mockResolvedValue(undefined);
   providerFactory.getAIProvider.mockReturnValue({
     generateStructured: vi.fn(async () => ({
@@ -281,10 +275,7 @@ describe("MVP profile analysis workflow", () => {
         model: "gemini-test",
       }),
     );
-    expect(profileService.markOnboardingCompleted).toHaveBeenCalledWith(
-      "profile_1",
-      onboarding,
-    );
+    expect(profileService.markOnboardingFailed).not.toHaveBeenCalled();
   });
 
   it("includes optional JD context when present", async () => {
@@ -396,7 +387,7 @@ describe("MVP profile analysis workflow", () => {
       targetContextId: null,
       status: "COMPLETED",
       result: validAnalysis,
-      promptVersion: "mvp-profile-analysis-v3-alignment",
+      promptVersion: "mvp-profile-analysis-v4-trail-focus",
       provider: "gemini",
       model: "gemini-test",
       safeErrorCode: null,

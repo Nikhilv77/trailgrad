@@ -23,6 +23,7 @@ export const profileAnalysisRequestedFunction = inngest.createFunction(
       requestAnalysisJob({
         profileId: event.data.profileId,
         sourceDocumentId: event.data.sourceDocumentId ?? null,
+        targetContextId: event.data.targetContextId ?? null,
         type: event.data.type,
         idempotencyKey: event.data.idempotencyKey,
       }),

@@ -50,6 +50,7 @@ Current core database areas include:
 
 - User profiles and onboarding state.
 - Career and target context.
+- Trail records for jobs, interviews, and learning goals.
 - Retained onboarding data model tables.
 - Private source documents and resume versions.
 - Durable analysis jobs.
@@ -60,14 +61,18 @@ Current implemented product features include:
 
 - Marketing landing page.
 - Clerk auth and auth-aware redirects.
-- Authenticated onboarding.
+- Authenticated resume-first onboarding.
 - Private resume upload, extraction, dedupe, versioning, and resume-likeness validation.
-- Durable initial profile analysis jobs through Inngest.
+- Completed-user trail creation, including multiple trails per profile.
+- Job/interview and learning-goal trail focus.
+- Durable trail analysis jobs through Inngest.
 - Gemini structured-output MVP profile analysis.
 - Target-alignment classification in analysis results.
-- Today dashboard for the latest completed analysis.
-- Completed-profile reanalysis for updated target/JD/prep settings.
-- Dashboard skeleton loading while reanalysis runs.
+- Today dashboard for the selected trail's completed analysis.
+- Trail list and dropdown switching inside the Today dashboard.
+- Profile settings for active resume, target role, and experience defaults.
+- Today empty/workspace states for users with no completed trail analysis.
+- Dashboard/workspace loading while trail analysis runs.
 
 ## Background Jobs
 
@@ -99,6 +104,7 @@ The current implemented provider is Gemini. Workflows import `getAIProvider()` r
 - Original resume files are stored privately outside Neon.
 - Extracted text is stored in resume version records for server-side analysis.
 - Final onboarding uses server-side active resume metadata rather than trusting browser-submitted resume metadata.
+- Profile resume updates reuse the same authenticated upload and validation pipeline.
 
 ## Validation and Schemas
 

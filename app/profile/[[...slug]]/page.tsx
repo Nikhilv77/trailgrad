@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 
+import { ProfileSettings } from "@/components/profile/profile-settings";
+import { requireCompletedOnboarding } from "@/lib/auth/server";
 import {
-  DEFAULT_AUTHENTICATED_ROUTE,
-  requireCompletedOnboarding,
-} from "@/lib/auth/server";
+  getOnboardingState,
+  listResumeVersions,
+} from "@/lib/services/profile-service";
 
 export const metadata: Metadata = {
   title: "Profile",
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
     follow: false,
   },
 };
+
+export const dynamic = "force-dynamic";
 
 interface ProfilePageProps {
   params?: Promise<{
@@ -29,7 +32,21 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       ? `/profile/${slug.map(encodeURIComponent).join("/")}`
       : "/profile";
 
-  await requireCompletedOnboarding({ currentPath });
+  const user = await requireCompletedOnboarding({ currentPath });
+  const [state, resumeVersions] = await Promise.all([
+    getOnboardingState(user.userId),
+    listResumeVersions(user.userId),
+  ]);
+  const activeResume = resumeVersions.find((version) => version.active);
 
-  redirect(DEFAULT_AUTHENTICATED_ROUTE);
+  return (
+    <ProfileSettings
+      initialExperienceLevel={state.onboarding?.experienceLevel ?? "mid-level"}
+      initialResumeName={
+        state.onboarding?.resumeName ??
+        (activeResume ? `Resume version ${activeResume.version}` : undefined)
+      }
+      initialTargetRole={state.onboarding?.targetRole ?? "software-engineer"}
+    />
+  );
 }

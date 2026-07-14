@@ -15,6 +15,13 @@ export const onboardingTargetRoles = [
   "product",
 ] as const;
 
+export const profileExperienceLevels = [
+  "student-new-graduate",
+  "junior",
+  "mid-level",
+  "senior",
+] as const;
+
 export const UserProfileSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -27,14 +34,15 @@ export const UserProfileSchema = z.object({
   preferredFeedbackStyle: z.enum(["Friendly Coach", "Strict Interviewer", "Senior Engineer", "HR Style"]),
 });
 
-const OnboardingSubmissionBaseSchema = z.object({
+export const ApplicationSubmissionSchema = z.object({
+  trailFocus: z.enum(["job", "learning"]).default("job"),
   targetRole: z.enum(onboardingTargetRoles, {
     message: "Choose a supported target role.",
   }),
   experienceLevel: z.string().trim().min(1, "Choose your current experience level.").max(80),
   targetCompany: z.string().trim().max(120).optional(),
   targetJobTitle: z.string().trim().max(120).optional(),
-  interviewDate: z.string().trim().max(20).optional(),
+  applicationDate: z.string().trim().max(20).optional(),
   noDateYet: z.boolean().optional(),
   preparationTimePerDay: z.enum(["15", "30", "60", "flexible"], {
     message: "Choose your daily preparation time.",
@@ -47,47 +55,84 @@ const OnboardingSubmissionBaseSchema = z.object({
   resumeSize: z.number().optional(),
   resumeUploadedAt: z.string().trim().max(80).optional(),
   targetJobMode: z.enum(["paste", "skip"], {
-    message: "Choose whether to add a target job.",
+    message: "Choose whether to add target details.",
   }),
   jobDescription: z.string().trim().max(12_000).optional(),
-  projectsMode: z.enum(["manual", "github_later", "skip"], {
-    message: "Choose how you want to handle projects.",
+}).superRefine((value, context) => {
+  if (!value.noDateYet && !value.applicationDate) {
+    context.addIssue({
+      code: "custom",
+      message: "Choose a date or select that you do not have one yet.",
+      path: ["applicationDate"],
+    });
+  }
+
+  if (value.targetJobMode === "paste" && !value.jobDescription?.trim()) {
+    const targetDetailsLabel =
+      value.trailFocus === "learning" ? "learning details" : "job description";
+
+    context.addIssue({
+      code: "custom",
+      message: `Add ${targetDetailsLabel} or choose to skip details.`,
+      path: ["jobDescription"],
+    });
+  }
+});
+
+export const ApplicationRequestSchema = z.object({
+  trailFocus: z.enum(["job", "learning"]).default("job"),
+  targetCompany: z.string().trim().max(120).optional(),
+  targetJobTitle: z.string().trim().max(120).optional(),
+  applicationDate: z.string().trim().max(20).optional(),
+  noDateYet: z.boolean().optional(),
+  preparationTimePerDay: z.enum(["15", "30", "60", "flexible"], {
+    message: "Choose your daily preparation time.",
   }),
-  projectName: z.string().trim().max(160).optional(),
-  projectDescription: z.string().trim().max(2_000).optional(),
-  projectTechStack: z.string().trim().max(600).optional(),
+  preparationIntensity: z.enum(["light", "standard", "intensive"], {
+    message: "Choose a preparation intensity.",
+  }),
+  targetJobMode: z.enum(["paste", "skip"], {
+    message: "Choose whether to add target details.",
+  }),
+  jobDescription: z.string().trim().max(12_000).optional(),
+}).superRefine((value, context) => {
+  if (!value.noDateYet && !value.applicationDate) {
+    context.addIssue({
+      code: "custom",
+      message: "Choose a date or select that you do not have one yet.",
+      path: ["applicationDate"],
+    });
+  }
+
+  if (value.targetJobMode === "paste" && !value.jobDescription?.trim()) {
+    const targetDetailsLabel =
+      value.trailFocus === "learning" ? "learning details" : "job description";
+
+    context.addIssue({
+      code: "custom",
+      message: `Add ${targetDetailsLabel} or choose to skip details.`,
+      path: ["jobDescription"],
+    });
+  }
+});
+
+const OnboardingSubmissionBaseSchema = z.object({
+  targetRole: z.enum(onboardingTargetRoles, {
+    message: "Choose a supported target role.",
+  }),
+  experienceLevel: z.string().trim().min(1, "Choose your current experience level.").max(80),
+  resumeName: z.string().trim().max(255).optional(),
+  resumeContentType: z.string().trim().max(120).optional(),
+  resumeSize: z.number().optional(),
+  resumeUploadedAt: z.string().trim().max(80).optional(),
 });
 
 export const OnboardingSubmissionSchema = OnboardingSubmissionBaseSchema.superRefine((value, context) => {
   if (!value.resumeName) {
     context.addIssue({
       code: "custom",
-      message: "Upload a resume before building your Trailgrad profile.",
+      message: "Upload a resume before entering your Trailgrad workspace.",
       path: ["resumeName"],
-    });
-  }
-
-  if (!value.noDateYet && !value.interviewDate) {
-    context.addIssue({
-      code: "custom",
-      message: "Choose a date or select that you do not have one yet.",
-      path: ["interviewDate"],
-    });
-  }
-
-  if (value.targetJobMode === "paste" && !value.jobDescription?.trim()) {
-    context.addIssue({
-      code: "custom",
-      message: "Paste a job description or choose to skip the target job.",
-      path: ["jobDescription"],
-    });
-  }
-
-  if (value.projectsMode === "manual" && !value.projectName?.trim()) {
-    context.addIssue({
-      code: "custom",
-      message: "Add a project name or choose to skip projects for now.",
-      path: ["projectName"],
     });
   }
 });
@@ -102,4 +147,13 @@ export const PartialOnboardingSubmissionSchema =
 export const OnboardingStepUpdateSchema = z.object({
   currentStep: OnboardingStepSchema,
   onboarding: PartialOnboardingSubmissionSchema,
+});
+
+export const ProfileSettingsUpdateSchema = z.object({
+  targetRole: z.enum(onboardingTargetRoles, {
+    message: "Choose a supported target role.",
+  }),
+  experienceLevel: z.enum(profileExperienceLevels, {
+    message: "Choose a supported experience level.",
+  }),
 });

@@ -21,6 +21,7 @@ export interface AnalysisJobRecord {
   id: string;
   profileId: string;
   sourceDocumentId: string | null;
+  targetContextId: string | null;
   type: AnalysisJobType;
   status: AnalysisJobStatus;
   currentStage: AnalysisJobStage;
@@ -46,6 +47,7 @@ export class AnalysisJobError extends Error {
       | "ANALYSIS_JOB_NOT_FOUND"
       | "ANALYSIS_JOB_SOURCE_NOT_FOUND"
       | "ANALYSIS_JOB_SOURCE_NOT_OWNED"
+      | "ANALYSIS_JOB_TARGET_NOT_OWNED"
       | "ANALYSIS_JOB_INVALID_STAGE"
       | "ANALYSIS_JOB_FAILED",
     message: string,

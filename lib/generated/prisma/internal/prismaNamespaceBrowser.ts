@@ -57,6 +57,7 @@ export const ModelName = {
   ManualProject: 'ManualProject',
   SourceDocument: 'SourceDocument',
   AnalysisJob: 'AnalysisJob',
+  JobApplication: 'JobApplication',
   AiRun: 'AiRun',
   ResumeVersion: 'ResumeVersion',
   ProfileAnalysis: 'ProfileAnalysis'
@@ -115,6 +116,7 @@ export type CareerContextScalarFieldEnum = (typeof CareerContextScalarFieldEnum)
 export const TargetContextScalarFieldEnum = {
   id: 'id',
   profileId: 'profileId',
+  trailFocus: 'trailFocus',
   role: 'role',
   company: 'company',
   jobTitle: 'jobTitle',
@@ -165,6 +167,7 @@ export const AnalysisJobScalarFieldEnum = {
   id: 'id',
   profileId: 'profileId',
   sourceDocumentId: 'sourceDocumentId',
+  targetContextId: 'targetContextId',
   type: 'type',
   status: 'status',
   currentStage: 'currentStage',
@@ -180,6 +183,29 @@ export const AnalysisJobScalarFieldEnum = {
 } as const
 
 export type AnalysisJobScalarFieldEnum = (typeof AnalysisJobScalarFieldEnum)[keyof typeof AnalysisJobScalarFieldEnum]
+
+
+export const JobApplicationScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  targetContextId: 'targetContextId',
+  trailFocus: 'trailFocus',
+  targetRole: 'targetRole',
+  experienceLevel: 'experienceLevel',
+  targetCompany: 'targetCompany',
+  targetJobTitle: 'targetJobTitle',
+  applicationDate: 'applicationDate',
+  noDateYet: 'noDateYet',
+  preparationTimePerDay: 'preparationTimePerDay',
+  preparationIntensity: 'preparationIntensity',
+  targetJobMode: 'targetJobMode',
+  jobDescription: 'jobDescription',
+  analysisJobId: 'analysisJobId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type JobApplicationScalarFieldEnum = (typeof JobApplicationScalarFieldEnum)[keyof typeof JobApplicationScalarFieldEnum]
 
 
 export const AiRunScalarFieldEnum = {

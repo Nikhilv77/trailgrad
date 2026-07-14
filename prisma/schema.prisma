@@ -26,6 +26,7 @@ model UserProfile {
   analysisJobs    AnalysisJob[]
   aiRuns          AiRun[]
   profileAnalyses ProfileAnalysis[]
+  jobApplications JobApplication[]
 
   @@index([onboardingStatus], map: "user_profiles_onboarding_status_idx")
   @@index([currentOnboardingStep], map: "user_profiles_current_onboarding_step_idx")
@@ -76,6 +77,7 @@ model CareerContext {
 model TargetContext {
   id             String      @id
   profileId      String      @map("profile_id")
+  trailFocus     String      @default("job") @map("trail_focus")
   role           String
   company        String?
   jobTitle       String?     @map("job_title")
@@ -85,6 +87,8 @@ model TargetContext {
   updatedAt      DateTime    @default(now()) @map("updated_at") @db.Timestamptz(6)
   profile        UserProfile @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
   profileAnalyses ProfileAnalysis[]
+  analysisJobs   AnalysisJob[]
+  jobApplication JobApplication?
 
   @@index([profileId], map: "target_contexts_profile_id_idx")
   @@map("target_contexts")
@@ -136,6 +140,7 @@ model AnalysisJob {
   id               String            @id
   profileId        String            @map("profile_id")
   sourceDocumentId String?           @map("source_document_id")
+  targetContextId  String?           @map("target_context_id")
   type             AnalysisJobType
   status           AnalysisJobStatus @default(QUEUED)
   currentStage     String            @default("resume_analysis") @map("current_stage")
@@ -150,13 +155,40 @@ model AnalysisJob {
   updatedAt        DateTime          @default(now()) @map("updated_at") @db.Timestamptz(6)
   profile          UserProfile       @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
   sourceDocument   SourceDocument?   @relation(fields: [sourceDocumentId], references: [id], onDelete: Restrict)
+  targetContext    TargetContext?    @relation(fields: [targetContextId], references: [id], onDelete: SetNull)
   aiRuns           AiRun[]
 
   @@index([profileId, status], map: "analysis_jobs_profile_status_idx")
   @@index([sourceDocumentId], map: "analysis_jobs_source_document_id_idx")
+  @@index([targetContextId], map: "analysis_jobs_target_context_id_idx")
   @@index([type, status], map: "analysis_jobs_type_status_idx")
   @@index([createdAt], map: "analysis_jobs_created_at_idx")
   @@map("analysis_jobs")
+}
+
+model JobApplication {
+  id                    String         @id
+  profileId             String         @map("profile_id")
+  targetContextId       String?        @unique(map: "job_applications_target_context_id_idx") @map("target_context_id")
+  trailFocus            String         @default("job") @map("trail_focus")
+  targetRole            String         @map("target_role")
+  experienceLevel       String         @map("experience_level")
+  targetCompany         String?        @map("target_company")
+  targetJobTitle        String?        @map("target_job_title")
+  applicationDate       DateTime?      @map("application_date") @db.Date
+  noDateYet             Boolean        @default(false) @map("no_date_yet")
+  preparationTimePerDay String         @map("preparation_time_per_day")
+  preparationIntensity  String         @map("preparation_intensity")
+  targetJobMode         String         @default("skip") @map("target_job_mode")
+  jobDescription        String?        @map("job_description")
+  analysisJobId         String?        @map("analysis_job_id")
+  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime       @default(now()) @map("updated_at") @db.Timestamptz(6)
+  profile               UserProfile    @relation(fields: [profileId], references: [clerkUserId], onDelete: Cascade)
+  targetContext         TargetContext? @relation(fields: [targetContextId], references: [id], onDelete: SetNull)
+
+  @@index([profileId, createdAt], map: "job_applications_profile_created_at_idx")
+  @@map("job_applications")
 }
 
 model AiRun {

@@ -40,6 +40,7 @@ export interface MVPAnalysisInputContext {
   } | null;
   targetContext: {
     id: string;
+    trailFocus: "job" | "learning";
     role: string;
     company: string | null;
     jobTitle: string | null;
@@ -67,6 +68,7 @@ function toProfileAnalysisRecord(row: ProfileAnalysis): ProfileAnalysisRecord {
 export async function loadMVPAnalysisInputContextRecord(input: {
   profileId: string;
   sourceDocumentId?: string | null;
+  targetContextId?: string | null;
 }): Promise<MVPAnalysisInputContext | null> {
   await ensureProfilesTable();
 
@@ -77,9 +79,13 @@ export async function loadMVPAnalysisInputContextRecord(input: {
     include: {
       careerContext: true,
       targetContexts: {
-        where: {
-          isActive: true,
-        },
+        where: input.targetContextId
+          ? {
+              id: input.targetContextId,
+            }
+          : {
+              isActive: true,
+            },
         take: 1,
       },
       resumeVersions: {
@@ -133,6 +139,7 @@ export async function loadMVPAnalysisInputContextRecord(input: {
     targetContext: targetContext
       ? {
           id: targetContext.id,
+          trailFocus: targetContext.trailFocus as "job" | "learning",
           role: targetContext.role,
           company: targetContext.company,
           jobTitle: targetContext.jobTitle,
@@ -166,6 +173,29 @@ export async function findLatestCompletedProfileAnalysisRecord(profileId: string
   const row = await prisma.profileAnalysis.findFirst({
     where: {
       profileId,
+      status: "COMPLETED",
+      result: {
+        not: PrismaNamespace.JsonNull,
+      },
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+
+  return row ? toProfileAnalysisRecord(row) : null;
+}
+
+export async function findLatestCompletedProfileAnalysisForTargetContextRecord(input: {
+  profileId: string;
+  targetContextId: string;
+}) {
+  await ensureProfilesTable();
+
+  const row = await prisma.profileAnalysis.findFirst({
+    where: {
+      profileId: input.profileId,
+      targetContextId: input.targetContextId,
       status: "COMPLETED",
       result: {
         not: PrismaNamespace.JsonNull,

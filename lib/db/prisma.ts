@@ -10,6 +10,8 @@ const globalForPrisma = globalThis as typeof globalThis & {
   trailgradPrismaWs?: PrismaClient;
 };
 
+const requiredPrismaDelegates = ["jobApplication"] as const;
+
 function getDatabaseUrl() {
   const databaseUrl = process.env.DATABASE_URL;
 
@@ -20,13 +22,31 @@ function getDatabaseUrl() {
   return databaseUrl;
 }
 
-export const prisma =
-  globalForPrisma.trailgradPrismaWs ??
-  new PrismaClient({
+function hasRequiredPrismaDelegates(client: PrismaClient | undefined) {
+  if (!client) {
+    return false;
+  }
+
+  const candidate = client as PrismaClient & Record<string, unknown>;
+
+  return requiredPrismaDelegates.every((delegate) => Boolean(candidate[delegate]));
+}
+
+const cachedPrisma = globalForPrisma.trailgradPrismaWs;
+
+if (cachedPrisma && !hasRequiredPrismaDelegates(cachedPrisma)) {
+  void cachedPrisma.$disconnect().catch(() => undefined);
+}
+
+const prismaClient: PrismaClient = cachedPrisma && hasRequiredPrismaDelegates(cachedPrisma)
+  ? cachedPrisma
+  : new PrismaClient({
     adapter: new PrismaNeon({
       connectionString: getDatabaseUrl(),
     }),
   });
+
+export const prisma = prismaClient;
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.trailgradPrismaWs = prisma;

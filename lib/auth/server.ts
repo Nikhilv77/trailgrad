@@ -27,6 +27,7 @@ const appRoutePrefixes = [
   "/projects",
   "/practice",
   "/profile",
+  "/trails",
 ] as const;
 
 const hasClerkServerConfig = Boolean(
@@ -164,34 +165,65 @@ export async function redirectAuthenticatedUserAppropriately(options?: {
   requestedRedirectUrl?: string | null;
   redirectSignedOut?: boolean;
 }) {
-  const requestedRedirectUrl = getSafeAppRedirectPath(
-    options?.requestedRedirectUrl,
-  );
+  const entryPath = await getAuthenticatedUserAppEntryPath({
+    requestedRedirectUrl: options?.requestedRedirectUrl,
+  });
   const redirectSignedOut = options?.redirectSignedOut ?? true;
 
-  if (!hasClerkServerConfig) {
+  if (!entryPath.authenticated) {
     if (redirectSignedOut) {
-      redirect(withRedirectParam(AUTH_ROUTE, requestedRedirectUrl));
+      redirect(entryPath.redirectPath);
     }
 
     return null;
+  }
+
+  redirect(entryPath.redirectPath);
+}
+
+export async function getAuthenticatedUserAppEntryPath(options?: {
+  requestedRedirectUrl?: string | null;
+}): Promise<
+  | {
+      authenticated: true;
+      redirectPath: string;
+    }
+  | {
+      authenticated: false;
+      redirectPath: string;
+    }
+> {
+  const requestedRedirectUrl = getSafeAppRedirectPath(
+    options?.requestedRedirectUrl,
+  );
+
+  if (!hasClerkServerConfig) {
+    return {
+      authenticated: false,
+      redirectPath: withRedirectParam(AUTH_ROUTE, requestedRedirectUrl),
+    };
   }
 
   const authObject = await auth();
 
   if (!authObject.userId) {
-    if (redirectSignedOut) {
-      redirect(withRedirectParam(AUTH_ROUTE, requestedRedirectUrl));
-    }
-
-    return null;
+    return {
+      authenticated: false,
+      redirectPath: withRedirectParam(AUTH_ROUTE, requestedRedirectUrl),
+    };
   }
 
   const onboardingStatus = await readOnboardingStatus(authObject.userId);
 
   if (!onboardingStatus.completed) {
-    redirect(withRedirectParam(ONBOARDING_ROUTE, requestedRedirectUrl));
+    return {
+      authenticated: true,
+      redirectPath: withRedirectParam(ONBOARDING_ROUTE, requestedRedirectUrl),
+    };
   }
 
-  redirect(requestedRedirectUrl ?? DEFAULT_AUTHENTICATED_ROUTE);
+  return {
+    authenticated: true,
+    redirectPath: requestedRedirectUrl ?? DEFAULT_AUTHENTICATED_ROUTE,
+  };
 }

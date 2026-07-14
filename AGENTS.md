@@ -7,17 +7,21 @@ Already implemented and working:
 - Clerk authentication
 - sign-in and sign-up
 - protected auth routing with onboarding/completed-user redirects
-- an existing onboarding interface after authentication
+- a resume-first onboarding interface after authentication
 - private resume upload for PDF and DOCX
 - server-side resume extraction and versioning
 - deterministic resume-likeness checks that reject unrelated documents
 - durable Inngest analysis jobs
 - server-only AI provider foundation using Gemini through `getAIProvider()`
 - MVP structured profile analysis stored in `profile_analyses`
-- Today dashboard that renders the latest completed analysis
+- trail creation after onboarding
+- reusable `/trails/new` trail setup route
+- Today dashboard that renders the selected trail's completed analysis
+- Today sidebar/dropdown trail switching
+- profile settings for active resume, target role, and experience defaults
 - target-alignment output inside the analysis result
-- completed-user reanalysis flow at `/today/reanalyze`
-- dashboard skeleton loading while reanalysis runs
+- completed-user trail analysis flow at `/trails/new`
+- `/trails/preparing` loading handoff while trail analysis runs
 - app-level not-found and error pages
 
 Important rules:
@@ -63,28 +67,37 @@ Current implemented product flow:
 1. Public users land on `/`.
 2. Clerk handles authentication at `/auth`.
 3. Incomplete authenticated users go to `/onboarding`.
-4. Onboarding collects target role, experience level, timeline, resume, optional JD, and review.
+4. Onboarding collects default target role/domain, experience level, resume, and review.
 5. Resume upload stores the original file in private S3-compatible storage and extracted text in `resume_versions`.
 6. Final onboarding submission uses the authenticated user's active extracted resume. The server hydrates resume metadata from `source_documents`; it does not trust client-submitted resume filename/size/type.
-7. Final onboarding creates an idempotent `INITIAL_PROFILE` `AnalysisJob` and sends `trailgrad/profile.analysis.requested`.
-8. Inngest runs the MVP profile analysis using the server-only AI provider boundary.
-9. The structured result is validated with Zod and stored in `profile_analyses`.
-10. Successful initial analysis marks onboarding completed and sends the user to `/today`.
-11. Completed users can update target/JD/prep settings at `/today/reanalyze`.
-12. Reanalysis creates a `JOB_ANALYSIS` job and keeps the existing dashboard behind a skeleton while the new job runs.
+7. Final onboarding marks onboarding completed, shows the `/onboarding/analyzing` handoff, and sends the user to `/trails/new`.
+8. Completed users with no trail are redirected from `/today` to `/trails/new`.
+9. Completed users create trails at `/trails/new`; `/today/applications/new` is a compatibility redirect.
+10. A trail can be job/interview-focused or learning-focused, and collects company/topic, title/goal, timeline, prep time/intensity, and optional pasted details while using profile role/domain and experience defaults.
+11. Trail creation persists a `job_applications` row, updates the active career/target context, creates an idempotent `JOB_ANALYSIS` `AnalysisJob`, and sends `trailgrad/profile.analysis.requested`.
+12. Inngest runs the MVP profile analysis using the server-only AI provider boundary.
+13. The structured result is validated with Zod and stored in `profile_analyses`.
+14. `/trails/preparing` shows a loading handoff while analysis runs and sends the user to `/today?trail=...` when ready.
+15. `/today` lists all trails, lets users switch selected trail, renders the selected trail's dashboard, and links to new trail creation and profile settings.
+16. `/profile` lets completed users update their active resume, target role/domain, and experience defaults without rewriting existing trail snapshots.
 
 Current protected routes:
 
-- `/today` - implemented dashboard
-- `/today/reanalyze` - implemented reanalysis form
+- `/today` - implemented selected-trail dashboard
+- `/trails/new` - implemented reusable trail creation flow
+- `/trails/preparing` - implemented trail loading handoff
+- `/today/applications/new` - compatibility redirect to `/trails/new`
+- `/today/reanalyze` - compatibility redirect to `/trails/new`
+- `/profile` - implemented profile settings for resume, role, and experience defaults
 - `/onboarding` - implemented onboarding flow
-- `/readiness`, `/projects`, `/practice`, `/profile/*` - protected placeholders/future app routes; do not make fake product screens unless asked
+- `/readiness`, `/projects`, `/practice` - protected placeholders/future app routes; do not make fake product screens unless asked
 
 Current database areas:
 
 - `user_profiles` - Clerk-keyed profile and onboarding state
 - `career_contexts` - target role, experience level, timeline, and prep settings
 - `target_contexts` - active target role/JD context
+- `job_applications` - user-created trail targets and prep settings
 - `source_documents` - private uploaded document metadata
 - `resume_versions` - extracted resume text and active version
 - `analysis_jobs` - durable Inngest job state, idempotency, retries, progress, safe errors
@@ -95,11 +108,11 @@ Current validation/security guardrails:
 
 - Clerk user ID is the only profile identity accepted by privileged endpoints.
 - Resume upload validates MIME type, extension, size, filename, duplicate content, readable text, and resume-likeness.
+- Final onboarding requires an active extracted resume and validates server-hydrated resume metadata.
 - Final onboarding validates known target roles only.
 - `targetJobMode=paste` requires a non-empty job description.
-- Onboarding and reanalysis text fields have length limits.
-- Initial onboarding failures may mark onboarding failed.
-- Reanalysis failures must not reset completed onboarding to failed.
+- Onboarding and trail text fields have length limits.
+- Trail analysis failures must not reset completed onboarding to failed.
 - AI calls must respect `AI_DATA_POLICY`; `synthetic_only` blocks real candidate/job data.
 
 After completing a task:

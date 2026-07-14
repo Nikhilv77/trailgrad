@@ -18,18 +18,13 @@ import {
   type MVPAnalysisInputContext,
   type ProfileAnalysisRecord,
 } from "@/lib/db/profile-analysis-repository";
-import type { OnboardingSubmission } from "@/lib/onboarding/types";
 import {
   claimAnalysisJobForRun,
   completeAnalysisJob,
   failAnalysisJob,
   persistAnalysisJobProgress,
 } from "@/lib/services/analysis-job-service";
-import {
-  markOnboardingCompleted,
-  markOnboardingFailed,
-} from "@/lib/services/profile-service";
-import { OnboardingSubmissionSchema } from "@/lib/validators/profile";
+import { markOnboardingFailed } from "@/lib/services/profile-service";
 
 export interface MVPProfileAnalysisRunResult {
   profileAnalysis: ProfileAnalysisRecord | null;
@@ -41,7 +36,6 @@ class MVPProfileAnalysisError extends Error {
   constructor(
     readonly code:
       | "PROFILE_ANALYSIS_INPUT_MISSING"
-      | "PROFILE_ANALYSIS_INVALID_ONBOARDING"
       | "PROFILE_ANALYSIS_FAILED",
     message: string,
   ) {
@@ -86,6 +80,7 @@ export async function runMVPProfileAnalysisJob(
     const context = await loadMVPAnalysisInputContextRecord({
       profileId: claimedJob.profileId,
       sourceDocumentId: claimedJob.sourceDocumentId,
+      targetContextId: claimedJob.targetContextId,
     });
 
     if (!context) {
@@ -95,7 +90,6 @@ export async function runMVPProfileAnalysisJob(
       );
     }
 
-    const onboarding = parseStoredOnboarding(context.onboarding);
     profileAnalysis = await reserveProfileAnalysisRecord({
       profileId: context.profileId,
       resumeVersionId: context.resumeVersion.id,
@@ -105,7 +99,6 @@ export async function runMVPProfileAnalysisJob(
 
     if (profileAnalysis.status === "COMPLETED") {
       await completeAnalysisJob(claimedJob.id);
-      await markOnboardingCompleted(claimedJob.profileId, onboarding);
 
       return {
         profileAnalysis,
@@ -151,7 +144,6 @@ export async function runMVPProfileAnalysisJob(
     await persistAnalysisJobProgress(claimedJob.id, "question_generation");
     await persistAnalysisJobProgress(claimedJob.id, "finalization");
     await completeAnalysisJob(claimedJob.id);
-    await markOnboardingCompleted(claimedJob.profileId, onboarding);
 
     return {
       profileAnalysis: completedProfileAnalysis,
@@ -182,19 +174,6 @@ export async function runMVPProfileAnalysisJob(
   }
 }
 
-function parseStoredOnboarding(value: unknown): OnboardingSubmission {
-  const parsed = OnboardingSubmissionSchema.safeParse(value);
-
-  if (!parsed.success) {
-    throw new MVPProfileAnalysisError(
-      "PROFILE_ANALYSIS_INVALID_ONBOARDING",
-      "Stored onboarding data is incomplete.",
-    );
-  }
-
-  return parsed.data;
-}
-
 function buildMVPAnalysisPromptContent(context: MVPAnalysisInputContext) {
   return [
     "Analyze this Trailgrad onboarding profile. Return only the requested JSON object.",
@@ -208,19 +187,30 @@ function buildMVPAnalysisPromptContent(context: MVPAnalysisInputContext) {
 }
 
 function buildCompactTargetContext(context: MVPAnalysisInputContext) {
+  const trailFocus = context.targetContext?.trailFocus ?? "job";
+  const targetDetail = context.targetContext?.jobDescription
+    ? truncateText(context.targetContext.jobDescription, 2_500)
+    : null;
+
   return {
+    trailFocus,
     targetRole: context.careerContext?.primaryTargetRole ?? null,
     experienceLevel: context.careerContext?.experienceLevel ?? null,
-    targetCompany: context.targetContext?.company ?? null,
-    targetJobTitle: context.targetContext?.jobTitle ?? null,
+    targetCompany:
+      trailFocus === "job" ? context.targetContext?.company ?? null : null,
+    targetJobTitle:
+      trailFocus === "job" ? context.targetContext?.jobTitle ?? null : null,
+    learningTopic:
+      trailFocus === "learning" ? context.targetContext?.company ?? null : null,
+    learningGoal:
+      trailFocus === "learning" ? context.targetContext?.jobTitle ?? null : null,
     timeline: context.careerContext?.noDateYet
       ? "no_date_yet"
       : context.careerContext?.interviewOrApplicationDate,
     dailyPreparationMinutes: context.careerContext?.dailyPreparationMinutes ?? null,
     preparationIntensity: context.careerContext?.preparationIntensity ?? null,
-    jobDescription: context.targetContext?.jobDescription
-      ? truncateText(context.targetContext.jobDescription, 2_500)
-      : null,
+    jobDescription: trailFocus === "job" ? targetDetail : null,
+    learningContext: trailFocus === "learning" ? targetDetail : null,
   };
 }
 

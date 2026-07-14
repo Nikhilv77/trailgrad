@@ -1,23 +1,13 @@
 import { auth } from "@clerk/nextjs/server";
 import { ZodError } from "zod";
 
-import {
-  createProfileAnalysisRequestedEvent,
-  inngest,
-} from "@/lib/inngest/client";
-import { buildAnalysisInputFingerprint } from "@/lib/onboarding/analysis-input-fingerprint";
 import type { OnboardingSubmission } from "@/lib/onboarding/types";
 import {
   listSourceDocuments,
   listResumeVersions,
-  markOnboardingAnalyzing,
-  markOnboardingFailed,
+  markOnboardingCompleted,
   updateOnboardingStep,
 } from "@/lib/services/profile-service";
-import {
-  buildAnalysisJobIdempotencyKey,
-  requestAnalysisJob,
-} from "@/lib/services/analysis-job-service";
 import { getReconciledOnboardingState } from "@/lib/services/onboarding-analysis-status-service";
 import {
   OnboardingStepUpdateSchema,
@@ -29,7 +19,6 @@ class OnboardingSubmissionError extends Error {
   constructor(
     readonly code:
       | "RESUME_NOT_READY"
-      | "ANALYSIS_QUEUE_UNAVAILABLE"
       | "ONBOARDING_SAVE_FAILED",
     message: string,
   ) {
@@ -147,28 +136,7 @@ export async function POST(request: Request) {
     const input = OnboardingSubmissionSchema.parse(
       hydrateOnboardingResumeMetadata(await request.json(), sourceDocument),
     );
-    const profile = await markOnboardingAnalyzing(userId, input);
-
-    const idempotencyKey = buildAnalysisJobIdempotencyKey({
-      inputFingerprint: buildAnalysisInputFingerprint(input),
-      profileId: userId,
-      sourceDocumentId: resumeVersion.sourceDocumentId,
-      type: "INITIAL_PROFILE",
-    });
-    const reservation = await requestAnalysisJob({
-      profileId: userId,
-      sourceDocumentId: resumeVersion.sourceDocumentId,
-      type: "INITIAL_PROFILE",
-      idempotencyKey,
-    });
-
-    await sendProfileAnalysisEvent({
-      profileId: userId,
-      sourceDocumentId: resumeVersion.sourceDocumentId,
-      idempotencyKey,
-      duplicateJob: reservation.duplicate,
-      attemptCount: reservation.job.attemptCount,
-    });
+    const profile = await markOnboardingCompleted(userId, input);
 
     return Response.json({
       status: profile.onboardingStatus,
@@ -177,7 +145,6 @@ export async function POST(request: Request) {
       completedAt: profile.onboardingCompletedAt,
       analysisError: profile.analysisError,
       onboarding: profile.onboarding,
-      analysisJobId: reservation.job.id,
     });
   } catch (error) {
     if (error instanceof ZodError) {
@@ -185,13 +152,6 @@ export async function POST(request: Request) {
         { error: error.issues[0]?.message ?? "Invalid onboarding payload." },
         { status: 400 },
       );
-    }
-
-    if (userId) {
-      await markOnboardingFailed(
-        userId,
-        getSafeOnboardingSubmissionError(error).message,
-      ).catch(() => undefined);
     }
 
     const safeError = getSafeOnboardingSubmissionError(error);
@@ -220,33 +180,6 @@ function hydrateOnboardingResumeMetadata(
     resumeSize: sourceDocument.fileSize,
     resumeUploadedAt: sourceDocument.createdAt,
   } as OnboardingSubmission;
-}
-
-async function sendProfileAnalysisEvent(input: {
-  profileId: string;
-  sourceDocumentId: string;
-  idempotencyKey: string;
-  duplicateJob: boolean;
-  attemptCount: number;
-}) {
-  try {
-    await inngest.send(
-      createProfileAnalysisRequestedEvent({
-        profileId: input.profileId,
-        sourceDocumentId: input.sourceDocumentId,
-        type: "INITIAL_PROFILE",
-        idempotencyKey: input.idempotencyKey,
-        eventId: input.duplicateJob
-          ? `${input.idempotencyKey}:retry:${input.attemptCount + 1}:${Date.now()}`
-          : input.idempotencyKey,
-      }),
-    );
-  } catch {
-    throw new OnboardingSubmissionError(
-      "ANALYSIS_QUEUE_UNAVAILABLE",
-      "Trailgrad saved your onboarding data, but could not queue the analysis job. For local development, run the Inngest dev server and set INNGEST_DEV=1.",
-    );
-  }
 }
 
 function getSafeOnboardingSubmissionError(error: unknown) {

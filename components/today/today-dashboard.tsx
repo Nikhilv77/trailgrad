@@ -3,16 +3,20 @@
 import { SignOutButton } from "@clerk/nextjs";
 import {
   AlertTriangle,
+  BriefcaseBusiness,
   CalendarDays,
   CheckCircle2,
   ClipboardList,
   Gauge,
+  GraduationCap,
   LogOut,
   Menu,
   MessageSquareText,
+  Plus,
   Sparkles,
   Target,
   Timer,
+  UserRound,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -22,6 +26,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { SiteBrand } from "@/components/marketing/site-brand";
 import { SIGN_OUT_REDIRECT_URL } from "@/lib/auth/routes";
 import type { MVPAnalysis } from "@/lib/ai/schemas/mvp-analysis";
+import type { JobApplicationRecord } from "@/lib/db/types";
 
 type SourceReference = MVPAnalysis["rejectionRisks"][number]["sourceReference"];
 type ReadinessLevel = "LOW" | "MEDIUM" | "HIGH";
@@ -37,8 +42,10 @@ interface TodayDashboardProps {
     provider: string;
     updatedAt: string;
   };
+  applications: JobApplicationRecord[];
   reanalysisJobId?: string;
   result: MVPAnalysis;
+  selectedApplicationId: string;
   updating?: boolean;
 }
 
@@ -61,7 +68,7 @@ const views: Array<{
   {
     id: "alignment",
     label: "Alignment",
-    description: "Intent, resume evidence, and target job fit.",
+    description: "Intent, resume evidence, and target fit.",
     icon: Target,
   },
   {
@@ -100,7 +107,7 @@ const readinessLabels: Array<{
   key: keyof MVPAnalysis["readiness"];
   label: string;
 }> = [
-  { key: "applicationReadiness", label: "Application readiness" },
+  { key: "applicationReadiness", label: "Trail readiness" },
   { key: "evidenceStrength", label: "Evidence strength" },
   { key: "projectDepth", label: "Project depth" },
   { key: "interviewPerformanceStatus", label: "Interview performance" },
@@ -108,13 +115,18 @@ const readinessLabels: Array<{
 
 export function TodayDashboard({
   analysis,
+  applications,
   reanalysisJobId,
   result,
+  selectedApplicationId,
   updating = false,
 }: TodayDashboardProps) {
   const [activeView, setActiveView] = useState<ViewId>("overview");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const selectedApplication =
+    applications.find((application) => application.id === selectedApplicationId) ??
+    applications[0];
   const readinessScore = getReadinessScore(result.readiness);
   const highRisks = result.rejectionRisks.filter((risk) => risk.severity === "HIGH").length;
   const targetAlignment = getTargetAlignment(result);
@@ -161,8 +173,11 @@ export function TodayDashboard({
           const completedAt = encodeURIComponent(
             payload.latestAnalysisUpdatedAt ?? new Date().toISOString(),
           );
+          const trailQuery = selectedApplicationId
+            ? `trail=${encodeURIComponent(selectedApplicationId)}&`
+            : "";
 
-          window.location.replace(`/today?refreshed=${completedAt}`);
+          window.location.replace(`/today?${trailQuery}refreshed=${completedAt}`);
         }
       } catch {
         // The dashboard still shows the latest completed snapshot if polling misses once.
@@ -176,7 +191,7 @@ export function TodayDashboard({
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [reanalysisJobId, updating]);
+  }, [reanalysisJobId, selectedApplicationId, updating]);
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#f4fbf9] text-[#111827]">
@@ -193,8 +208,10 @@ export function TodayDashboard({
           <DashboardSidebar
             activeView={activeView}
             analysis={analysis}
+            applications={applications}
             highRisks={highRisks}
             readinessScore={readinessScore}
+            selectedApplicationId={selectedApplicationId}
             onSelect={selectView}
           />
         </aside>
@@ -214,6 +231,10 @@ export function TodayDashboard({
             </div>
             {mobileMenuOpen ? (
               <div className="mt-3 rounded-2xl border border-[#d7ebe6] bg-white p-2 shadow-[0_18px_54px_rgba(15,118,110,0.12)]">
+                <TrailSwitcher
+                  applications={applications}
+                  selectedApplicationId={selectedApplicationId}
+                />
                 <DashboardNavigation activeView={activeView} onSelect={selectView} compact />
                 <div className="mt-2 border-t border-[#d7ebe6] p-2">
                   <div className="rounded-xl bg-[#f6fbfa] px-3 py-2">
@@ -224,13 +245,6 @@ export function TodayDashboard({
                       {formatDate(analysis.updatedAt)}
                     </p>
                   </div>
-                  <Link
-                    href="/today/reanalyze"
-                    className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#0f9f8d] text-sm font-semibold text-white shadow-[0_12px_28px_rgba(15,159,141,0.2)] transition-colors hover:bg-[#0d8d7d]"
-                  >
-                    <Sparkles className="size-4" />
-                    Update analysis
-                  </Link>
                   <DashboardSignOutButton className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-[#d7ebe6] bg-white text-sm font-semibold text-[#4b5563] transition-colors hover:border-[#b9ddd5] hover:text-[#0f766e]">
                     <LogOut className="size-4" />
                     Sign out
@@ -245,6 +259,9 @@ export function TodayDashboard({
               activeDescription={active.description}
               activeLabel={active.label}
               analysisUpdatedAt={analysis.updatedAt}
+              applications={applications}
+              selectedApplication={selectedApplication}
+              selectedApplicationId={selectedApplicationId}
               updating={updating}
             />
 
@@ -295,7 +312,7 @@ function DashboardAnalysisSkeleton() {
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="tg-dashboard-text-shine text-xs font-semibold uppercase tracking-[0.18em]">
-                Rebuilding profile analysis
+                Working on this trail
               </p>
               <div className="tg-dashboard-shimmer mt-4 h-8 w-72 max-w-full rounded-xl" />
               <div className="tg-dashboard-shimmer mt-3 h-4 w-full max-w-3xl rounded-full" />
@@ -400,21 +417,30 @@ function DashboardSkeletonStyles() {
 function DashboardSidebar({
   activeView,
   analysis,
+  applications,
   highRisks,
   onSelect,
   readinessScore,
+  selectedApplicationId,
 }: {
   activeView: ViewId;
   analysis: TodayDashboardProps["analysis"];
+  applications: JobApplicationRecord[];
   highRisks: number;
   onSelect: (view: ViewId) => void;
   readinessScore: number;
+  selectedApplicationId: string;
 }) {
   return (
     <div className="flex min-h-full flex-col">
       <div className="flex items-center justify-between gap-3 px-1">
         <SiteBrand compact iconFrame={false} />
       </div>
+
+      <TrailRail
+        applications={applications}
+        selectedApplicationId={selectedApplicationId}
+      />
 
       <div className="relative mt-7 overflow-hidden rounded-[24px] bg-[#0f766e] p-5 text-white shadow-[0_24px_54px_rgba(15,118,110,0.24)]">
         <div
@@ -459,13 +485,6 @@ function DashboardSidebar({
       <DashboardNavigation activeView={activeView} onSelect={onSelect} />
 
       <div className="mt-auto space-y-3 pt-5">
-        <Link
-          href="/today/reanalyze"
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0f9f8d] text-sm font-semibold text-white shadow-[0_14px_32px_rgba(15,159,141,0.2)] transition-colors hover:bg-[#0d8d7d]"
-        >
-          <Sparkles className="size-4" />
-          Update analysis
-        </Link>
         <div className="rounded-[18px] border border-[#d7ebe6] bg-white/76 p-3 shadow-[0_12px_34px_rgba(15,118,110,0.06)]">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6b7d78]">
             Last analyzed
@@ -537,27 +556,142 @@ function DashboardNavigation({
   );
 }
 
+function TrailRail({
+  applications,
+  selectedApplicationId,
+}: {
+  applications: JobApplicationRecord[];
+  selectedApplicationId: string;
+}) {
+  return (
+    <section className="mt-6 rounded-[22px] border border-[#d7ebe6] bg-white/72 p-3 shadow-[0_12px_34px_rgba(15,118,110,0.06)]">
+      <div className="flex items-center justify-between gap-3 px-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7a928c]">
+          Trails
+        </p>
+        <Link
+          href="/trails/new"
+          className="grid size-8 place-items-center rounded-full bg-[#0f9f8d] text-white shadow-[0_10px_22px_rgba(15,159,141,0.22)] transition-colors hover:bg-[#0d8d7d]"
+          aria-label="Create a new trail"
+        >
+          <Plus className="size-4" />
+        </Link>
+      </div>
+      <div className="mt-3 grid gap-1.5">
+        {applications.map((application) => {
+          const active = application.id === selectedApplicationId;
+          const Icon =
+            application.trailFocus === "learning"
+              ? GraduationCap
+              : BriefcaseBusiness;
+
+          return (
+            <Link
+              key={application.id}
+              href={`/today?trail=${encodeURIComponent(application.id)}`}
+              className={`group relative flex items-center gap-3 rounded-[16px] border px-3 py-2.5 transition-colors ${
+                active
+                  ? "border-[#c4ebe3] bg-[#effbf8] text-[#0f766e]"
+                  : "border-transparent text-[#63756f] hover:border-[#d7ebe6] hover:bg-white hover:text-[#0f766e]"
+              }`}
+            >
+              <span
+                className={`grid size-9 shrink-0 place-items-center rounded-[13px] ${
+                  active ? "bg-white" : "bg-[#f6fbfa] group-hover:bg-[#effbf8]"
+                }`}
+              >
+                <Icon className="size-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold">
+                  {getTrailTitle(application)}
+                </span>
+                <span className="mt-0.5 block truncate text-xs font-medium opacity-70">
+                  {getTrailSubtitle(application)}
+                </span>
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function TrailSwitcher({
+  applications,
+  selectedApplicationId,
+}: {
+  applications: JobApplicationRecord[];
+  selectedApplicationId: string;
+}) {
+  return (
+    <div className="grid gap-2 p-2">
+      <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7a928c]">
+        Trail
+      </label>
+      <select
+        value={selectedApplicationId}
+        onChange={(event) => {
+          window.location.href = `/today?trail=${encodeURIComponent(
+            event.target.value,
+          )}`;
+        }}
+        className="h-11 w-full rounded-xl border border-[#d7ebe6] bg-[#f6fbfa] px-3 text-sm font-semibold text-[#111827] outline-none transition-colors focus:border-[#0f9f8d]"
+      >
+        {applications.map((application) => (
+          <option key={application.id} value={application.id}>
+            {getTrailTitle(application)}
+          </option>
+        ))}
+      </select>
+      <div className="grid grid-cols-2 gap-2">
+        <Link
+          href="/trails/new"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0f9f8d] px-3 text-sm font-semibold text-white"
+        >
+          <Plus className="size-4" />
+          New trail
+        </Link>
+        <Link
+          href="/profile"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#d7ebe6] bg-white px-3 text-sm font-semibold text-[#0f766e]"
+        >
+          <UserRound className="size-4" />
+          Profile
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function DashboardHeader({
   activeDescription,
   activeLabel,
   analysisUpdatedAt,
+  applications,
+  selectedApplication,
+  selectedApplicationId,
   updating,
 }: {
   activeDescription: string;
   activeLabel: string;
   analysisUpdatedAt: string;
+  applications: JobApplicationRecord[];
+  selectedApplication?: JobApplicationRecord;
+  selectedApplicationId: string;
   updating: boolean;
 }) {
   return (
     <header className="rounded-[30px] border border-[#d7ebe6] bg-white/88 p-5 shadow-[0_20px_60px_rgba(15,118,110,0.08)] backdrop-blur-xl sm:p-6 lg:p-7">
       {updating ? (
         <div className="mb-5 rounded-2xl border border-[#c4ebe3] bg-[#effbf8] px-4 py-3 text-sm font-semibold leading-6 text-[#0f766e]">
-          Trailgrad is updating your analysis. Your latest completed snapshot
+          Trailgrad is working on this trail. Your latest completed snapshot
           stays visible and this page will refresh when the new run finishes.
         </div>
       ) : null}
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f8f7e]">
             Today workspace
           </p>
@@ -568,13 +702,66 @@ function DashboardHeader({
             {activeDescription}
           </p>
         </div>
-        <div className="w-full rounded-2xl border border-[#e0efeb] bg-[#f6fbfa] px-4 py-3 sm:w-auto sm:min-w-[188px]">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6b7d78]">
-            Updated
-          </p>
-          <p className="mt-1 text-sm font-semibold text-[#111827]">
-            {formatDate(analysisUpdatedAt)}
-          </p>
+        <div className="grid w-full gap-3 lg:w-[360px]">
+          <div className="rounded-2xl border border-[#e0efeb] bg-[#f6fbfa] p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6b7d78]">
+                  Current trail
+                </p>
+                <p className="mt-1 truncate text-sm font-semibold text-[#111827]">
+                  {selectedApplication
+                    ? getTrailTitle(selectedApplication)
+                    : "Selected trail"}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#0f766e] shadow-[0_8px_20px_rgba(15,118,110,0.07)]">
+                {selectedApplication?.trailFocus === "learning"
+                  ? "Learning"
+                  : "Job"}
+              </span>
+            </div>
+            <select
+              value={selectedApplicationId}
+              onChange={(event) => {
+                window.location.href = `/today?trail=${encodeURIComponent(
+                  event.target.value,
+                )}`;
+              }}
+              className="mt-3 h-10 w-full rounded-xl border border-[#d7ebe6] bg-white px-3 text-sm font-semibold text-[#111827] outline-none transition-colors focus:border-[#0f9f8d]"
+              aria-label="Select trail"
+            >
+              {applications.map((application) => (
+                <option key={application.id} value={application.id}>
+                  {getTrailTitle(application)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+            <Link
+              href="/trails/new"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0f9f8d] px-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(15,159,141,0.18)] transition-colors hover:bg-[#0d8d7d]"
+            >
+              <Plus className="size-4" />
+              New
+            </Link>
+            <Link
+              href="/profile"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#d7ebe6] bg-white/80 px-3 text-sm font-semibold text-[#0f766e] transition-colors hover:border-[#b9ddd5] hover:bg-white"
+            >
+              <UserRound className="size-4" />
+              Profile
+            </Link>
+            <div className="rounded-xl border border-[#e0efeb] bg-[#f6fbfa] px-3 py-2 text-right">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6b7d78]">
+                Updated
+              </p>
+              <p className="text-xs font-semibold text-[#111827]">
+                {formatDate(analysisUpdatedAt)}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </header>
@@ -667,8 +854,8 @@ function AlignmentView({ targetAlignment }: { targetAlignment: TargetAlignment }
             value={targetAlignment.detectedResumeDirection}
           />
           <AlignmentCard
-            label="Target job"
-            value={targetAlignment.detectedJobDirection ?? "No job description added"}
+            label="Target details"
+            value={targetAlignment.detectedJobDirection ?? "No extra details added"}
           />
         </div>
       </Panel>
@@ -680,7 +867,7 @@ function AlignmentView({ targetAlignment }: { targetAlignment: TargetAlignment }
           </p>
           <p className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[#111827]">
             {targetAlignment.recommendedTarget === "job_description"
-              ? "The pasted job description"
+              ? "The pasted details"
               : "The selected role"}
           </p>
           <p className="mt-3 text-sm leading-7 text-[#4b5563]">
@@ -713,7 +900,7 @@ function AlignmentNotice({ targetAlignment }: { targetAlignment: TargetAlignment
         </div>
         <div className="rounded-2xl bg-white/72 px-4 py-3 text-sm font-semibold text-[#374151]">
           {targetAlignment.recommendedTarget === "job_description"
-            ? "Use pasted job"
+            ? "Use pasted details"
             : "Use selected role"}
         </div>
       </div>
@@ -1194,6 +1381,37 @@ function getTargetAlignment(result: MVPAnalysis): TargetAlignment {
     explanation:
       "This analysis was created before Trailgrad added target-alignment detection. Run a fresh analysis after changing your resume or target to see alignment details.",
   };
+}
+
+function getTrailTitle(application: JobApplicationRecord) {
+  if (application.trailFocus === "learning") {
+    return (
+      application.targetJobTitle ||
+      application.targetCompany ||
+      `${roleLabel(application.targetRole)} growth`
+    );
+  }
+
+  return (
+    application.targetJobTitle ||
+    application.targetCompany ||
+    roleLabel(application.targetRole)
+  );
+}
+
+function getTrailSubtitle(application: JobApplicationRecord) {
+  const focusLabel =
+    application.trailFocus === "learning" ? "Learning" : "Job";
+  const detail = application.targetCompany || roleLabel(application.targetRole);
+
+  return `${focusLabel} · ${detail}`;
+}
+
+function roleLabel(role: string) {
+  return role
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 function formatDate(value: string) {

@@ -1,6 +1,6 @@
 # Trailgrad
 
-Trailgrad is a Next.js interview-readiness product. The current app has a public marketing page, Clerk authentication, authenticated onboarding, private resume upload, resume-likeness validation, a durable MVP analysis workflow, a reanalysis flow, and a Today dashboard that renders the saved structured analysis.
+Trailgrad is a Next.js interview-readiness product. The current app has a public marketing page, Clerk authentication, authenticated resume-first onboarding, private resume upload, resume-likeness validation, post-onboarding trail creation, durable MVP trail-analysis workflows, a trail-aware Today dashboard, and profile settings for resume, role, and experience defaults.
 
 The core product loop is:
 
@@ -38,10 +38,12 @@ Signed-out users who enter the app go through Clerk at `/auth`. After authentica
 Current protected app routes include:
 
 - `/today`
-- `/today/reanalyze`
+- `/trails/new`
+- `/trails/preparing`
+- `/profile`
 - `/onboarding`
 
-The undeveloped product routes `/readiness`, `/projects`, `/practice`, and `/profile/*` are still protected, but currently redirect completed users back to `/today` instead of rendering mock product screens.
+`/today/applications/new` and `/today/reanalyze` are compatibility redirects to `/trails/new`. The undeveloped product routes `/readiness`, `/projects`, and `/practice` are still protected placeholders and should not render mock product screens.
 
 Incomplete authenticated users are redirected back to `/onboarding` when they open an app route. Completed authenticated users are redirected from `/onboarding` to `/today`.
 
@@ -54,10 +56,16 @@ Incomplete authenticated users are redirected back to `/onboarding` when they op
 - `components/onboarding/onboarding-flow.tsx` - existing onboarding UI with persistent state and resume upload
 - `app/api/profile/onboarding/route.ts` - onboarding autosave and submission
 - `app/api/profile/onboarding/resume/route.ts` - authenticated resume upload endpoint
-- `app/api/profile/reanalysis/route.ts` - completed-profile reanalysis endpoint and job-status polling endpoint
-- `app/today/reanalyze/page.tsx` - reanalysis form for updating target role/JD/prep settings
+- `app/api/applications/route.ts` - completed-profile trail creation and listing endpoint
+- `app/api/profile/reanalysis/route.ts` - legacy POST compatibility and job-status polling endpoint
+- `app/profile/[[...slug]]/page.tsx` - profile settings for resume, role, and experience defaults
+- `components/profile/profile-settings.tsx` - profile update UI
+- `app/trails/new/page.tsx` - reusable trail setup route
+- `app/trails/preparing/page.tsx` - loading handoff while trail analysis runs
+- `app/today/applications/new/page.tsx` - compatibility redirect to `/trails/new`
 - `lib/services/profile-service.ts` - profile/onboarding service facade
 - `lib/db/profile-repository.ts` - Prisma-backed profile and onboarding repository
+- `lib/db/application-repository.ts` - Prisma-backed application repository
 - `lib/resume/upload-service.ts` - resume validation, storage, extraction, dedupe, and versioning
 - `lib/resume/resume-likeness.ts` and `lib/resume/resume-classifier.ts` - deterministic resume-shape checks used during upload
 - `lib/storage/private-object-storage.ts` - server-only S3-compatible storage adapter
@@ -80,6 +88,7 @@ Implemented tables:
 - `user_profiles` - onboarding status, current step, timestamps, analysis error, and JSON onboarding draft
 - `career_contexts` - target role, experience level, timeline, preparation availability, intensity, and optional company/title
 - `target_contexts` - active target role/job description context
+- `job_applications` - completed-user trails with target, timeline, JD, and prep settings
 - `manual_projects` - retained database table from the onboarding data model; no current UI writes manual projects
 - `source_documents` - private uploaded document metadata, storage path, SHA-256 hash, processing status, and version
 - `resume_versions` - versioned resume records, extracted text status, extracted text, and active flag
@@ -135,29 +144,44 @@ On final onboarding submission, the server ignores client-submitted resume metad
 
 Onboarding currently collects:
 
-- target role and experience level
-- preparation timeline and availability
+- target role/domain and experience level
 - resume upload
-- optional pasted job description
 - final review before analysis
 
 The server validates final onboarding input with Zod. Important guardrails:
 
 - `targetRole` must be one of Trailgrad's supported role IDs.
-- `targetJobMode=paste` requires a non-empty `jobDescription`.
-- text fields have length limits to avoid bloated profile rows.
-- final analysis uses the active extracted resume owned by the authenticated user.
+- final onboarding requires an active extracted resume owned by the authenticated user.
+- the server hydrates resume metadata from `source_documents`.
+- browser-submitted resume filename, size, and content type are ignored on final submission.
 
 When onboarding is submitted, Trailgrad:
 
-1. Saves the hardened onboarding payload and marks the profile `analyzing`.
-2. Creates an idempotent `INITIAL_PROFILE` `AnalysisJob`.
-3. Sends the typed Inngest event `trailgrad/profile.analysis.requested`.
-4. The Inngest worker loads the active extracted resume and target context.
-5. The AI provider factory returns the Gemini provider.
-6. Gemini returns compact structured JSON validated by Zod.
-7. Trailgrad stores the result in `profile_analyses`.
-8. The analysis job and onboarding status are marked completed.
+1. Saves the hardened onboarding payload with server-hydrated resume metadata.
+2. Marks onboarding completed.
+3. Shows the `/onboarding/analyzing` handoff.
+4. Sends the user to `/trails/new`.
+
+Completed users then create trails at `/trails/new`. A trail can represent a job, interview, internship, or learning goal. The trail form collects:
+
+- optional company and job title
+- optional learning topic/goal when the trail is learning-focused
+- target date/timeline or "no date yet"
+- daily prep time and intensity
+- optional pasted job description or learning context
+
+Trails use the role/domain and experience level from onboarding as trusted profile defaults. Completed users can later update those defaults and upload a newer active resume from `/profile`.
+
+Trail creation:
+
+1. Persists a `job_applications` row.
+2. Updates the active career and target context used by analysis.
+3. Creates an idempotent `JOB_ANALYSIS` `AnalysisJob` tied to the trail target context.
+4. Sends the typed Inngest event `trailgrad/profile.analysis.requested`.
+5. The Inngest worker loads the active extracted resume and trail target context.
+6. The AI provider factory returns the Gemini provider.
+7. Gemini returns compact structured JSON validated by Zod.
+8. Trailgrad stores the result in `profile_analyses`.
 
 The current MVP analysis result includes:
 
@@ -173,22 +197,42 @@ The current MVP analysis result includes:
 
 Target alignment is used to detect when the selected role, resume direction, and pasted JD may be pointing at different goals. It is surfaced inside the Today dashboard, but it does not yet block analysis.
 
-## Reanalysis
+## Trails And Dashboard
 
-Completed users can update their analysis from `/today/reanalyze`.
+Completed users can create multiple trails from `/trails/new`.
 
-The reanalysis flow:
+The trail flow:
 
 1. Keeps the current active resume.
-2. Lets the user update target role, optional company/title, optional JD, preparation time, and intensity.
-3. Saves the updated target context.
-4. Creates an idempotent `JOB_ANALYSIS` `AnalysisJob`.
-5. Queues the same Inngest analysis event.
-6. Shows a dashboard-shaped skeleton while the new job is running.
-7. Polls `/api/profile/reanalysis?jobId=...`.
-8. Hard-refreshes `/today` when the job reaches a terminal state, so the latest completed dashboard data is shown.
+2. Lets the user choose whether the trail is for a job/interview or a learning goal.
+3. Lets the user set optional company/topic, title/goal, optional details, target date/timeline, preparation time, and intensity.
+4. Saves a user-facing trail using the current profile role/domain and experience defaults.
+5. Creates an idempotent `JOB_ANALYSIS` `AnalysisJob`.
+6. Queues the same Inngest analysis event.
+7. Shows `/trails/preparing` while the new job is running.
+8. Polls `/api/profile/reanalysis?jobId=...`.
+9. Hard-refreshes `/today?trail=...` when the job reaches a terminal state, so the selected trail dashboard is shown.
 
-Reanalysis failures do not mark completed onboarding as failed. Initial onboarding failures still surface as onboarding failures.
+The Today dashboard now:
+
+- lists trails in the sidebar
+- lets users switch trails from a dropdown
+- renders the readiness dashboard for the selected trail's target context
+- links to create a new trail
+- links to `/profile` for resume, role, and experience updates
+- shows a trail workspace/empty state when a selected trail has not produced a completed analysis yet
+
+## Profile Settings
+
+Completed users can open `/profile` to update reusable profile defaults:
+
+- active resume upload
+- target role/domain
+- experience level
+
+Resume updates reuse the same authenticated upload pipeline as onboarding, including private storage, extraction, duplicate detection, and resume-likeness validation. Role updates are still restricted to Trailgrad's supported role IDs. Updating profile defaults does not rewrite existing trail snapshots; new trails use the latest defaults.
+
+Application analysis failures do not mark completed onboarding as failed.
 
 ## Environment
 
@@ -236,7 +280,7 @@ AI secrets are server-only. Do not prefix `GEMINI_API_KEY` with `NEXT_PUBLIC_`.
 
 By default, `AI_DATA_POLICY=synthetic_only`. In this mode Trailgrad blocks model calls that attempt to send real candidate resumes, real job descriptions, or personal candidate data. Only synthetic fixtures or explicitly marked development data may be sent. To use real candidate data in a properly configured environment, set `AI_DATA_POLICY=real_user_data_allowed` intentionally; Trailgrad never enables that mode automatically and never relies only on `NODE_ENV` for data protection.
 
-The AI foundation implements Gemini structured JSON output and safe metadata logging. The MVP onboarding analysis workflow queues an Inngest `INITIAL_PROFILE` job after onboarding submission, analyzes the extracted resume plus target context, stores one compact `profile_analyses` result, and completes onboarding when the job succeeds. To process it locally, run the Next.js app and an Inngest dev worker pointed at `/api/inngest`. With `AI_DATA_POLICY=synthetic_only`, real resumes and job descriptions are blocked; use synthetic fixtures or intentionally set `AI_DATA_POLICY=real_user_data_allowed` in a properly configured environment.
+The AI foundation implements Gemini structured JSON output and safe metadata logging. The MVP trail-analysis workflow queues an Inngest `JOB_ANALYSIS` job after trail creation, analyzes the extracted resume plus the selected trail target context, and stores one compact `profile_analyses` result per resume version and target context. To process it locally, run the Next.js app and an Inngest dev worker pointed at `/api/inngest`. With `AI_DATA_POLICY=synthetic_only`, real resumes and job descriptions are blocked; use synthetic fixtures or intentionally set `AI_DATA_POLICY=real_user_data_allowed` in a properly configured environment.
 
 For local Inngest development, keep `INNGEST_DEV=1` in `.env.local` and run the Inngest dev server alongside `pnpm dev`.
 
@@ -296,9 +340,9 @@ pnpm test
 - Use Prisma and `prisma/migrations/` as the database source of truth.
 - Do not store original resume bytes in Neon.
 - Keep object storage private and use signed URLs only when a user must access their own file.
-- Resume upload still stops at private storage and text extraction. The first AI call happens later, after onboarding submission, through the Inngest MVP profile analysis job.
+- Resume upload still stops at private storage and text extraction. Trail analysis happens later, after trail creation, through the Inngest MVP profile analysis job.
 - The AI provider architecture currently implements only Gemini.
 - Gemini free-tier development must use synthetic or anonymized data only.
 - Do not trust browser-supplied resume metadata on final submission. The server hydrates final resume metadata from the active source document.
 - Do not allow arbitrary target role strings unless the product intentionally adds a custom-role flow.
-- Reanalysis uses `JOB_ANALYSIS` jobs and should not reset a completed user back into failed onboarding.
+- Trail analysis uses `JOB_ANALYSIS` jobs and should not reset a completed user back into failed onboarding.

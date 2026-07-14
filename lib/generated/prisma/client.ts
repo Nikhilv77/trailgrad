@@ -72,6 +72,11 @@ export type SourceDocument = Prisma.SourceDocumentModel
  */
 export type AnalysisJob = Prisma.AnalysisJobModel
 /**
+ * Model JobApplication
+ * 
+ */
+export type JobApplication = Prisma.JobApplicationModel
+/**
  * Model AiRun
  * 
  */

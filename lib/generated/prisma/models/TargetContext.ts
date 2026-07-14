@@ -27,6 +27,7 @@ export type AggregateTargetContext = {
 export type TargetContextMinAggregateOutputType = {
   id: string | null
   profileId: string | null
+  trailFocus: string | null
   role: string | null
   company: string | null
   jobTitle: string | null
@@ -39,6 +40,7 @@ export type TargetContextMinAggregateOutputType = {
 export type TargetContextMaxAggregateOutputType = {
   id: string | null
   profileId: string | null
+  trailFocus: string | null
   role: string | null
   company: string | null
   jobTitle: string | null
@@ -51,6 +53,7 @@ export type TargetContextMaxAggregateOutputType = {
 export type TargetContextCountAggregateOutputType = {
   id: number
   profileId: number
+  trailFocus: number
   role: number
   company: number
   jobTitle: number
@@ -65,6 +68,7 @@ export type TargetContextCountAggregateOutputType = {
 export type TargetContextMinAggregateInputType = {
   id?: true
   profileId?: true
+  trailFocus?: true
   role?: true
   company?: true
   jobTitle?: true
@@ -77,6 +81,7 @@ export type TargetContextMinAggregateInputType = {
 export type TargetContextMaxAggregateInputType = {
   id?: true
   profileId?: true
+  trailFocus?: true
   role?: true
   company?: true
   jobTitle?: true
@@ -89,6 +94,7 @@ export type TargetContextMaxAggregateInputType = {
 export type TargetContextCountAggregateInputType = {
   id?: true
   profileId?: true
+  trailFocus?: true
   role?: true
   company?: true
   jobTitle?: true
@@ -174,6 +180,7 @@ export type TargetContextGroupByArgs<ExtArgs extends runtime.Types.Extensions.In
 export type TargetContextGroupByOutputType = {
   id: string
   profileId: string
+  trailFocus: string
   role: string
   company: string | null
   jobTitle: string | null
@@ -207,6 +214,7 @@ export type TargetContextWhereInput = {
   NOT?: Prisma.TargetContextWhereInput | Prisma.TargetContextWhereInput[]
   id?: Prisma.StringFilter<"TargetContext"> | string
   profileId?: Prisma.StringFilter<"TargetContext"> | string
+  trailFocus?: Prisma.StringFilter<"TargetContext"> | string
   role?: Prisma.StringFilter<"TargetContext"> | string
   company?: Prisma.StringNullableFilter<"TargetContext"> | string | null
   jobTitle?: Prisma.StringNullableFilter<"TargetContext"> | string | null
@@ -216,11 +224,14 @@ export type TargetContextWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"TargetContext"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
   profileAnalyses?: Prisma.ProfileAnalysisListRelationFilter
+  analysisJobs?: Prisma.AnalysisJobListRelationFilter
+  jobApplication?: Prisma.XOR<Prisma.JobApplicationNullableScalarRelationFilter, Prisma.JobApplicationWhereInput> | null
 }
 
 export type TargetContextOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
+  trailFocus?: Prisma.SortOrder
   role?: Prisma.SortOrder
   company?: Prisma.SortOrderInput | Prisma.SortOrder
   jobTitle?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -230,6 +241,8 @@ export type TargetContextOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   profile?: Prisma.UserProfileOrderByWithRelationInput
   profileAnalyses?: Prisma.ProfileAnalysisOrderByRelationAggregateInput
+  analysisJobs?: Prisma.AnalysisJobOrderByRelationAggregateInput
+  jobApplication?: Prisma.JobApplicationOrderByWithRelationInput
 }
 
 export type TargetContextWhereUniqueInput = Prisma.AtLeast<{
@@ -238,6 +251,7 @@ export type TargetContextWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.TargetContextWhereInput[]
   NOT?: Prisma.TargetContextWhereInput | Prisma.TargetContextWhereInput[]
   profileId?: Prisma.StringFilter<"TargetContext"> | string
+  trailFocus?: Prisma.StringFilter<"TargetContext"> | string
   role?: Prisma.StringFilter<"TargetContext"> | string
   company?: Prisma.StringNullableFilter<"TargetContext"> | string | null
   jobTitle?: Prisma.StringNullableFilter<"TargetContext"> | string | null
@@ -247,11 +261,14 @@ export type TargetContextWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"TargetContext"> | Date | string
   profile?: Prisma.XOR<Prisma.UserProfileScalarRelationFilter, Prisma.UserProfileWhereInput>
   profileAnalyses?: Prisma.ProfileAnalysisListRelationFilter
+  analysisJobs?: Prisma.AnalysisJobListRelationFilter
+  jobApplication?: Prisma.XOR<Prisma.JobApplicationNullableScalarRelationFilter, Prisma.JobApplicationWhereInput> | null
 }, "id">
 
 export type TargetContextOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
+  trailFocus?: Prisma.SortOrder
   role?: Prisma.SortOrder
   company?: Prisma.SortOrderInput | Prisma.SortOrder
   jobTitle?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -270,6 +287,7 @@ export type TargetContextScalarWhereWithAggregatesInput = {
   NOT?: Prisma.TargetContextScalarWhereWithAggregatesInput | Prisma.TargetContextScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"TargetContext"> | string
   profileId?: Prisma.StringWithAggregatesFilter<"TargetContext"> | string
+  trailFocus?: Prisma.StringWithAggregatesFilter<"TargetContext"> | string
   role?: Prisma.StringWithAggregatesFilter<"TargetContext"> | string
   company?: Prisma.StringNullableWithAggregatesFilter<"TargetContext"> | string | null
   jobTitle?: Prisma.StringNullableWithAggregatesFilter<"TargetContext"> | string | null
@@ -281,6 +299,7 @@ export type TargetContextScalarWhereWithAggregatesInput = {
 
 export type TargetContextCreateInput = {
   id: string
+  trailFocus?: string
   role: string
   company?: string | null
   jobTitle?: string | null
@@ -290,11 +309,14 @@ export type TargetContextCreateInput = {
   updatedAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutTargetContextsInput
   profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutTargetContextInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutTargetContextInput
+  jobApplication?: Prisma.JobApplicationCreateNestedOneWithoutTargetContextInput
 }
 
 export type TargetContextUncheckedCreateInput = {
   id: string
   profileId: string
+  trailFocus?: string
   role: string
   company?: string | null
   jobTitle?: string | null
@@ -303,10 +325,13 @@ export type TargetContextUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutTargetContextInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutTargetContextInput
+  jobApplication?: Prisma.JobApplicationUncheckedCreateNestedOneWithoutTargetContextInput
 }
 
 export type TargetContextUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -316,11 +341,14 @@ export type TargetContextUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutTargetContextsNestedInput
   profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutTargetContextNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutTargetContextNestedInput
+  jobApplication?: Prisma.JobApplicationUpdateOneWithoutTargetContextNestedInput
 }
 
 export type TargetContextUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -329,11 +357,14 @@ export type TargetContextUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutTargetContextNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutTargetContextNestedInput
+  jobApplication?: Prisma.JobApplicationUncheckedUpdateOneWithoutTargetContextNestedInput
 }
 
 export type TargetContextCreateManyInput = {
   id: string
   profileId: string
+  trailFocus?: string
   role: string
   company?: string | null
   jobTitle?: string | null
@@ -345,6 +376,7 @@ export type TargetContextCreateManyInput = {
 
 export type TargetContextUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -357,6 +389,7 @@ export type TargetContextUpdateManyMutationInput = {
 export type TargetContextUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -379,6 +412,7 @@ export type TargetContextOrderByRelationAggregateInput = {
 export type TargetContextCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
+  trailFocus?: Prisma.SortOrder
   role?: Prisma.SortOrder
   company?: Prisma.SortOrder
   jobTitle?: Prisma.SortOrder
@@ -391,6 +425,7 @@ export type TargetContextCountOrderByAggregateInput = {
 export type TargetContextMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
+  trailFocus?: Prisma.SortOrder
   role?: Prisma.SortOrder
   company?: Prisma.SortOrder
   jobTitle?: Prisma.SortOrder
@@ -403,6 +438,7 @@ export type TargetContextMaxOrderByAggregateInput = {
 export type TargetContextMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   profileId?: Prisma.SortOrder
+  trailFocus?: Prisma.SortOrder
   role?: Prisma.SortOrder
   company?: Prisma.SortOrder
   jobTitle?: Prisma.SortOrder
@@ -459,6 +495,38 @@ export type TargetContextUncheckedUpdateManyWithoutProfileNestedInput = {
   deleteMany?: Prisma.TargetContextScalarWhereInput | Prisma.TargetContextScalarWhereInput[]
 }
 
+export type TargetContextCreateNestedOneWithoutAnalysisJobsInput = {
+  create?: Prisma.XOR<Prisma.TargetContextCreateWithoutAnalysisJobsInput, Prisma.TargetContextUncheckedCreateWithoutAnalysisJobsInput>
+  connectOrCreate?: Prisma.TargetContextCreateOrConnectWithoutAnalysisJobsInput
+  connect?: Prisma.TargetContextWhereUniqueInput
+}
+
+export type TargetContextUpdateOneWithoutAnalysisJobsNestedInput = {
+  create?: Prisma.XOR<Prisma.TargetContextCreateWithoutAnalysisJobsInput, Prisma.TargetContextUncheckedCreateWithoutAnalysisJobsInput>
+  connectOrCreate?: Prisma.TargetContextCreateOrConnectWithoutAnalysisJobsInput
+  upsert?: Prisma.TargetContextUpsertWithoutAnalysisJobsInput
+  disconnect?: Prisma.TargetContextWhereInput | boolean
+  delete?: Prisma.TargetContextWhereInput | boolean
+  connect?: Prisma.TargetContextWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TargetContextUpdateToOneWithWhereWithoutAnalysisJobsInput, Prisma.TargetContextUpdateWithoutAnalysisJobsInput>, Prisma.TargetContextUncheckedUpdateWithoutAnalysisJobsInput>
+}
+
+export type TargetContextCreateNestedOneWithoutJobApplicationInput = {
+  create?: Prisma.XOR<Prisma.TargetContextCreateWithoutJobApplicationInput, Prisma.TargetContextUncheckedCreateWithoutJobApplicationInput>
+  connectOrCreate?: Prisma.TargetContextCreateOrConnectWithoutJobApplicationInput
+  connect?: Prisma.TargetContextWhereUniqueInput
+}
+
+export type TargetContextUpdateOneWithoutJobApplicationNestedInput = {
+  create?: Prisma.XOR<Prisma.TargetContextCreateWithoutJobApplicationInput, Prisma.TargetContextUncheckedCreateWithoutJobApplicationInput>
+  connectOrCreate?: Prisma.TargetContextCreateOrConnectWithoutJobApplicationInput
+  upsert?: Prisma.TargetContextUpsertWithoutJobApplicationInput
+  disconnect?: Prisma.TargetContextWhereInput | boolean
+  delete?: Prisma.TargetContextWhereInput | boolean
+  connect?: Prisma.TargetContextWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TargetContextUpdateToOneWithWhereWithoutJobApplicationInput, Prisma.TargetContextUpdateWithoutJobApplicationInput>, Prisma.TargetContextUncheckedUpdateWithoutJobApplicationInput>
+}
+
 export type TargetContextCreateNestedOneWithoutProfileAnalysesInput = {
   create?: Prisma.XOR<Prisma.TargetContextCreateWithoutProfileAnalysesInput, Prisma.TargetContextUncheckedCreateWithoutProfileAnalysesInput>
   connectOrCreate?: Prisma.TargetContextCreateOrConnectWithoutProfileAnalysesInput
@@ -477,6 +545,7 @@ export type TargetContextUpdateOneWithoutProfileAnalysesNestedInput = {
 
 export type TargetContextCreateWithoutProfileInput = {
   id: string
+  trailFocus?: string
   role: string
   company?: string | null
   jobTitle?: string | null
@@ -485,10 +554,13 @@ export type TargetContextCreateWithoutProfileInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutTargetContextInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutTargetContextInput
+  jobApplication?: Prisma.JobApplicationCreateNestedOneWithoutTargetContextInput
 }
 
 export type TargetContextUncheckedCreateWithoutProfileInput = {
   id: string
+  trailFocus?: string
   role: string
   company?: string | null
   jobTitle?: string | null
@@ -497,6 +569,8 @@ export type TargetContextUncheckedCreateWithoutProfileInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutTargetContextInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutTargetContextInput
+  jobApplication?: Prisma.JobApplicationUncheckedCreateNestedOneWithoutTargetContextInput
 }
 
 export type TargetContextCreateOrConnectWithoutProfileInput = {
@@ -531,6 +605,7 @@ export type TargetContextScalarWhereInput = {
   NOT?: Prisma.TargetContextScalarWhereInput | Prisma.TargetContextScalarWhereInput[]
   id?: Prisma.StringFilter<"TargetContext"> | string
   profileId?: Prisma.StringFilter<"TargetContext"> | string
+  trailFocus?: Prisma.StringFilter<"TargetContext"> | string
   role?: Prisma.StringFilter<"TargetContext"> | string
   company?: Prisma.StringNullableFilter<"TargetContext"> | string | null
   jobTitle?: Prisma.StringNullableFilter<"TargetContext"> | string | null
@@ -540,8 +615,9 @@ export type TargetContextScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"TargetContext"> | Date | string
 }
 
-export type TargetContextCreateWithoutProfileAnalysesInput = {
+export type TargetContextCreateWithoutAnalysisJobsInput = {
   id: string
+  trailFocus?: string
   role: string
   company?: string | null
   jobTitle?: string | null
@@ -550,11 +626,14 @@ export type TargetContextCreateWithoutProfileAnalysesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   profile: Prisma.UserProfileCreateNestedOneWithoutTargetContextsInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutTargetContextInput
+  jobApplication?: Prisma.JobApplicationCreateNestedOneWithoutTargetContextInput
 }
 
-export type TargetContextUncheckedCreateWithoutProfileAnalysesInput = {
+export type TargetContextUncheckedCreateWithoutAnalysisJobsInput = {
   id: string
   profileId: string
+  trailFocus?: string
   role: string
   company?: string | null
   jobTitle?: string | null
@@ -562,6 +641,160 @@ export type TargetContextUncheckedCreateWithoutProfileAnalysesInput = {
   isActive?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutTargetContextInput
+  jobApplication?: Prisma.JobApplicationUncheckedCreateNestedOneWithoutTargetContextInput
+}
+
+export type TargetContextCreateOrConnectWithoutAnalysisJobsInput = {
+  where: Prisma.TargetContextWhereUniqueInput
+  create: Prisma.XOR<Prisma.TargetContextCreateWithoutAnalysisJobsInput, Prisma.TargetContextUncheckedCreateWithoutAnalysisJobsInput>
+}
+
+export type TargetContextUpsertWithoutAnalysisJobsInput = {
+  update: Prisma.XOR<Prisma.TargetContextUpdateWithoutAnalysisJobsInput, Prisma.TargetContextUncheckedUpdateWithoutAnalysisJobsInput>
+  create: Prisma.XOR<Prisma.TargetContextCreateWithoutAnalysisJobsInput, Prisma.TargetContextUncheckedCreateWithoutAnalysisJobsInput>
+  where?: Prisma.TargetContextWhereInput
+}
+
+export type TargetContextUpdateToOneWithWhereWithoutAnalysisJobsInput = {
+  where?: Prisma.TargetContextWhereInput
+  data: Prisma.XOR<Prisma.TargetContextUpdateWithoutAnalysisJobsInput, Prisma.TargetContextUncheckedUpdateWithoutAnalysisJobsInput>
+}
+
+export type TargetContextUpdateWithoutAnalysisJobsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profile?: Prisma.UserProfileUpdateOneRequiredWithoutTargetContextsNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutTargetContextNestedInput
+  jobApplication?: Prisma.JobApplicationUpdateOneWithoutTargetContextNestedInput
+}
+
+export type TargetContextUncheckedUpdateWithoutAnalysisJobsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutTargetContextNestedInput
+  jobApplication?: Prisma.JobApplicationUncheckedUpdateOneWithoutTargetContextNestedInput
+}
+
+export type TargetContextCreateWithoutJobApplicationInput = {
+  id: string
+  trailFocus?: string
+  role: string
+  company?: string | null
+  jobTitle?: string | null
+  jobDescription?: string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  profile: Prisma.UserProfileCreateNestedOneWithoutTargetContextsInput
+  profileAnalyses?: Prisma.ProfileAnalysisCreateNestedManyWithoutTargetContextInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutTargetContextInput
+}
+
+export type TargetContextUncheckedCreateWithoutJobApplicationInput = {
+  id: string
+  profileId: string
+  trailFocus?: string
+  role: string
+  company?: string | null
+  jobTitle?: string | null
+  jobDescription?: string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedCreateNestedManyWithoutTargetContextInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutTargetContextInput
+}
+
+export type TargetContextCreateOrConnectWithoutJobApplicationInput = {
+  where: Prisma.TargetContextWhereUniqueInput
+  create: Prisma.XOR<Prisma.TargetContextCreateWithoutJobApplicationInput, Prisma.TargetContextUncheckedCreateWithoutJobApplicationInput>
+}
+
+export type TargetContextUpsertWithoutJobApplicationInput = {
+  update: Prisma.XOR<Prisma.TargetContextUpdateWithoutJobApplicationInput, Prisma.TargetContextUncheckedUpdateWithoutJobApplicationInput>
+  create: Prisma.XOR<Prisma.TargetContextCreateWithoutJobApplicationInput, Prisma.TargetContextUncheckedCreateWithoutJobApplicationInput>
+  where?: Prisma.TargetContextWhereInput
+}
+
+export type TargetContextUpdateToOneWithWhereWithoutJobApplicationInput = {
+  where?: Prisma.TargetContextWhereInput
+  data: Prisma.XOR<Prisma.TargetContextUpdateWithoutJobApplicationInput, Prisma.TargetContextUncheckedUpdateWithoutJobApplicationInput>
+}
+
+export type TargetContextUpdateWithoutJobApplicationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profile?: Prisma.UserProfileUpdateOneRequiredWithoutTargetContextsNestedInput
+  profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutTargetContextNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutTargetContextNestedInput
+}
+
+export type TargetContextUncheckedUpdateWithoutJobApplicationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutTargetContextNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutTargetContextNestedInput
+}
+
+export type TargetContextCreateWithoutProfileAnalysesInput = {
+  id: string
+  trailFocus?: string
+  role: string
+  company?: string | null
+  jobTitle?: string | null
+  jobDescription?: string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  profile: Prisma.UserProfileCreateNestedOneWithoutTargetContextsInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutTargetContextInput
+  jobApplication?: Prisma.JobApplicationCreateNestedOneWithoutTargetContextInput
+}
+
+export type TargetContextUncheckedCreateWithoutProfileAnalysesInput = {
+  id: string
+  profileId: string
+  trailFocus?: string
+  role: string
+  company?: string | null
+  jobTitle?: string | null
+  jobDescription?: string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutTargetContextInput
+  jobApplication?: Prisma.JobApplicationUncheckedCreateNestedOneWithoutTargetContextInput
 }
 
 export type TargetContextCreateOrConnectWithoutProfileAnalysesInput = {
@@ -582,6 +815,7 @@ export type TargetContextUpdateToOneWithWhereWithoutProfileAnalysesInput = {
 
 export type TargetContextUpdateWithoutProfileAnalysesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -590,11 +824,14 @@ export type TargetContextUpdateWithoutProfileAnalysesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profile?: Prisma.UserProfileUpdateOneRequiredWithoutTargetContextsNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutTargetContextNestedInput
+  jobApplication?: Prisma.JobApplicationUpdateOneWithoutTargetContextNestedInput
 }
 
 export type TargetContextUncheckedUpdateWithoutProfileAnalysesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   profileId?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -602,10 +839,13 @@ export type TargetContextUncheckedUpdateWithoutProfileAnalysesInput = {
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutTargetContextNestedInput
+  jobApplication?: Prisma.JobApplicationUncheckedUpdateOneWithoutTargetContextNestedInput
 }
 
 export type TargetContextCreateManyProfileInput = {
   id: string
+  trailFocus?: string
   role: string
   company?: string | null
   jobTitle?: string | null
@@ -617,6 +857,7 @@ export type TargetContextCreateManyProfileInput = {
 
 export type TargetContextUpdateWithoutProfileInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -625,10 +866,13 @@ export type TargetContextUpdateWithoutProfileInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profileAnalyses?: Prisma.ProfileAnalysisUpdateManyWithoutTargetContextNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutTargetContextNestedInput
+  jobApplication?: Prisma.JobApplicationUpdateOneWithoutTargetContextNestedInput
 }
 
 export type TargetContextUncheckedUpdateWithoutProfileInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -637,10 +881,13 @@ export type TargetContextUncheckedUpdateWithoutProfileInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   profileAnalyses?: Prisma.ProfileAnalysisUncheckedUpdateManyWithoutTargetContextNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutTargetContextNestedInput
+  jobApplication?: Prisma.JobApplicationUncheckedUpdateOneWithoutTargetContextNestedInput
 }
 
 export type TargetContextUncheckedUpdateManyWithoutProfileInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  trailFocus?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.StringFieldUpdateOperationsInput | string
   company?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -657,10 +904,12 @@ export type TargetContextUncheckedUpdateManyWithoutProfileInput = {
 
 export type TargetContextCountOutputType = {
   profileAnalyses: number
+  analysisJobs: number
 }
 
 export type TargetContextCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profileAnalyses?: boolean | TargetContextCountOutputTypeCountProfileAnalysesArgs
+  analysisJobs?: boolean | TargetContextCountOutputTypeCountAnalysisJobsArgs
 }
 
 /**
@@ -680,10 +929,18 @@ export type TargetContextCountOutputTypeCountProfileAnalysesArgs<ExtArgs extends
   where?: Prisma.ProfileAnalysisWhereInput
 }
 
+/**
+ * TargetContextCountOutputType without action
+ */
+export type TargetContextCountOutputTypeCountAnalysisJobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AnalysisJobWhereInput
+}
+
 
 export type TargetContextSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   profileId?: boolean
+  trailFocus?: boolean
   role?: boolean
   company?: boolean
   jobTitle?: boolean
@@ -693,12 +950,15 @@ export type TargetContextSelect<ExtArgs extends runtime.Types.Extensions.Interna
   updatedAt?: boolean
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   profileAnalyses?: boolean | Prisma.TargetContext$profileAnalysesArgs<ExtArgs>
+  analysisJobs?: boolean | Prisma.TargetContext$analysisJobsArgs<ExtArgs>
+  jobApplication?: boolean | Prisma.TargetContext$jobApplicationArgs<ExtArgs>
   _count?: boolean | Prisma.TargetContextCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["targetContext"]>
 
 export type TargetContextSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   profileId?: boolean
+  trailFocus?: boolean
   role?: boolean
   company?: boolean
   jobTitle?: boolean
@@ -712,6 +972,7 @@ export type TargetContextSelectCreateManyAndReturn<ExtArgs extends runtime.Types
 export type TargetContextSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   profileId?: boolean
+  trailFocus?: boolean
   role?: boolean
   company?: boolean
   jobTitle?: boolean
@@ -725,6 +986,7 @@ export type TargetContextSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
 export type TargetContextSelectScalar = {
   id?: boolean
   profileId?: boolean
+  trailFocus?: boolean
   role?: boolean
   company?: boolean
   jobTitle?: boolean
@@ -734,10 +996,12 @@ export type TargetContextSelectScalar = {
   updatedAt?: boolean
 }
 
-export type TargetContextOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "profileId" | "role" | "company" | "jobTitle" | "jobDescription" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["targetContext"]>
+export type TargetContextOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "profileId" | "trailFocus" | "role" | "company" | "jobTitle" | "jobDescription" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["targetContext"]>
 export type TargetContextInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profile?: boolean | Prisma.UserProfileDefaultArgs<ExtArgs>
   profileAnalyses?: boolean | Prisma.TargetContext$profileAnalysesArgs<ExtArgs>
+  analysisJobs?: boolean | Prisma.TargetContext$analysisJobsArgs<ExtArgs>
+  jobApplication?: boolean | Prisma.TargetContext$jobApplicationArgs<ExtArgs>
   _count?: boolean | Prisma.TargetContextCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TargetContextIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -752,10 +1016,13 @@ export type $TargetContextPayload<ExtArgs extends runtime.Types.Extensions.Inter
   objects: {
     profile: Prisma.$UserProfilePayload<ExtArgs>
     profileAnalyses: Prisma.$ProfileAnalysisPayload<ExtArgs>[]
+    analysisJobs: Prisma.$AnalysisJobPayload<ExtArgs>[]
+    jobApplication: Prisma.$JobApplicationPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     profileId: string
+    trailFocus: string
     role: string
     company: string | null
     jobTitle: string | null
@@ -1159,6 +1426,8 @@ export interface Prisma__TargetContextClient<T, Null = never, ExtArgs extends ru
   readonly [Symbol.toStringTag]: "PrismaPromise"
   profile<T extends Prisma.UserProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__UserProfileClient<runtime.Types.Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   profileAnalyses<T extends Prisma.TargetContext$profileAnalysesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TargetContext$profileAnalysesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProfileAnalysisPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  analysisJobs<T extends Prisma.TargetContext$analysisJobsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TargetContext$analysisJobsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnalysisJobPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  jobApplication<T extends Prisma.TargetContext$jobApplicationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TargetContext$jobApplicationArgs<ExtArgs>>): Prisma.Prisma__JobApplicationClient<runtime.Types.Result.GetResult<Prisma.$JobApplicationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1190,6 +1459,7 @@ export interface Prisma__TargetContextClient<T, Null = never, ExtArgs extends ru
 export interface TargetContextFieldRefs {
   readonly id: Prisma.FieldRef<"TargetContext", 'String'>
   readonly profileId: Prisma.FieldRef<"TargetContext", 'String'>
+  readonly trailFocus: Prisma.FieldRef<"TargetContext", 'String'>
   readonly role: Prisma.FieldRef<"TargetContext", 'String'>
   readonly company: Prisma.FieldRef<"TargetContext", 'String'>
   readonly jobTitle: Prisma.FieldRef<"TargetContext", 'String'>
@@ -1619,6 +1889,49 @@ export type TargetContext$profileAnalysesArgs<ExtArgs extends runtime.Types.Exte
   take?: number
   skip?: number
   distinct?: Prisma.ProfileAnalysisScalarFieldEnum | Prisma.ProfileAnalysisScalarFieldEnum[]
+}
+
+/**
+ * TargetContext.analysisJobs
+ */
+export type TargetContext$analysisJobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AnalysisJob
+   */
+  select?: Prisma.AnalysisJobSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AnalysisJob
+   */
+  omit?: Prisma.AnalysisJobOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AnalysisJobInclude<ExtArgs> | null
+  where?: Prisma.AnalysisJobWhereInput
+  orderBy?: Prisma.AnalysisJobOrderByWithRelationInput | Prisma.AnalysisJobOrderByWithRelationInput[]
+  cursor?: Prisma.AnalysisJobWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AnalysisJobScalarFieldEnum | Prisma.AnalysisJobScalarFieldEnum[]
+}
+
+/**
+ * TargetContext.jobApplication
+ */
+export type TargetContext$jobApplicationArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the JobApplication
+   */
+  select?: Prisma.JobApplicationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the JobApplication
+   */
+  omit?: Prisma.JobApplicationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.JobApplicationInclude<ExtArgs> | null
+  where?: Prisma.JobApplicationWhereInput
 }
 
 /**

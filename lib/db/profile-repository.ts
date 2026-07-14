@@ -17,6 +17,7 @@ import type {
   SourceDocumentRecord,
   TargetContextRecord,
 } from "@/lib/db/types";
+import type { ApplicationSubmission } from "@/lib/applications/types";
 import type {
   OnboardingState,
   OnboardingStatus,
@@ -96,6 +97,7 @@ function toTargetContextRecord(row: TargetContext): TargetContextRecord {
   return {
     id: row.id,
     profileId: row.profileId,
+    trailFocus: row.trailFocus as TargetContextRecord["trailFocus"],
     role: row.role,
     company: row.company,
     jobTitle: row.jobTitle,
@@ -265,8 +267,6 @@ export async function markOnboardingAnalyzingRecord(
         },
       });
 
-  await saveOnboardingDataModelRecord(clerkUserId, onboarding);
-
   return toProfileRecord(profile);
 }
 
@@ -307,8 +307,6 @@ export async function completeProfileOnboardingRecord(
           analysisError: null,
         },
       });
-
-  await saveOnboardingDataModelRecord(clerkUserId, onboarding);
 
   return toProfileRecord(profile);
 }
@@ -623,18 +621,17 @@ export async function updateOnboardingResumeMetadataRecord(
 
 export async function saveOnboardingDataModelRecord(
   clerkUserId: string,
-  onboarding: OnboardingSubmission,
+  onboarding: ApplicationSubmission,
 ) {
   await ensureProfilesTable();
   await getOrCreateProfileRecord(clerkUserId);
   await upsertCareerContextRecord(clerkUserId, onboarding);
   await upsertTargetContextRecord(clerkUserId, onboarding);
-  await upsertManualProjectRecord(clerkUserId, onboarding);
 }
 
 export async function upsertCareerContextRecord(
   clerkUserId: string,
-  onboarding: OnboardingSubmission,
+  onboarding: ApplicationSubmission,
 ) {
   await ensureProfilesTable();
 
@@ -648,7 +645,7 @@ export async function upsertCareerContextRecord(
       experienceLevel: onboarding.experienceLevel,
       targetCompany: emptyToNull(onboarding.targetCompany),
       targetJobTitle: emptyToNull(onboarding.targetJobTitle),
-      interviewOrApplicationDate: getInterviewDate(onboarding),
+      interviewOrApplicationDate: getApplicationDate(onboarding),
       noDateYet: Boolean(onboarding.noDateYet),
       dailyPreparationMinutes: getPreparationMinutes(onboarding.preparationTimePerDay),
       flexiblePreparationTime: onboarding.preparationTimePerDay === "flexible",
@@ -660,7 +657,7 @@ export async function upsertCareerContextRecord(
       experienceLevel: onboarding.experienceLevel,
       targetCompany: emptyToNull(onboarding.targetCompany),
       targetJobTitle: emptyToNull(onboarding.targetJobTitle),
-      interviewOrApplicationDate: getInterviewDate(onboarding),
+      interviewOrApplicationDate: getApplicationDate(onboarding),
       noDateYet: Boolean(onboarding.noDateYet),
       dailyPreparationMinutes: getPreparationMinutes(onboarding.preparationTimePerDay),
       flexiblePreparationTime: onboarding.preparationTimePerDay === "flexible",
@@ -673,9 +670,46 @@ export async function upsertCareerContextRecord(
   return toCareerContextRecord(careerContext);
 }
 
+export async function updateProfileDefaultsRecord(
+  clerkUserId: string,
+  input: {
+    targetRole: string;
+    experienceLevel: string;
+  },
+) {
+  await ensureProfilesTable();
+  await getOrCreateProfileRecord(clerkUserId);
+
+  const careerContext = await prisma.careerContext.upsert({
+    where: {
+      profileId: clerkUserId,
+    },
+    create: {
+      profileId: clerkUserId,
+      primaryTargetRole: input.targetRole,
+      experienceLevel: input.experienceLevel,
+      targetCompany: null,
+      targetJobTitle: null,
+      interviewOrApplicationDate: null,
+      noDateYet: true,
+      dailyPreparationMinutes: null,
+      flexiblePreparationTime: true,
+      preparationIntensity: "standard",
+      timezone: null,
+    },
+    update: {
+      primaryTargetRole: input.targetRole,
+      experienceLevel: input.experienceLevel,
+      updatedAt: new Date(),
+    },
+  });
+
+  return toCareerContextRecord(careerContext);
+}
+
 export async function upsertTargetContextRecord(
   clerkUserId: string,
-  onboarding: OnboardingSubmission,
+  onboarding: ApplicationSubmission,
 ) {
   await ensureProfilesTable();
   const targetContextId = getActiveTargetContextId(clerkUserId, onboarding);
@@ -699,6 +733,7 @@ export async function upsertTargetContextRecord(
       create: {
         id: targetContextId,
         profileId: clerkUserId,
+        trailFocus: onboarding.trailFocus,
         role: onboarding.targetRole,
         company: emptyToNull(onboarding.targetCompany),
         jobTitle: emptyToNull(onboarding.targetJobTitle),
@@ -710,6 +745,7 @@ export async function upsertTargetContextRecord(
       },
       update: {
         role: onboarding.targetRole,
+        trailFocus: onboarding.trailFocus,
         company: emptyToNull(onboarding.targetCompany),
         jobTitle: emptyToNull(onboarding.targetJobTitle),
         jobDescription:
@@ -727,38 +763,13 @@ export async function upsertTargetContextRecord(
 
 export async function upsertManualProjectRecord(
   clerkUserId: string,
-  onboarding: OnboardingSubmission,
+  onboarding: ApplicationSubmission,
 ) {
+  void clerkUserId;
+  void onboarding;
   await ensureProfilesTable();
 
-  if (onboarding.projectsMode !== "manual" || !onboarding.projectName?.trim()) {
-    return null;
-  }
-
-  const manualProject = await prisma.manualProject.upsert({
-    where: {
-      profileId_name: {
-        profileId: clerkUserId,
-        name: onboarding.projectName.trim(),
-      },
-    },
-    create: {
-      id: randomUUID(),
-      profileId: clerkUserId,
-      name: onboarding.projectName.trim(),
-      description: onboarding.projectDescription?.trim() ?? "",
-      technologies: getTechnologies(onboarding.projectTechStack),
-      currentStatus: "active",
-    },
-    update: {
-      description: onboarding.projectDescription?.trim() ?? "",
-      technologies: getTechnologies(onboarding.projectTechStack),
-      currentStatus: "active",
-      updatedAt: new Date(),
-    },
-  });
-
-  return toManualProjectRecord(manualProject);
+  return null;
 }
 
 export async function getCareerContextRecord(clerkUserId: string) {
@@ -833,7 +844,7 @@ export async function listResumeVersionRecords(clerkUserId: string) {
 
 function getActiveTargetContextId(
   clerkUserId: string,
-  onboarding: OnboardingSubmission,
+  onboarding: ApplicationSubmission,
 ) {
   return `target:${clerkUserId}:${buildAnalysisInputFingerprint(onboarding)}`;
 }
@@ -844,23 +855,14 @@ function emptyToNull(value: string | undefined) {
   return trimmed ? trimmed : null;
 }
 
-function getInterviewDate(onboarding: OnboardingSubmission) {
-  if (onboarding.noDateYet || !onboarding.interviewDate) {
+function getApplicationDate(onboarding: ApplicationSubmission) {
+  if (onboarding.noDateYet || !onboarding.applicationDate) {
     return null;
   }
 
-  return new Date(`${onboarding.interviewDate}T00:00:00.000Z`);
+  return new Date(`${onboarding.applicationDate}T00:00:00.000Z`);
 }
 
-function getPreparationMinutes(value: OnboardingSubmission["preparationTimePerDay"]) {
+function getPreparationMinutes(value: ApplicationSubmission["preparationTimePerDay"]) {
   return value === "flexible" ? null : Number(value);
-}
-
-function getTechnologies(value: string | undefined) {
-  return (
-    value
-      ?.split(",")
-      .map((item) => item.trim())
-      .filter(Boolean) ?? []
-  );
 }

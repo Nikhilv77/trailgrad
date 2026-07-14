@@ -1,4 +1,5 @@
 export type PreparationIntensity = "light" | "standard" | "intensive";
+export type TrailFocus = "job" | "learning";
 
 export type SourceDocumentType = "resume";
 
@@ -33,11 +34,32 @@ export interface CareerContextRecord {
 export interface TargetContextRecord {
   id: string;
   profileId: string;
+  trailFocus: TrailFocus;
   role: string;
   company: string | null;
   jobTitle: string | null;
   jobDescription: string | null;
   isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JobApplicationRecord {
+  id: string;
+  profileId: string;
+  targetContextId: string | null;
+  trailFocus: TrailFocus;
+  targetRole: string;
+  experienceLevel: string;
+  targetCompany: string | null;
+  targetJobTitle: string | null;
+  applicationDate: string | null;
+  noDateYet: boolean;
+  preparationTimePerDay: "15" | "30" | "60" | "flexible";
+  preparationIntensity: PreparationIntensity;
+  targetJobMode: "paste" | "skip";
+  jobDescription: string | null;
+  analysisJobId: string | null;
   createdAt: string;
   updatedAt: string;
 }
