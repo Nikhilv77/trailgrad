@@ -17,13 +17,18 @@ import {
 } from "@/lib/services/analysis-job-service";
 import {
   getOnboardingState,
+  listSourceDocuments,
   listResumeVersions,
+  markOnboardingCompleted,
 } from "@/lib/services/profile-service";
 import {
   ApplicationRequestSchema,
   ApplicationSubmissionSchema,
   OnboardingSubmissionSchema,
+  OnboardingTrailSubmissionSchema,
 } from "@/lib/validators/profile";
+import type { SourceDocumentRecord } from "@/lib/db/types";
+import type { OnboardingState, OnboardingSubmission } from "@/lib/onboarding/types";
 
 class ApplicationRouteError extends Error {
   constructor(
@@ -64,28 +69,16 @@ export async function POST(request: Request) {
     const userId = await requireUserId();
     const state = await getOnboardingState(userId);
 
-    if (state.status !== "completed") {
+    if (!canCreateTrailFromOnboardingState(state)) {
       throw new ApplicationRouteError(
         "ONBOARDING_NOT_COMPLETE",
         "Complete onboarding before creating a trail.",
       );
     }
 
-    const onboarding = OnboardingSubmissionSchema.safeParse(state.onboarding);
+    const sourceDocuments = await listSourceDocuments(userId);
+    const latestSourceDocument = sourceDocuments[0];
 
-    if (!onboarding.success) {
-      throw new ApplicationRouteError(
-        "ONBOARDING_NOT_COMPLETE",
-        "Complete onboarding before creating a trail.",
-      );
-    }
-
-    const requestInput = ApplicationRequestSchema.parse(await request.json());
-    const input = ApplicationSubmissionSchema.parse({
-      ...requestInput,
-      targetRole: onboarding.data.targetRole,
-      experienceLevel: onboarding.data.experienceLevel,
-    });
     const resumeVersion = (await listResumeVersions(userId)).find(
       (version) => version.active && version.extractedTextStatus === "EXTRACTED",
     );
@@ -96,6 +89,51 @@ export async function POST(request: Request) {
         "Upload a resume before creating a trail.",
       );
     }
+
+    if (shouldBlockForLatestResumeUpload(latestSourceDocument, resumeVersion)) {
+      throw new ApplicationRouteError(
+        "RESUME_NOT_READY",
+        "The latest uploaded file does not look like a valid resume. Upload a valid resume before creating a trail.",
+      );
+    }
+
+    const sourceDocument = sourceDocuments.find(
+      (document) => document.id === resumeVersion.sourceDocumentId,
+    );
+
+    if (!sourceDocument) {
+      throw new ApplicationRouteError(
+        "RESUME_NOT_READY",
+        "Upload a resume before creating a trail.",
+      );
+    }
+
+    const hydratedOnboarding = hydrateOnboardingResumeMetadata(
+      state.onboarding,
+      sourceDocument,
+    );
+    const onboarding = OnboardingSubmissionSchema.safeParse(hydratedOnboarding);
+
+    if (!onboarding.success) {
+      throw new ApplicationRouteError(
+        "ONBOARDING_NOT_COMPLETE",
+        "Complete onboarding before creating a trail.",
+      );
+    }
+
+    const requestBody = await request.json().catch(() => ({}));
+    const trailOnboarding =
+      state.status === "completed"
+        ? null
+        : OnboardingTrailSubmissionSchema.parse(hydratedOnboarding);
+    const input =
+      state.status === "completed"
+        ? ApplicationSubmissionSchema.parse({
+            ...ApplicationRequestSchema.parse(requestBody),
+            targetRole: onboarding.data.targetRole,
+            experienceLevel: onboarding.data.experienceLevel,
+          })
+        : ApplicationSubmissionSchema.parse(trailOnboarding);
 
     const application = await createJobApplicationRecord({
       profileId: userId,
@@ -152,6 +190,10 @@ export async function POST(request: Request) {
       );
     }
 
+    if (state.status !== "completed") {
+      await markOnboardingCompleted(userId, trailOnboarding ?? onboarding.data);
+    }
+
     return Response.json({
       application: savedApplication ?? application,
       analysisJobId: reservation.job.id,
@@ -182,6 +224,55 @@ async function requireUserId() {
   }
 
   return userId;
+}
+
+function canCreateTrailFromOnboardingState(state: OnboardingState) {
+  if (state.status === "completed") {
+    return true;
+  }
+
+  return (
+    state.status === "in_progress" &&
+    (state.currentStep === "trail" || state.currentStep === "resume")
+  );
+}
+
+function hydrateOnboardingResumeMetadata(
+  value: unknown,
+  sourceDocument: SourceDocumentRecord,
+): OnboardingSubmission {
+  const input =
+    value && typeof value === "object" && !Array.isArray(value) ? value : {};
+
+  return {
+    ...input,
+    resumeName: sourceDocument.originalFilename,
+    resumeContentType: sourceDocument.mimeType,
+    resumeSize: sourceDocument.fileSize,
+    resumeUploadedAt: sourceDocument.createdAt,
+  } as OnboardingSubmission;
+}
+
+function shouldBlockForLatestResumeUpload(
+  latestSourceDocument: SourceDocumentRecord | undefined,
+  activeResumeVersion: { sourceDocumentId: string; createdAt: string },
+) {
+  if (!latestSourceDocument) {
+    return false;
+  }
+
+  if (latestSourceDocument.processingStatus === "EXTRACTED") {
+    return false;
+  }
+
+  if (latestSourceDocument.id === activeResumeVersion.sourceDocumentId) {
+    return true;
+  }
+
+  return (
+    Date.parse(latestSourceDocument.createdAt) >=
+    Date.parse(activeResumeVersion.createdAt)
+  );
 }
 
 function getSafeApplicationError(error: unknown) {

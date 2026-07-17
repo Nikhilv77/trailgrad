@@ -1,8 +1,8 @@
 # Trailgrad
 
-Trailgrad is a Next.js interview-readiness product. The current app has a public marketing page, Clerk authentication, authenticated resume-first onboarding, private resume upload, resume-likeness validation, post-onboarding trail creation, durable MVP trail-analysis workflows, a trail-aware Today dashboard, and profile settings for resume, role, and experience defaults.
+Trailgrad is a Next.js interview-readiness product. It helps a candidate turn a target role, a real resume, and a concrete goal into a focused readiness trail.
 
-The core product loop is:
+The current product loop is:
 
 ```text
 Diagnose candidate risks
@@ -16,87 +16,131 @@ Diagnose candidate risks
 ## Current Stack
 
 - Next.js App Router
-- React and TypeScript
+- React 19 and TypeScript
 - Clerk for authentication
 - Neon PostgreSQL
 - Prisma ORM
 - Inngest for durable background jobs
-- Gemini API through a server-only AI provider boundary
-- Cloudflare R2 or any S3-compatible private object storage for resume files
+- Gemini through the server-only AI provider boundary
+- Cloudflare R2 or any S3-compatible private object storage for resumes
 - Vitest for unit tests
 - Playwright for e2e tests
 
-## App Flow
+## Current Product Flow
 
 Public users land on `/`.
 
-Signed-out users who enter the app go through Clerk at `/auth`. After authentication, server-side routing sends them to:
+Clerk handles sign-in and sign-up at `/auth`. After authentication:
 
-- `/onboarding` when their Trailgrad profile is not completed
-- `/today` when onboarding is completed
+- incomplete users go to `/onboarding`
+- completed users go to `/today`
+- completed users with no trail can still enter the first-trail flow
 
-Current protected app routes include:
+The active onboarding flow has two product steps:
 
-- `/today`
-- `/trails/new`
-- `/trails/preparing`
-- `/profile`
-- `/onboarding`
+1. Create a trail
+2. Upload a resume
 
-`/today/applications/new` and `/today/reanalyze` are compatibility redirects to `/trails/new`. The undeveloped product routes `/readiness`, `/projects`, and `/practice` are still protected placeholders and should not render mock product screens.
+There is no separate review screen, no "create trail" interstitial, and no hash-loader handoff in the active onboarding path.
 
-Incomplete authenticated users are redirected back to `/onboarding` when they open an app route. Completed authenticated users are redirected from `/onboarding` to `/today`.
+### Step 1: Create A Trail
+
+The first onboarding step uses the shared `FirstTrailForm` experience. It collects:
+
+- target role
+- experience level
+- primary goal
+- optional company target
+- timeline
+- weekly preparation time
+- preparation intensity
+- optional job description or notes
+
+The target role and experience level are selected from Trailgrad's supported catalogs. Arbitrary role strings are not accepted.
+
+### Step 2: Upload Resume
+
+The second onboarding step uploads one private PDF or DOCX resume. The UI shows extraction, inspection, success, and invalid-resume states inside the resume card.
+
+When the user creates the trail, the server:
+
+1. verifies the authenticated user's active extracted resume
+2. rejects the submission if the latest uploaded file failed resume validation
+3. validates the saved onboarding trail draft
+4. creates the first `job_applications` trail
+5. creates an idempotent `JOB_ANALYSIS` analysis job
+6. queues `trailgrad/profile.analysis.requested`
+7. marks onboarding completed
+8. redirects to `/trails/preparing?jobId=...&trail=...`
+9. sends the user to `/today?trail=...` when analysis reaches a terminal state
+
+`/onboarding/analyzing` remains only as a compatibility route and redirects back into the current flow.
+
+## Protected Routes
+
+- `/today` - selected-trail dashboard
+- `/trails/new` - reusable trail creation flow for completed users
+- `/trails/preparing` - loading handoff while trail analysis runs
+- `/profile` - profile settings for active resume, target role, and experience level
+- `/onboarding` - first-trail onboarding flow
+- `/readiness`, `/projects`, `/practice` - protected placeholders
+
+Compatibility redirects:
+
+- `/today/applications/new` -> `/trails/new`
+- `/today/reanalyze` -> `/trails/new`
 
 ## Key Files
 
 - `proxy.ts` - Clerk middleware and route protection
-- `lib/auth/server.ts` - server-side auth and onboarding redirect helpers
+- `lib/auth/server.ts` - server-side auth and redirect helpers
 - `app/auth/page.tsx` - post-auth routing entry
-- `app/onboarding/page.tsx` - authenticated onboarding page
-- `components/onboarding/onboarding-flow.tsx` - existing onboarding UI with persistent state and resume upload
-- `app/api/profile/onboarding/route.ts` - onboarding autosave and submission
+- `app/onboarding/page.tsx` - authenticated onboarding entry
+- `components/onboarding/onboarding-flow.tsx` - onboarding shell, progress, resume upload, first-trail completion
+- `components/trails/first-trail-form.tsx` - shared trail creation UI used by onboarding and `/trails/new`
+- `components/trails/trail-form-options.tsx` - trail option cards and selectors
+- `lib/trails/catalog.ts` - supported roles, experience levels, preparation time, and intensity catalogs
+- `app/api/profile/onboarding/route.ts` - onboarding state save and hardened completion validation
 - `app/api/profile/onboarding/resume/route.ts` - authenticated resume upload endpoint
-- `app/api/applications/route.ts` - completed-profile trail creation and listing endpoint
-- `app/api/profile/reanalysis/route.ts` - legacy POST compatibility and job-status polling endpoint
-- `app/profile/[[...slug]]/page.tsx` - profile settings for resume, role, and experience defaults
+- `app/api/applications/route.ts` - trail creation, onboarding first-trail completion, and analysis job queueing
+- `app/trails/new/page.tsx` - reusable completed-user trail setup route
+- `app/trails/preparing/page.tsx` - analysis loading handoff
+- `app/profile/[[...slug]]/page.tsx` - profile settings route
 - `components/profile/profile-settings.tsx` - profile update UI
-- `app/trails/new/page.tsx` - reusable trail setup route
-- `app/trails/preparing/page.tsx` - loading handoff while trail analysis runs
-- `app/today/applications/new/page.tsx` - compatibility redirect to `/trails/new`
 - `lib/services/profile-service.ts` - profile/onboarding service facade
-- `lib/db/profile-repository.ts` - Prisma-backed profile and onboarding repository
-- `lib/db/application-repository.ts` - Prisma-backed application repository
-- `lib/resume/upload-service.ts` - resume validation, storage, extraction, dedupe, and versioning
-- `lib/resume/resume-likeness.ts` and `lib/resume/resume-classifier.ts` - deterministic resume-shape checks used during upload
+- `lib/db/profile-repository.ts` - Prisma-backed profile and resume repository
+- `lib/db/application-repository.ts` - Prisma-backed trail repository
+- `lib/resume/upload-service.ts` - resume validation, private storage, extraction, dedupe, and versioning
+- `lib/resume/resume-likeness.ts` and `lib/resume/resume-classifier.ts` - deterministic resume-shape checks
 - `lib/storage/private-object-storage.ts` - server-only S3-compatible storage adapter
-- `lib/inngest/client.ts` - Inngest client and typed Trailgrad events
+- `lib/inngest/client.ts` - typed Inngest events
 - `lib/inngest/functions.ts` - durable background job handlers
-- `lib/ai/provider-factory.ts` - server-only AI provider factory used by the analysis workflow
+- `lib/ai/provider-factory.ts` - server-only AI provider factory
 - `lib/ai/providers/gemini-provider.ts` - Gemini structured-output provider
 - `lib/ai/configuration.ts` - AI provider, model, timeout, retry, budget, and data-policy configuration
-- `lib/ai/schemas/` - Zod schemas for AI structured outputs
-- `lib/ai/prompts/` - shared Trailgrad AI rules and operation prompts
+- `lib/ai/prompts/mvp-analysis.ts` - compact trail-analysis prompt
+- `lib/validators/profile.ts` - onboarding, profile, and trail validation schemas
 - `prisma/schema.prisma` - canonical database schema
 - `prisma/migrations/` - canonical database migration history
 
-## Database Model
+## Data Model
 
-Trailgrad uses Clerk user IDs as the stable auth reference. `user_profiles.clerk_user_id` is the primary key, so profile creation is idempotent and there is one Trailgrad profile per Clerk user.
+Trailgrad uses Clerk user IDs as the stable profile identity. Privileged endpoints only resolve the current profile from the authenticated Clerk user.
 
 Implemented tables:
 
-- `user_profiles` - onboarding status, current step, timestamps, analysis error, and JSON onboarding draft
-- `career_contexts` - target role, experience level, timeline, preparation availability, intensity, and optional company/title
-- `target_contexts` - active target role/job description context
-- `job_applications` - completed-user trails with target, timeline, JD, and prep settings
-- `manual_projects` - retained database table from the onboarding data model; no current UI writes manual projects
-- `source_documents` - private uploaded document metadata, storage path, SHA-256 hash, processing status, and version
-- `resume_versions` - versioned resume records, extracted text status, extracted text, and active flag
-- `analysis_jobs` - durable analysis job state, progress stage, retry count, idempotency key, and safe errors
-- `profile_analyses` - one compact MVP structured analysis per resume version and target context
-- `ai_runs` - safe AI metadata only: provider/model, operation, prompt version, token counts, cost estimate, duration, status, fallback flag, and safe error code
+- `user_profiles` - onboarding status, current step, timestamps, analysis error, and onboarding draft
+- `career_contexts` - target role, experience level, timeline, preparation time, intensity, and optional target details
+- `target_contexts` - active target role or job-description context
+- `job_applications` - user-created trails
+- `manual_projects` - retained table; no active UI writes manual projects
+- `source_documents` - private uploaded document metadata and storage path
+- `resume_versions` - extracted resume text, extraction status, active flag, and version history
+- `analysis_jobs` - durable job state, idempotency, retries, stage, and safe errors
+- `profile_analyses` - compact structured analysis result per resume version and target context
+- `ai_runs` - safe AI metadata only
 
-The old base64 resume storage path has been removed. Original resume bytes are not stored in Neon.
+Original resume bytes are not stored in Neon. Resume files live in private S3-compatible object storage.
 
 `ai_runs` must not store resume text, job-description text, complete prompts, complete model outputs, interview answers, personal contact information, addresses, or API keys.
 
@@ -118,9 +162,9 @@ The server validates:
 - sanitized filename
 - duplicate content by SHA-256
 - readable extracted text
-- likely resume structure, so unrelated PDFs or product documents are rejected before analysis
+- likely resume structure
 
-Files are stored privately in S3-compatible object storage using this path shape:
+Files are stored privately with this path shape:
 
 ```text
 profiles/{profileId}/resumes/{sourceDocumentId}/{sanitizedFilename}
@@ -128,62 +172,37 @@ profiles/{profileId}/resumes/{sourceDocumentId}/{sanitizedFilename}
 
 The upload service:
 
-1. Resolves or creates the current Trailgrad profile.
-2. Validates and hashes the uploaded bytes.
-3. Reuses an existing `SourceDocument` for duplicate content.
-4. Uploads new files to private object storage.
-5. Extracts resume text server-side.
-6. Stores normalized extracted text in `resume_versions`.
-7. Updates onboarding resume metadata.
+1. resolves or creates the current Trailgrad profile
+2. validates and hashes the uploaded bytes
+3. reuses an existing `SourceDocument` for duplicate content
+4. uploads new files to private object storage
+5. extracts resume text server-side
+6. stores normalized extracted text in `resume_versions`
+7. updates onboarding resume metadata
 
-No permanent public URLs are exposed.
+No permanent public resume URLs are exposed.
 
-On final onboarding submission, the server ignores client-submitted resume metadata and hydrates `resumeName`, `resumeSize`, `resumeContentType`, and `resumeUploadedAt` from the active server-side source document. The browser can display upload state, but the database source of truth is the authenticated user's active uploaded resume.
+On final onboarding/trail creation, the server does not trust browser-submitted resume metadata. It hydrates resume name, size, content type, and upload time from the authenticated user's active `source_documents` record.
 
-## Onboarding and Analysis
+If a user uploads a bad file after a valid resume, trail creation is blocked until they upload a valid resume again. This prevents a stale valid resume from letting an invalid latest upload pass.
 
-Onboarding currently collects:
+## Trail Analysis
 
-- target role/domain and experience level
-- resume upload
-- final review before analysis
+Trail creation uses the active extracted resume plus the selected target context.
 
-The server validates final onboarding input with Zod. Important guardrails:
+The flow:
 
-- `targetRole` must be one of Trailgrad's supported role IDs.
-- final onboarding requires an active extracted resume owned by the authenticated user.
-- the server hydrates resume metadata from `source_documents`.
-- browser-submitted resume filename, size, and content type are ignored on final submission.
+1. Persist a `job_applications` trail.
+2. Update the active career and target context.
+3. Create an idempotent `JOB_ANALYSIS` job.
+4. Send `trailgrad/profile.analysis.requested`.
+5. Inngest loads the active resume text and target context.
+6. `getAIProvider()` returns the configured provider.
+7. Gemini returns compact structured JSON.
+8. Zod validates the result.
+9. Trailgrad stores the result in `profile_analyses`.
 
-When onboarding is submitted, Trailgrad:
-
-1. Saves the hardened onboarding payload with server-hydrated resume metadata.
-2. Marks onboarding completed.
-3. Shows the `/onboarding/analyzing` handoff.
-4. Sends the user to `/trails/new`.
-
-Completed users then create trails at `/trails/new`. A trail can represent a job, interview, internship, or learning goal. The trail form collects:
-
-- optional company and job title
-- optional learning topic/goal when the trail is learning-focused
-- target date/timeline or "no date yet"
-- daily prep time and intensity
-- optional pasted job description or learning context
-
-Trails use the role/domain and experience level from onboarding as trusted profile defaults. Completed users can later update those defaults and upload a newer active resume from `/profile`.
-
-Trail creation:
-
-1. Persists a `job_applications` row.
-2. Updates the active career and target context used by analysis.
-3. Creates an idempotent `JOB_ANALYSIS` `AnalysisJob` tied to the trail target context.
-4. Sends the typed Inngest event `trailgrad/profile.analysis.requested`.
-5. The Inngest worker loads the active extracted resume and trail target context.
-6. The AI provider factory returns the Gemini provider.
-7. Gemini returns compact structured JSON validated by Zod.
-8. Trailgrad stores the result in `profile_analyses`.
-
-The current MVP analysis result includes:
+The current MVP result includes:
 
 - profile summary
 - strongest signals
@@ -195,50 +214,36 @@ The current MVP analysis result includes:
 - readiness dimensions
 - target-alignment classification
 
-Target alignment is used to detect when the selected role, resume direction, and pasted JD may be pointing at different goals. It is surfaced inside the Today dashboard, but it does not yet block analysis.
+Target alignment helps detect when the selected role, resume direction, and pasted target details point at different goals. It is surfaced in the Today dashboard, but it does not yet block analysis.
 
-## Trails And Dashboard
+## Today And Profile
 
 Completed users can create multiple trails from `/trails/new`.
 
-The trail flow:
-
-1. Keeps the current active resume.
-2. Lets the user choose whether the trail is for a job/interview or a learning goal.
-3. Lets the user set optional company/topic, title/goal, optional details, target date/timeline, preparation time, and intensity.
-4. Saves a user-facing trail using the current profile role/domain and experience defaults.
-5. Creates an idempotent `JOB_ANALYSIS` `AnalysisJob`.
-6. Queues the same Inngest analysis event.
-7. Shows `/trails/preparing` while the new job is running.
-8. Polls `/api/profile/reanalysis?jobId=...`.
-9. Hard-refreshes `/today?trail=...` when the job reaches a terminal state, so the selected trail dashboard is shown.
-
-The Today dashboard now:
+The Today dashboard:
 
 - lists trails in the sidebar
-- lets users switch trails from a dropdown
-- renders the readiness dashboard for the selected trail's target context
-- links to create a new trail
-- links to `/profile` for resume, role, and experience updates
-- shows a trail workspace/empty state when a selected trail has not produced a completed analysis yet
+- lets users switch the selected trail
+- renders the selected trail's completed analysis
+- links to new trail creation
+- links to profile settings
+- shows an empty/loading workspace when the selected trail has no completed analysis yet
 
-## Profile Settings
+`/profile` lets completed users update:
 
-Completed users can open `/profile` to update reusable profile defaults:
-
-- active resume upload
-- target role/domain
+- active resume
+- target role
 - experience level
 
-Resume updates reuse the same authenticated upload pipeline as onboarding, including private storage, extraction, duplicate detection, and resume-likeness validation. Role updates are still restricted to Trailgrad's supported role IDs. Updating profile defaults does not rewrite existing trail snapshots; new trails use the latest defaults.
+Profile resume uploads reuse the same private upload, extraction, duplicate detection, and resume-likeness checks. Updating profile defaults does not rewrite existing trail snapshots; new trails use the latest defaults.
 
-Application analysis failures do not mark completed onboarding as failed.
+Trail analysis failures do not reset completed onboarding to failed.
 
 ## Environment
 
 Create `.env.local` from `.env.example`.
 
-Required:
+Core local values:
 
 ```env
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
@@ -254,6 +259,7 @@ S3_BUCKET=
 S3_ACCESS_KEY_ID=
 S3_SECRET_ACCESS_KEY=
 RESUME_MAX_UPLOAD_BYTES=5242880
+RESUME_MAX_PAGE_COUNT=5
 AI_PROVIDER=gemini
 AI_DATA_POLICY=synthetic_only
 GEMINI_API_KEY=
@@ -264,6 +270,9 @@ AI_DEFAULT_TIMEOUT_MS=30000
 AI_MAX_RETRIES=1
 AI_MONTHLY_BUDGET_USD=0
 AI_MAX_OUTPUT_TOKENS=3072
+INNGEST_DEV=1
+NEXT_PUBLIC_SITE_URL=https://trailgrad.com
+PLAYWRIGHT_BASE_URL=
 ```
 
 For Cloudflare R2:
@@ -278,11 +287,9 @@ Use the R2 S3 client Access Key ID and Secret Access Key. Do not use `NEXT_PUBLI
 
 AI secrets are server-only. Do not prefix `GEMINI_API_KEY` with `NEXT_PUBLIC_`.
 
-By default, `AI_DATA_POLICY=synthetic_only`. In this mode Trailgrad blocks model calls that attempt to send real candidate resumes, real job descriptions, or personal candidate data. Only synthetic fixtures or explicitly marked development data may be sent. To use real candidate data in a properly configured environment, set `AI_DATA_POLICY=real_user_data_allowed` intentionally; Trailgrad never enables that mode automatically and never relies only on `NODE_ENV` for data protection.
+By default, `AI_DATA_POLICY=synthetic_only`. In this mode Trailgrad blocks model calls that attempt to send real candidate resumes, real job descriptions, or personal candidate data. To use real candidate data in a properly configured environment, set `AI_DATA_POLICY=real_user_data_allowed` intentionally.
 
-The AI foundation implements Gemini structured JSON output and safe metadata logging. The MVP trail-analysis workflow queues an Inngest `JOB_ANALYSIS` job after trail creation, analyzes the extracted resume plus the selected trail target context, and stores one compact `profile_analyses` result per resume version and target context. To process it locally, run the Next.js app and an Inngest dev worker pointed at `/api/inngest`. With `AI_DATA_POLICY=synthetic_only`, real resumes and job descriptions are blocked; use synthetic fixtures or intentionally set `AI_DATA_POLICY=real_user_data_allowed` in a properly configured environment.
-
-For local Inngest development, keep `INNGEST_DEV=1` in `.env.local` and run the Inngest dev server alongside `pnpm dev`.
+For local Inngest development, keep `INNGEST_DEV=1` and run the Inngest dev server alongside `pnpm dev`.
 
 ## Development
 
@@ -334,15 +341,15 @@ pnpm test
 
 ## Notes For Future Agents
 
-- Do not redesign the UI unless explicitly asked. The current branding, typography, colors, spacing, and onboarding presentation should be preserved.
-- Do not replace Clerk or add a second auth abstraction.
+- Do not redesign the UI unless explicitly asked.
+- Preserve Trailgrad branding, typography, colors, spacing, card style, and button style.
+- Do not replace Clerk or add a second auth system.
 - Keep privileged work server-side.
 - Use Prisma and `prisma/migrations/` as the database source of truth.
 - Do not store original resume bytes in Neon.
-- Keep object storage private and use signed URLs only when a user must access their own file.
-- Resume upload still stops at private storage and text extraction. Trail analysis happens later, after trail creation, through the Inngest MVP profile analysis job.
-- The AI provider architecture currently implements only Gemini.
-- Gemini free-tier development must use synthetic or anonymized data only.
-- Do not trust browser-supplied resume metadata on final submission. The server hydrates final resume metadata from the active source document.
-- Do not allow arbitrary target role strings unless the product intentionally adds a custom-role flow.
+- Keep object storage private.
+- Do not trust browser-supplied resume metadata on final onboarding or trail creation.
+- Do not allow arbitrary target role strings unless a custom-role product flow is intentionally added.
+- Use `getAIProvider()` and shared AI data-policy checks for model calls.
+- Do not store full prompts, full responses, resume text, job-description text, API keys, emails, phone numbers, addresses, or interview answers in `ai_runs`.
 - Trail analysis uses `JOB_ANALYSIS` jobs and should not reset a completed user back into failed onboarding.

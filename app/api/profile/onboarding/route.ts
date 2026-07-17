@@ -91,6 +91,8 @@ export async function PATCH(request: Request) {
       );
     }
 
+    console.error("[onboarding] Failed to save onboarding step.", error);
+
     return Response.json(
       { error: "Unable to save onboarding step." },
       { status: 500 },
@@ -111,6 +113,9 @@ export async function POST(request: Request) {
       );
     }
 
+    const sourceDocuments = await listSourceDocuments(userId);
+    const latestSourceDocument = sourceDocuments[0];
+
     const resumeVersion = (await listResumeVersions(userId)).find(
       (version) => version.active && version.extractedTextStatus === "EXTRACTED",
     );
@@ -122,7 +127,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const sourceDocument = (await listSourceDocuments(userId)).find(
+    if (shouldBlockForLatestResumeUpload(latestSourceDocument, resumeVersion)) {
+      throw new OnboardingSubmissionError(
+        "RESUME_NOT_READY",
+        "The latest uploaded file does not look like a valid resume. Upload a valid resume before creating a trail.",
+      );
+    }
+
+    const sourceDocument = sourceDocuments.find(
       (document) => document.id === resumeVersion.sourceDocumentId,
     );
 
@@ -180,6 +192,28 @@ function hydrateOnboardingResumeMetadata(
     resumeSize: sourceDocument.fileSize,
     resumeUploadedAt: sourceDocument.createdAt,
   } as OnboardingSubmission;
+}
+
+function shouldBlockForLatestResumeUpload(
+  latestSourceDocument: SourceDocumentRecord | undefined,
+  activeResumeVersion: { sourceDocumentId: string; createdAt: string },
+) {
+  if (!latestSourceDocument) {
+    return false;
+  }
+
+  if (latestSourceDocument.processingStatus === "EXTRACTED") {
+    return false;
+  }
+
+  if (latestSourceDocument.id === activeResumeVersion.sourceDocumentId) {
+    return true;
+  }
+
+  return (
+    Date.parse(latestSourceDocument.createdAt) >=
+    Date.parse(activeResumeVersion.createdAt)
+  );
 }
 
 function getSafeOnboardingSubmissionError(error: unknown) {

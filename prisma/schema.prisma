@@ -10,7 +10,7 @@ datasource db {
 model UserProfile {
   clerkUserId           String    @id @map("clerk_user_id")
   onboardingStatus      String    @default("not_started") @map("onboarding_status")
-  currentOnboardingStep String    @default("target-role") @map("current_onboarding_step")
+  currentOnboardingStep String    @default("trail") @map("current_onboarding_step")
   onboardingStartedAt   DateTime? @map("onboarding_started_at") @db.Timestamptz(6)
   onboardingCompletedAt DateTime? @map("onboarding_completed_at") @db.Timestamptz(6)
   analysisError         String?   @map("analysis_error")

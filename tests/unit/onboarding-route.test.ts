@@ -35,6 +35,15 @@ const serverHydratedOnboarding: OnboardingSubmission = {
   resumeUploadedAt: serverSourceDocument.createdAt,
 };
 
+const failedLatestSourceDocument = {
+  ...serverSourceDocument,
+  id: "source_failed",
+  originalFilename: "not-a-resume.pdf",
+  processingStatus: "FAILED",
+  errorCode: "RESUME_NOT_DETECTED",
+  createdAt: "2026-01-01T00:05:00.000Z",
+};
+
 afterEach(() => {
   vi.resetModules();
   vi.restoreAllMocks();
@@ -98,7 +107,7 @@ describe("onboarding profile route", () => {
       listSourceDocuments: vi.fn(async () => [serverSourceDocument]),
       markOnboardingCompleted: vi.fn(async () => ({
         onboardingStatus: "completed",
-        currentOnboardingStep: "review",
+        currentOnboardingStep: "trail",
         onboardingStartedAt: "2026-01-01T00:00:00.000Z",
         onboardingCompletedAt: "2026-01-01T00:04:00.000Z",
         analysisError: null,
@@ -127,7 +136,7 @@ describe("onboarding profile route", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       status: "completed",
-      currentStep: "review",
+      currentStep: "trail",
       completedAt: "2026-01-01T00:04:00.000Z",
       onboarding: serverHydratedOnboarding,
     });
@@ -162,6 +171,50 @@ describe("onboarding profile route", () => {
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toMatchObject({
       code: "RESUME_NOT_READY",
+    });
+  });
+
+  it("rejects final submission when the latest resume upload failed", async () => {
+    vi.doMock("@clerk/nextjs/server", () => ({
+      auth: vi.fn(async () => ({ userId: "user_onboarding_route" })),
+    }));
+    vi.doMock("@/lib/services/onboarding-analysis-status-service", () => ({
+      getReconciledOnboardingState: vi.fn(),
+    }));
+    vi.doMock("@/lib/services/profile-service", () => ({
+      listResumeVersions: vi.fn(async () => [
+        {
+          id: "resume_version_1",
+          profileId: "user_onboarding_route",
+          sourceDocumentId: "source_1",
+          version: 1,
+          extractedTextStatus: "EXTRACTED",
+          extractedText: "TRAILGRAD_SYNTHETIC_FIXTURE resume text",
+          errorCode: null,
+          active: true,
+          createdAt: "2026-01-01T00:00:00.000Z",
+        },
+      ]),
+      listSourceDocuments: vi.fn(async () => [
+        failedLatestSourceDocument,
+        serverSourceDocument,
+      ]),
+      markOnboardingCompleted: vi.fn(),
+      updateOnboardingStep: vi.fn(),
+    }));
+
+    const { POST } = await import("@/app/api/profile/onboarding/route");
+    const response = await POST(
+      new Request("http://localhost/api/profile/onboarding", {
+        method: "POST",
+        body: JSON.stringify(onboardingPayload),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "RESUME_NOT_READY",
+      error: expect.stringContaining("latest uploaded file"),
     });
   });
 });

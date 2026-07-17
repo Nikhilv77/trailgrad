@@ -216,7 +216,7 @@ beforeEach(() => {
     targetContextId: null,
     status: "PENDING",
     result: null,
-    promptVersion: "mvp-profile-analysis-v4-trail-focus",
+    promptVersion: "mvp-profile-analysis-v5-onboarding-trail",
     provider: "pending",
     model: "pending",
     safeErrorCode: null,
@@ -312,9 +312,50 @@ describe("MVP profile analysis workflow", () => {
     await runMVPProfileAnalysisJob("job_1");
     expect(provider.generateStructured).toHaveBeenCalledWith(
       expect.objectContaining({
+        content: expect.stringContaining("Trail setup context"),
+      }),
+    );
+    expect(provider.generateStructured).toHaveBeenCalledWith(
+      expect.objectContaining({
         content: expect.stringContaining("Build eval tools"),
       }),
     );
+  });
+
+  it("builds a concise labeled trail setup packet for the AI", async () => {
+    const { mvpProfileAnalysisTestInternals } = await import(
+      "@/lib/services/mvp-profile-analysis-service"
+    );
+    const content =
+      mvpProfileAnalysisTestInternals.buildMVPAnalysisPromptContent(
+        context({
+          careerContext: {
+            primaryTargetRole: "product",
+            experienceLevel: "junior",
+            interviewOrApplicationDate: "2026-05-01",
+            noDateYet: false,
+            dailyPreparationMinutes: 30,
+            flexiblePreparationTime: false,
+            preparationIntensity: "standard",
+          },
+          targetContext: {
+            id: "target_product",
+            trailFocus: "job",
+            role: "product",
+            company: "Fictional Commerce Co",
+            jobTitle: "Crack top product roles",
+            jobDescription:
+              "TRAILGRAD_SYNTHETIC_FIXTURE Product role focused on checkout experiments.",
+          },
+        }),
+      );
+
+    expect(content).toContain("Trail setup context");
+    expect(content).toContain("Product Manager");
+    expect(content).toContain("Junior");
+    expect(content).toContain("5-10 hours per week");
+    expect(content).toContain("responsePriorities");
+    expect(content).not.toContain("Target context:");
   });
 
   it("preserves NOT_ASSESSED interview performance in valid output", async () => {
@@ -387,7 +428,7 @@ describe("MVP profile analysis workflow", () => {
       targetContextId: null,
       status: "COMPLETED",
       result: validAnalysis,
-      promptVersion: "mvp-profile-analysis-v4-trail-focus",
+      promptVersion: "mvp-profile-analysis-v5-onboarding-trail",
       provider: "gemini",
       model: "gemini-test",
       safeErrorCode: null,

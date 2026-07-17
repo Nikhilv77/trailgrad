@@ -7,12 +7,11 @@ import {
   listManualProjectRecords,
   listResumeVersionRecords,
   listSourceDocumentRecords,
-  markOnboardingAnalyzingRecord,
   markOnboardingFailedRecord,
-  saveOnboardingDataModelRecord,
   updateProfileDefaultsRecord,
   updateOnboardingStepRecord,
 } from "@/lib/db/profile-repository";
+import { listJobApplicationRecords } from "@/lib/db/application-repository";
 import type {
   CareerContextRecord,
   ManualProjectRecord,
@@ -20,7 +19,6 @@ import type {
   SourceDocumentRecord,
   TargetContextRecord,
 } from "@/lib/db/types";
-import type { ApplicationSubmission } from "@/lib/applications/types";
 import type {
   OnboardingState,
   OnboardingStatus,
@@ -85,13 +83,6 @@ export async function updateProfileDefaults(
   return updateProfileDefaultsRecord(clerkUserId, input);
 }
 
-export async function markOnboardingAnalyzing(
-  clerkUserId: string,
-  onboarding: OnboardingSubmission,
-): Promise<TrailgradProfileRecord> {
-  return markOnboardingAnalyzingRecord(clerkUserId, onboarding);
-}
-
 export async function markOnboardingCompleted(
   clerkUserId: string,
   onboarding: OnboardingSubmission,
@@ -104,13 +95,6 @@ export async function markOnboardingFailed(
   analysisError: string,
 ): Promise<TrailgradProfileRecord> {
   return markOnboardingFailedRecord(clerkUserId, analysisError);
-}
-
-export async function saveOnboardingDataModel(
-  clerkUserId: string,
-  onboarding: ApplicationSubmission,
-): Promise<void> {
-  await saveOnboardingDataModelRecord(clerkUserId, onboarding);
 }
 
 export async function getCareerContext(
@@ -153,11 +137,15 @@ export async function readTrailgradOnboardingStatus(
   clerkUserId: string,
 ): Promise<TrailgradOnboardingStatus> {
   const profile = await getOrCreateProfile(clerkUserId);
+  const hasCompletedOnboardingPayload =
+    profile.onboardingStatus === "completed" &&
+    OnboardingSubmissionSchema.safeParse(profile.onboarding).success;
+  const hasTrail =
+    hasCompletedOnboardingPayload &&
+    (await listJobApplicationRecords(clerkUserId)).length > 0;
 
   return {
-    completed:
-      profile.onboardingStatus === "completed" &&
-      OnboardingSubmissionSchema.safeParse(profile.onboarding).success,
+    completed: hasCompletedOnboardingPayload && hasTrail,
     completedAt: profile.onboardingCompletedAt,
     profile,
   };

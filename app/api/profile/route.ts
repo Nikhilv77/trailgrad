@@ -74,7 +74,7 @@ export async function PATCH(request: Request) {
     });
 
     const [profile, careerContext] = await Promise.all([
-      updateOnboardingStep(userId, "review", onboarding),
+      updateOnboardingStep(userId, "trail", onboarding),
       updateProfileDefaults(userId, input),
     ]);
 

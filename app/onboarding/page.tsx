@@ -8,6 +8,7 @@ import {
   getSingleSearchParam,
   requireAuthenticatedUser,
 } from "@/lib/auth/server";
+import { listJobApplicationRecords } from "@/lib/db/application-repository";
 import { getReconciledOnboardingState } from "@/lib/services/onboarding-analysis-status-service";
 import { OnboardingSubmissionSchema } from "@/lib/validators/profile";
 
@@ -40,15 +41,26 @@ export default async function OnboardingPage({
   });
   const onboardingState = await getReconciledOnboardingState(user.userId);
 
-  if (
+  const completedOnboarding =
     onboardingState.status === "completed" &&
-    OnboardingSubmissionSchema.safeParse(onboardingState.onboarding).success
-  ) {
-    redirect(DEFAULT_AUTHENTICATED_ROUTE);
-  }
+    OnboardingSubmissionSchema.safeParse(onboardingState.onboarding).success;
 
-  if (onboardingState.status === "analyzing") {
-    redirect("/onboarding/analyzing");
+  if (completedOnboarding) {
+    const trails = await listJobApplicationRecords(user.userId);
+
+    if (trails.length > 0) {
+      redirect(DEFAULT_AUTHENTICATED_ROUTE);
+    }
+
+    return (
+      <OnboardingFlow
+        initialState={{
+          ...onboardingState,
+          status: "in_progress",
+          currentStep: "trail",
+        }}
+      />
+    );
   }
 
   return <OnboardingFlow initialState={onboardingState} />;

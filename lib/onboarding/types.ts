@@ -1,3 +1,5 @@
+import type { ApplicationSubmission } from "@/lib/applications/types";
+
 export const onboardingStatuses = [
   "not_started",
   "in_progress",
@@ -9,14 +11,40 @@ export const onboardingStatuses = [
 export type OnboardingStatus = (typeof onboardingStatuses)[number];
 
 export const onboardingStepIds = [
-  "target-role",
+  "trail",
   "resume",
-  "review",
 ] as const;
 
 export type OnboardingStepId = (typeof onboardingStepIds)[number];
 
-export interface OnboardingSubmission {
+export const legacyOnboardingStepIds = [
+  "target-role",
+  "confirm",
+  "review",
+] as const;
+
+export type LegacyOnboardingStepId = (typeof legacyOnboardingStepIds)[number];
+
+export function normalizeOnboardingStepId(
+  stepId: string | null | undefined,
+): OnboardingStepId {
+  if (stepId === "resume") {
+    return "resume";
+  }
+
+  if (stepId === "target-role" || stepId === "trail") {
+    return "trail";
+  }
+
+  if (stepId === "confirm" || stepId === "review") {
+    return "resume";
+  }
+
+  return "trail";
+}
+
+export interface OnboardingSubmission
+  extends Partial<Omit<ApplicationSubmission, "targetRole" | "experienceLevel">> {
   targetRole: string;
   experienceLevel: string;
   resumeName?: string;

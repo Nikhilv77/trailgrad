@@ -96,23 +96,15 @@ export function AnalyzingStatus({
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f4fbf9] text-[#111827]">
+    <main className="relative min-h-screen overflow-hidden bg-[#f3f4f6] text-[#111827]">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[#f6fcfa]" />
-        <div
-          className="absolute inset-[-18%]"
-          style={{
-            background:
-              "radial-gradient(ellipse 24% 17% at 6% 72%, rgba(15,118,110,0.3), rgba(20,184,166,0.18) 46%, transparent 76%), radial-gradient(ellipse 32% 21% at 75% 16%, rgba(94,234,212,0.28), rgba(20,184,166,0.13) 48%, transparent 78%), linear-gradient(135deg, #f9fffd 0%, #e6fbf6 54%, #f7fcfa 100%)",
-            filter: "blur(34px) saturate(1.03)",
-            opacity: 0.86,
-          }}
-        />
-        <div className="tg-grid absolute inset-0 opacity-[0.045]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#f9fafb_0%,#f3f4f6_46%,#eef2f7_100%)]" />
+        <div className="absolute inset-x-0 top-0 h-48 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(255,255,255,0))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(107,114,128,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(107,114,128,0.055)_1px,transparent_1px)] [background-size:46px_46px] opacity-70" />
       </div>
 
-      <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1180px] items-center justify-center px-5 py-8 sm:px-8 lg:px-10">
-        <article className="w-full max-w-[640px] rounded-[28px] bg-white p-7 text-center shadow-[0_34px_110px_rgba(15,118,110,0.16),0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-2xl sm:p-9">
+      <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1320px] items-center justify-center px-5 py-8 sm:px-8 lg:px-10">
+        <article className="w-full max-w-[680px] rounded-[24px] border border-[#d9dee7] bg-white p-7 text-center shadow-none sm:p-9">
           <div className="mx-auto grid size-16 place-items-center rounded-[18px] border border-[#dff2ee] bg-[#effbf8] text-[#0f9f8d]">
             <AlertCircle className="size-7" />
           </div>

@@ -12,6 +12,30 @@ const extractedResumeVersion = {
   createdAt: "2026-01-01T00:00:00.000Z",
 };
 
+const serverSourceDocument = {
+  id: "source_1",
+  profileId: "user_application_route",
+  sourceType: "resume",
+  originalFilename: "server-resume.pdf",
+  mimeType: "application/pdf",
+  storagePath: "private/resumes/server-resume.pdf",
+  fileSize: 42_000,
+  sha256ContentHash: "hash_1",
+  processingStatus: "EXTRACTED",
+  errorCode: null,
+  version: 1,
+  createdAt: "2026-01-01T00:03:00.000Z",
+};
+
+const failedLatestSourceDocument = {
+  ...serverSourceDocument,
+  id: "source_failed",
+  originalFilename: "not-a-resume.pdf",
+  processingStatus: "FAILED",
+  errorCode: "RESUME_NOT_DETECTED",
+  createdAt: "2026-01-01T00:05:00.000Z",
+};
+
 const savedApplication = {
   id: "application_1",
   profileId: "user_application_route",
@@ -39,7 +63,7 @@ afterEach(() => {
 });
 
 describe("application analysis route", () => {
-  it("queues a job analysis after creating an application", async () => {
+  it("queues a job analysis and completes onboarding from the trail step", async () => {
     vi.doMock("@clerk/nextjs/server", () => ({
       auth: vi.fn(async () => ({ userId: "user_application_route" })),
     }));
@@ -80,18 +104,29 @@ describe("application analysis route", () => {
 
     const profileService = {
       getOnboardingState: vi.fn(async () => ({
-        status: "completed",
-        currentStep: "review",
+        status: "in_progress",
+        currentStep: "resume",
         startedAt: "2026-01-01T00:00:00.000Z",
-        completedAt: "2026-01-01T00:05:00.000Z",
+        completedAt: null,
         analysisError: null,
         onboarding: {
           targetRole: "product",
           experienceLevel: "mid-level",
-          resumeName: "resume.pdf",
+          resumeName: "fake-client-name.pdf",
+          trailFocus: "job",
+          targetCompany: "Fictional Commerce Co",
+          targetJobTitle: "Product Manager",
+          noDateYet: true,
+          targetJobMode: "paste",
+          jobDescription:
+            "TRAILGRAD_SYNTHETIC_FIXTURE Product manager role for checkout experiments.",
+          preparationTimePerDay: "60",
+          preparationIntensity: "intensive",
         },
       })),
       listResumeVersions: vi.fn(async () => [extractedResumeVersion]),
+      listSourceDocuments: vi.fn(async () => [serverSourceDocument]),
+      markOnboardingCompleted: vi.fn(),
     };
 
     vi.doMock("@/lib/services/profile-service", () => profileService);
@@ -165,6 +200,25 @@ describe("application analysis route", () => {
         type: "JOB_ANALYSIS",
       }),
     );
+    expect(profileService.markOnboardingCompleted).toHaveBeenCalledWith(
+      "user_application_route",
+      expect.objectContaining({
+        targetRole: "product",
+        experienceLevel: "mid-level",
+        trailFocus: "job",
+        targetCompany: "Fictional Commerce Co",
+        targetJobTitle: "Product Manager",
+        targetJobMode: "paste",
+        jobDescription:
+          "TRAILGRAD_SYNTHETIC_FIXTURE Product manager role for checkout experiments.",
+        preparationTimePerDay: "60",
+        preparationIntensity: "intensive",
+        resumeName: "server-resume.pdf",
+        resumeContentType: "application/pdf",
+        resumeSize: 42_000,
+        resumeUploadedAt: "2026-01-01T00:03:00.000Z",
+      }),
+    );
     expect(createProfileAnalysisRequestedEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         idempotencyKey: "JOB_ANALYSIS:user_application_route:source_1:fingerprint",
@@ -214,7 +268,7 @@ describe("application analysis route", () => {
     vi.doMock("@/lib/services/profile-service", () => ({
       getOnboardingState: vi.fn(async () => ({
         status: "completed",
-        currentStep: "review",
+        currentStep: "trail",
         startedAt: "2026-01-01T00:00:00.000Z",
         completedAt: "2026-01-01T00:05:00.000Z",
         analysisError: null,
@@ -225,6 +279,8 @@ describe("application analysis route", () => {
         },
       })),
       listResumeVersions: vi.fn(async () => [extractedResumeVersion]),
+      listSourceDocuments: vi.fn(async () => [serverSourceDocument]),
+      markOnboardingCompleted: vi.fn(),
     }));
 
     const learningApplication = {
@@ -290,7 +346,7 @@ describe("application analysis route", () => {
     vi.doMock("@/lib/services/profile-service", () => ({
       getOnboardingState: vi.fn(async () => ({
         status: "completed",
-        currentStep: "review",
+        currentStep: "trail",
         startedAt: "2026-01-01T00:00:00.000Z",
         completedAt: "2026-01-01T00:05:00.000Z",
         analysisError: null,
@@ -301,6 +357,8 @@ describe("application analysis route", () => {
         },
       })),
       listResumeVersions: vi.fn(async () => [extractedResumeVersion]),
+      listSourceDocuments: vi.fn(async () => [serverSourceDocument]),
+      markOnboardingCompleted: vi.fn(),
     }));
     vi.doMock("@/lib/db/application-repository", () => ({
       createJobApplicationRecord: vi.fn(),
@@ -324,6 +382,63 @@ describe("application analysis route", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
       code: "APPLICATION_INVALID_INPUT",
+    });
+  });
+
+  it("rejects trail creation when the latest resume upload failed", async () => {
+    vi.doMock("@clerk/nextjs/server", () => ({
+      auth: vi.fn(async () => ({ userId: "user_application_route" })),
+    }));
+    vi.doMock("@/lib/services/profile-service", () => ({
+      getOnboardingState: vi.fn(async () => ({
+        status: "in_progress",
+        currentStep: "resume",
+        startedAt: "2026-01-01T00:00:00.000Z",
+        completedAt: null,
+        analysisError: null,
+        onboarding: {
+          targetRole: "product",
+          experienceLevel: "mid-level",
+          resumeName: "server-resume.pdf",
+          trailFocus: "job",
+          targetCompany: "Fictional Commerce Co",
+          targetJobTitle: "Product Manager",
+          noDateYet: true,
+          targetJobMode: "skip",
+          preparationTimePerDay: "30",
+          preparationIntensity: "standard",
+        },
+      })),
+      listResumeVersions: vi.fn(async () => [extractedResumeVersion]),
+      listSourceDocuments: vi.fn(async () => [
+        failedLatestSourceDocument,
+        serverSourceDocument,
+      ]),
+      markOnboardingCompleted: vi.fn(),
+    }));
+    vi.doMock("@/lib/db/application-repository", () => ({
+      createJobApplicationRecord: vi.fn(),
+      attachAnalysisJobToApplicationRecord: vi.fn(),
+      listJobApplicationRecords: vi.fn(async () => []),
+    }));
+
+    const { POST } = await import("@/app/api/applications/route");
+    const response = await POST(
+      new Request("http://localhost/api/applications", {
+        method: "POST",
+        body: JSON.stringify({
+          noDateYet: true,
+          targetJobMode: "skip",
+          preparationTimePerDay: "30",
+          preparationIntensity: "standard",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: "RESUME_NOT_READY",
+      error: expect.stringContaining("latest uploaded file"),
     });
   });
 
@@ -356,7 +471,7 @@ describe("application analysis route", () => {
     vi.doMock("@/lib/services/profile-service", () => ({
       getOnboardingState: vi.fn(async () => ({
         status: "completed",
-        currentStep: "review",
+        currentStep: "trail",
         startedAt: "2026-01-01T00:00:00.000Z",
         completedAt: "2026-01-01T00:05:00.000Z",
         analysisError: null,
@@ -367,6 +482,8 @@ describe("application analysis route", () => {
         },
       })),
       listResumeVersions: vi.fn(async () => [extractedResumeVersion]),
+      listSourceDocuments: vi.fn(async () => [serverSourceDocument]),
+      markOnboardingCompleted: vi.fn(),
     }));
 
     const secondApplication = {
@@ -419,7 +536,7 @@ describe("application analysis route", () => {
     vi.doMock("@/lib/services/profile-service", () => ({
       getOnboardingState: vi.fn(async () => ({
         status: "completed",
-        currentStep: "review",
+        currentStep: "trail",
         startedAt: "2026-01-01T00:00:00.000Z",
         completedAt: "2026-01-01T00:05:00.000Z",
         analysisError: null,
@@ -428,6 +545,8 @@ describe("application analysis route", () => {
         },
       })),
       listResumeVersions: vi.fn(async () => [extractedResumeVersion]),
+      listSourceDocuments: vi.fn(async () => [serverSourceDocument]),
+      markOnboardingCompleted: vi.fn(),
     }));
     vi.doMock("@/lib/db/application-repository", () => ({
       createJobApplicationRecord: vi.fn(),
@@ -460,18 +579,16 @@ describe("application analysis route", () => {
     }));
     vi.doMock("@/lib/services/profile-service", () => ({
       getOnboardingState: vi.fn(async () => ({
-        status: "in_progress",
-        currentStep: "resume",
-        startedAt: "2026-01-01T00:00:00.000Z",
+        status: "not_started",
+        currentStep: "trail",
+        startedAt: null,
         completedAt: null,
         analysisError: null,
-        onboarding: {
-          targetRole: "product",
-          experienceLevel: "mid-level",
-          resumeName: "resume.pdf",
-        },
+        onboarding: null,
       })),
       listResumeVersions: vi.fn(),
+      listSourceDocuments: vi.fn(),
+      markOnboardingCompleted: vi.fn(),
     }));
     vi.doMock("@/lib/db/application-repository", () => ({
       createJobApplicationRecord: vi.fn(),

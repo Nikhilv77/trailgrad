@@ -1,22 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { ApplicationSubmission } from "@/lib/applications/types";
 import type { OnboardingSubmission } from "@/lib/onboarding/types";
 
 const onboardingPayload: OnboardingSubmission = {
   targetRole: "ai-engineer",
   experienceLevel: "junior",
   resumeName: "resume.pdf",
-};
-
-const applicationPayload: ApplicationSubmission = {
-  trailFocus: "job",
-  targetRole: "ai-engineer",
-  experienceLevel: "junior",
-  noDateYet: true,
-  preparationTimePerDay: "30",
-  preparationIntensity: "standard",
-  targetJobMode: "skip",
 };
 
 class RedirectError extends Error {
@@ -42,7 +31,7 @@ async function loadAuthModules(userId: string | null) {
         | "failed";
       currentOnboardingStep:
         | "resume"
-        | "review";
+        | "trail";
       onboardingStartedAt: string | null;
       onboardingCompletedAt: string | null;
       analysisError: string | null;
@@ -51,11 +40,9 @@ async function loadAuthModules(userId: string | null) {
       updatedAt: string;
     }
   >();
-  const careerContexts = new Map<string, { profileId: string; primaryTargetRole: string }>();
-  const targetContexts = new Map<string, { profileId: string; role: string; isActive: boolean }>();
-  const manualProjects = new Map<string, Array<{ profileId: string; name: string }>>();
   const sourceDocuments = new Map<string, Array<{ profileId: string; version: number }>>();
   const resumeVersions = new Map<string, Array<{ profileId: string; version: number; active: boolean }>>();
+  const jobApplications = new Map<string, Array<{ id: string; profileId: string }>>();
 
   vi.doMock("@/lib/db/profile-repository", () => ({
     getOrCreateProfileRecord: vi.fn(async (clerkUserId: string) => {
@@ -69,7 +56,7 @@ async function loadAuthModules(userId: string | null) {
       const profile = {
         clerkUserId,
         onboardingStatus: "not_started" as const,
-        currentOnboardingStep: "resume" as const,
+        currentOnboardingStep: "trail" as const,
         onboardingStartedAt: null,
         onboardingCompletedAt: null,
         analysisError: null,
@@ -100,7 +87,7 @@ async function loadAuthModules(userId: string | null) {
     updateOnboardingStepRecord: vi.fn(
       async (
         clerkUserId: string,
-        currentStep: "resume" | "review",
+        currentStep: "resume" | "trail",
         onboarding: Partial<OnboardingSubmission>,
       ) => {
         const now = new Date().toISOString();
@@ -127,26 +114,6 @@ async function loadAuthModules(userId: string | null) {
         return profile;
       },
     ),
-    markOnboardingAnalyzingRecord: vi.fn(
-      async (clerkUserId: string, onboarding: OnboardingSubmission) => {
-        const now = new Date().toISOString();
-        const existingProfile = profileRecords.get(clerkUserId);
-        const profile = {
-          clerkUserId,
-          onboardingStatus: "analyzing" as const,
-          currentOnboardingStep: "review" as const,
-          onboardingStartedAt: existingProfile?.onboardingStartedAt ?? now,
-          onboardingCompletedAt: existingProfile?.onboardingCompletedAt ?? null,
-          analysisError: null,
-          onboarding,
-          createdAt: existingProfile?.createdAt ?? now,
-          updatedAt: now,
-        };
-
-        profileRecords.set(clerkUserId, profile);
-        return profile;
-      },
-    ),
     completeProfileOnboardingRecord: vi.fn(
       async (clerkUserId: string, onboarding: OnboardingSubmission) => {
         const now = new Date().toISOString();
@@ -154,7 +121,7 @@ async function loadAuthModules(userId: string | null) {
         const profile = {
           clerkUserId,
           onboardingStatus: "completed" as const,
-          currentOnboardingStep: "review" as const,
+          currentOnboardingStep: "trail" as const,
           onboardingStartedAt: existingProfile?.onboardingStartedAt ?? now,
           onboardingCompletedAt:
             existingProfile?.onboardingCompletedAt ?? now,
@@ -175,7 +142,7 @@ async function loadAuthModules(userId: string | null) {
         const profile = {
           clerkUserId,
           onboardingStatus: "failed" as const,
-          currentOnboardingStep: "review" as const,
+          currentOnboardingStep: "trail" as const,
           onboardingStartedAt: existingProfile?.onboardingStartedAt ?? now,
           onboardingCompletedAt: existingProfile?.onboardingCompletedAt ?? null,
           analysisError,
@@ -188,33 +155,20 @@ async function loadAuthModules(userId: string | null) {
         return profile;
       },
     ),
-    saveOnboardingDataModelRecord: vi.fn(
-      async (clerkUserId: string, onboarding: ApplicationSubmission) => {
-        careerContexts.set(clerkUserId, {
-          profileId: clerkUserId,
-          primaryTargetRole: onboarding.targetRole,
-        });
-        targetContexts.set(clerkUserId, {
-          profileId: clerkUserId,
-          role: onboarding.targetRole,
-          isActive: true,
-        });
-      },
-    ),
-    getCareerContextRecord: vi.fn(async (clerkUserId: string) =>
-      careerContexts.get(clerkUserId) ?? null,
-    ),
-    getActiveTargetContextRecord: vi.fn(async (clerkUserId: string) =>
-      targetContexts.get(clerkUserId) ?? null,
-    ),
-    listManualProjectRecords: vi.fn(async (clerkUserId: string) =>
-      manualProjects.get(clerkUserId) ?? [],
-    ),
+    getCareerContextRecord: vi.fn(),
+    getActiveTargetContextRecord: vi.fn(),
+    listManualProjectRecords: vi.fn(async () => []),
     listSourceDocumentRecords: vi.fn(async (clerkUserId: string) =>
       sourceDocuments.get(clerkUserId) ?? [],
     ),
     listResumeVersionRecords: vi.fn(async (clerkUserId: string) =>
       resumeVersions.get(clerkUserId) ?? [],
+    ),
+  }));
+
+  vi.doMock("@/lib/db/application-repository", () => ({
+    listJobApplicationRecords: vi.fn(async (clerkUserId: string) =>
+      jobApplications.get(clerkUserId) ?? [],
     ),
   }));
 
@@ -246,6 +200,14 @@ async function loadAuthModules(userId: string | null) {
   }));
 
   return {
+    addTrail: (clerkUserId: string) => {
+      jobApplications.set(clerkUserId, [
+        {
+          id: `trail_${clerkUserId}`,
+          profileId: clerkUserId,
+        },
+      ]);
+    },
     authServer: await import("@/lib/auth/server"),
     profileService: await import("@/lib/services/profile-service"),
   };
@@ -264,7 +226,7 @@ describe("authenticated route decisions", () => {
     await expect(profileService.getOrCreateProfile(userId)).resolves.toMatchObject({
       clerkUserId: userId,
       onboardingStatus: "not_started",
-      currentOnboardingStep: "resume",
+      currentOnboardingStep: "trail",
       onboardingCompletedAt: null,
     });
   });
@@ -286,12 +248,12 @@ describe("authenticated route decisions", () => {
     const { profileService } = await loadAuthModules(userId);
 
     await expect(
-      profileService.updateOnboardingStep(userId, "review", {
+      profileService.updateOnboardingStep(userId, "resume", {
         resumeName: "resume.pdf",
       }),
     ).resolves.toMatchObject({
       onboardingStatus: "in_progress",
-      currentOnboardingStep: "review",
+      currentOnboardingStep: "resume",
       onboardingStartedAt: expect.any(String),
       onboarding: {
         resumeName: "resume.pdf",
@@ -302,30 +264,16 @@ describe("authenticated route decisions", () => {
   it("restores a saved onboarding step", async () => {
     const userId = "user_restore_step";
     const { profileService } = await loadAuthModules(userId);
-    await profileService.updateOnboardingStep(userId, "review", {
+    await profileService.updateOnboardingStep(userId, "resume", {
       resumeName: "resume.pdf",
     });
 
     await expect(profileService.getOnboardingState(userId)).resolves.toMatchObject({
       status: "in_progress",
-      currentStep: "review",
+      currentStep: "resume",
       onboarding: {
         resumeName: "resume.pdf",
       },
-    });
-  });
-
-  it("marks onboarding as analyzing before profile completion", async () => {
-    const userId = "user_analyzing_service";
-    const { profileService } = await loadAuthModules(userId);
-
-    await expect(
-      profileService.markOnboardingAnalyzing(userId, onboardingPayload),
-    ).resolves.toMatchObject({
-      onboardingStatus: "analyzing",
-      currentOnboardingStep: "review",
-      onboardingCompletedAt: null,
-      analysisError: null,
     });
   });
 
@@ -337,7 +285,7 @@ describe("authenticated route decisions", () => {
       profileService.markOnboardingCompleted(userId, onboardingPayload),
     ).resolves.toMatchObject({
       onboardingStatus: "completed",
-      currentOnboardingStep: "review",
+      currentOnboardingStep: "trail",
       onboardingCompletedAt: expect.any(String),
       analysisError: null,
     });
@@ -346,37 +294,20 @@ describe("authenticated route decisions", () => {
   it("stores failed analysis state", async () => {
     const userId = "user_failed_analysis";
     const { profileService } = await loadAuthModules(userId);
-    await profileService.updateOnboardingStep(userId, "review", onboardingPayload);
+    await profileService.updateOnboardingStep(userId, "resume", onboardingPayload);
 
     await expect(
       profileService.markOnboardingFailed(userId, "Analysis timed out."),
     ).resolves.toMatchObject({
       onboardingStatus: "failed",
-      currentOnboardingStep: "review",
+      currentOnboardingStep: "trail",
       analysisError: "Analysis timed out.",
     });
   });
 
-  it("stores minimum onboarding data model by profile ID", async () => {
-    const userId = "user_data_model";
-    const { profileService } = await loadAuthModules(userId);
-    await profileService.saveOnboardingDataModel(userId, applicationPayload);
-
-    await expect(profileService.getCareerContext(userId)).resolves.toMatchObject({
-      profileId: userId,
-      primaryTargetRole: "ai-engineer",
-    });
-    await expect(profileService.getActiveTargetContext(userId)).resolves.toMatchObject({
-      profileId: userId,
-      role: "ai-engineer",
-      isActive: true,
-    });
-    await expect(profileService.listManualProjects(userId)).resolves.toEqual([]);
-  });
-
   it("isolates onboarding state by Clerk user ID", async () => {
     const { profileService } = await loadAuthModules("user_isolation_a");
-    await profileService.updateOnboardingStep("user_isolation_a", "review", {
+    await profileService.updateOnboardingStep("user_isolation_a", "resume", {
       resumeName: "resume.pdf",
     });
 
@@ -384,7 +315,7 @@ describe("authenticated route decisions", () => {
       profileService.getOnboardingState("user_isolation_b"),
     ).resolves.toMatchObject({
       status: "not_started",
-      currentStep: "resume",
+      currentStep: "trail",
       onboarding: null,
     });
   });
@@ -451,6 +382,22 @@ describe("authenticated route decisions", () => {
 
   it("returns a loader handoff path for a signed-in completed user", async () => {
     const userId = "user_auth_ready_completed";
+    const { addTrail, authServer, profileService } = await loadAuthModules(userId);
+    await profileService.completeTrailgradOnboarding(userId, onboardingPayload);
+    addTrail(userId);
+
+    await expect(
+      authServer.getAuthenticatedUserAppEntryPath({
+        requestedRedirectUrl: "/today",
+      }),
+    ).resolves.toEqual({
+      authenticated: true,
+      redirectPath: "/today",
+    });
+  });
+
+  it("keeps a completed profile without a trail inside onboarding", async () => {
+    const userId = "user_auth_ready_completed_without_trail";
     const { authServer, profileService } = await loadAuthModules(userId);
     await profileService.completeTrailgradOnboarding(userId, onboardingPayload);
 
@@ -460,7 +407,7 @@ describe("authenticated route decisions", () => {
       }),
     ).resolves.toEqual({
       authenticated: true,
-      redirectPath: "/today",
+      redirectPath: "/onboarding?redirect_url=%2Ftoday",
     });
   });
 
@@ -476,8 +423,9 @@ describe("authenticated route decisions", () => {
 
   it("redirects a signed-in completed user away from /onboarding to /today", async () => {
     const userId = "user_complete_onboarding";
-    const { profileService } = await loadAuthModules(userId);
+    const { addTrail, profileService } = await loadAuthModules(userId);
     await profileService.completeTrailgradOnboarding(userId, onboardingPayload);
+    addTrail(userId);
 
     vi.doMock("@/components/onboarding/onboarding-flow", () => ({
       OnboardingFlow: () => null,
@@ -492,10 +440,36 @@ describe("authenticated route decisions", () => {
     });
   });
 
+  it("renders onboarding for a completed profile that has no trail yet", async () => {
+    const userId = "user_complete_without_trail_onboarding";
+    const { profileService } = await loadAuthModules(userId);
+    await profileService.completeTrailgradOnboarding(userId, onboardingPayload);
+
+    const OnboardingFlow = vi.fn(() => null);
+    vi.doMock("@/components/onboarding/onboarding-flow", () => ({
+      OnboardingFlow,
+    }));
+
+    const { default: OnboardingPage } = await import("@/app/onboarding/page");
+
+    const result = await OnboardingPage({ searchParams: Promise.resolve({}) });
+
+    expect(result).toMatchObject({
+      props: {
+        initialState: expect.objectContaining({
+          currentStep: "trail",
+          status: "in_progress",
+        }),
+      },
+    });
+    expect(OnboardingFlow).not.toHaveBeenCalled();
+  });
+
   it("allows a signed-in completed user to visit /today", async () => {
     const userId = "user_complete_today";
-    const { authServer, profileService } = await loadAuthModules(userId);
+    const { addTrail, authServer, profileService } = await loadAuthModules(userId);
     await profileService.completeTrailgradOnboarding(userId, onboardingPayload);
+    addTrail(userId);
 
     await expect(
       authServer.requireCompletedOnboarding({ currentPath: "/today" }),

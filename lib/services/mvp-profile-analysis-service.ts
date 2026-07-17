@@ -25,6 +25,12 @@ import {
   persistAnalysisJobProgress,
 } from "@/lib/services/analysis-job-service";
 import { markOnboardingFailed } from "@/lib/services/profile-service";
+import {
+  getExperienceLevelLabel,
+  getPreparationIntensityLabel,
+  getPreparationTimeLabel,
+  getTargetRoleLabel,
+} from "@/lib/trails/catalog";
 
 export interface MVPProfileAnalysisRunResult {
   profileAnalysis: ProfileAnalysisRecord | null;
@@ -178,7 +184,7 @@ function buildMVPAnalysisPromptContent(context: MVPAnalysisInputContext) {
   return [
     "Analyze this Trailgrad onboarding profile. Return only the requested JSON object.",
     "",
-    "Target context:",
+    "Trail setup context:",
     JSON.stringify(buildCompactTargetContext(context)),
     "",
     "Compact resume evidence packet with original line numbers:",
@@ -188,30 +194,88 @@ function buildMVPAnalysisPromptContent(context: MVPAnalysisInputContext) {
 
 function buildCompactTargetContext(context: MVPAnalysisInputContext) {
   const trailFocus = context.targetContext?.trailFocus ?? "job";
+  const targetRoleId =
+    context.targetContext?.role ?? context.careerContext?.primaryTargetRole ?? null;
+  const experienceLevelId = context.careerContext?.experienceLevel ?? null;
   const targetDetail = context.targetContext?.jobDescription
     ? truncateText(context.targetContext.jobDescription, 2_500)
     : null;
+  const preparationTimeId = getPreparationTimeId(context);
+  const timeline = context.careerContext?.noDateYet
+    ? {
+        kind: "flexible",
+        label: "Flexible / no date yet",
+        targetDate: null,
+      }
+    : {
+        kind: "dated",
+        label: context.careerContext?.interviewOrApplicationDate
+          ? `By ${context.careerContext.interviewOrApplicationDate}`
+          : "Date not provided",
+        targetDate: context.careerContext?.interviewOrApplicationDate ?? null,
+      };
 
   return {
     trailFocus,
-    targetRole: context.careerContext?.primaryTargetRole ?? null,
-    experienceLevel: context.careerContext?.experienceLevel ?? null,
-    targetCompany:
-      trailFocus === "job" ? context.targetContext?.company ?? null : null,
-    targetJobTitle:
-      trailFocus === "job" ? context.targetContext?.jobTitle ?? null : null,
-    learningTopic:
-      trailFocus === "learning" ? context.targetContext?.company ?? null : null,
-    learningGoal:
-      trailFocus === "learning" ? context.targetContext?.jobTitle ?? null : null,
-    timeline: context.careerContext?.noDateYet
-      ? "no_date_yet"
-      : context.careerContext?.interviewOrApplicationDate,
-    dailyPreparationMinutes: context.careerContext?.dailyPreparationMinutes ?? null,
-    preparationIntensity: context.careerContext?.preparationIntensity ?? null,
-    jobDescription: trailFocus === "job" ? targetDetail : null,
-    learningContext: trailFocus === "learning" ? targetDetail : null,
+    targetRole: {
+      id: targetRoleId,
+      label: getTargetRoleLabel(targetRoleId),
+    },
+    experienceLevel: {
+      id: experienceLevelId,
+      label: getExperienceLevelLabel(experienceLevelId),
+    },
+    selectedGoal: {
+      label: context.targetContext?.jobTitle ?? null,
+      companyOrTopic: context.targetContext?.company ?? null,
+      hasSpecificCompanyOrTopic: Boolean(context.targetContext?.company),
+    },
+    schedule: {
+      timeline,
+      weeklyTime: {
+        id: preparationTimeId,
+        label: getPreparationTimeLabel(preparationTimeId),
+        dailyMinutes: context.careerContext?.dailyPreparationMinutes ?? null,
+        flexible: Boolean(context.careerContext?.flexiblePreparationTime),
+      },
+      intensity: {
+        id: context.careerContext?.preparationIntensity ?? null,
+        label: getPreparationIntensityLabel(
+          context.careerContext?.preparationIntensity,
+        ),
+      },
+    },
+    targetDetails: targetDetail
+      ? {
+          provided: true,
+          kind: trailFocus === "learning" ? "learning_context" : "job_description",
+          text: targetDetail,
+        }
+      : {
+          provided: false,
+          kind: trailFocus === "learning" ? "learning_context" : "job_description",
+        },
+    responsePriorities: [
+      "highest-impact rejection risks",
+      "evidence gaps the resume can realistically fix",
+      "questions likely for this role and goal",
+      "one next action sized to the prep rhythm",
+    ],
   };
+}
+
+function getPreparationTimeId(context: MVPAnalysisInputContext) {
+  if (context.careerContext?.flexiblePreparationTime) {
+    return "flexible";
+  }
+
+  const minutes = context.careerContext?.dailyPreparationMinutes;
+
+  if (minutes === 15 || minutes === 30 || minutes === 60) {
+    return String(minutes);
+  }
+
+  return null;
 }
 
 function buildCompactResumeEvidencePacket(text: string) {

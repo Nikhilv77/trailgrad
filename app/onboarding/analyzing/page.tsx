@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { AnalyzingStatus } from "@/components/onboarding/analyzing-status";
 import { requireAuthenticatedUser } from "@/lib/auth/server";
+import { listJobApplicationRecords } from "@/lib/db/application-repository";
 import { getReconciledOnboardingState } from "@/lib/services/onboarding-analysis-status-service";
 
 export const metadata: Metadata = {
@@ -21,23 +21,10 @@ export default async function OnboardingAnalyzingPage() {
   const onboardingState = await getReconciledOnboardingState(user.userId);
 
   if (onboardingState.status === "completed") {
-    return (
-      <AnalyzingStatus
-        completedRedirectPath="/trails/new"
-        handoffOnly
-        message="Working on your trails..."
-      />
-    );
+    const trails = await listJobApplicationRecords(user.userId);
+
+    redirect(trails.length > 0 ? "/trails/new" : "/onboarding");
   }
 
-  if (onboardingState.status !== "analyzing") {
-    redirect("/onboarding");
-  }
-
-  return (
-    <AnalyzingStatus
-      completedRedirectPath="/trails/new"
-      message="Working on your trails..."
-    />
-  );
+  redirect("/onboarding");
 }
