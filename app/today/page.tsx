@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 import { ApplicationWorkspace } from "@/components/today/application-workspace";
@@ -31,7 +32,10 @@ export default async function TodayPage({ searchParams }: TodayPageProps) {
   const reanalysisJobId = getSingleSearchParam(params.jobId);
   const selectedTrailId = getSingleSearchParam(params.trail);
   const user = await requireCompletedOnboarding({ currentPath: "/today" });
-  const applications = await listJobApplicationRecords(user.userId);
+  const [applications, clerkUser] = await Promise.all([
+    listJobApplicationRecords(user.userId),
+    currentUser(),
+  ]);
 
   if (applications.length === 0) {
     redirect("/trails/new");
@@ -71,6 +75,10 @@ export default async function TodayPage({ searchParams }: TodayPageProps) {
       applications={applications}
       selectedApplicationId={selectedApplication.id}
       updating={updating}
+      viewer={{
+        firstName: clerkUser?.firstName?.trim() || "Nikhil",
+        imageUrl: clerkUser?.hasImage ? clerkUser.imageUrl : null,
+      }}
     />
   );
 }
